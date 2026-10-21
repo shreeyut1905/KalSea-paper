@@ -1,7 +1,6 @@
 # build products
 build/
 render/
-main.pdf
 *.aux
 *.bbl
 *.blg
