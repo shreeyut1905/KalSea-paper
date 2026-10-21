@@ -1,0 +1,60 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Training-free caching.}
+Caching exploits the similarity of network activations at consecutive sampling steps. DeepCache~\cite{ma2024deepcache}
+and block caching~\cite{wimbauer2024cache} reuse features of U-Nets; $\Delta$-DiT~\cite{chen2024deltadit},
+FORA~\cite{selvaraju2024fora} and ToCa~\cite{zou2025toca} bring reuse to diffusion transformers at the level
+of blocks, attention and MLP outputs, and tokens. PAB~\cite{zhao2025pab} and FasterCache~\cite{lv2025fastercache}
+target video models, OmniCache~\cite{chu2025omnicache} distributes reuse over the whole sampling trajectory, and
+Learning-to-Cache~\cite{ma2024learningtocache} learns which layers to cache. Because fixed schedules cannot adapt to the content, recent caches decide online.
+AdaCache~\cite{kahatapitiya2025adacache} tailors the caching schedule to each video and its motion.
+TeaCache~\cite{liu2025teacache} accumulates the relative change of the timestep-modulated input of the first block
+and recomputes once it exceeds a threshold, MagCache~\cite{ma2025magcache} models the magnitude ratio of successive
+residuals, and DiCache~\cite{bu2026dicache} probes a shallow layer online. \seacache~\cite{chung2026seacache} keeps
+TeaCache's accumulate-and-reset
+rule but measures the change after a spectral-evolution-aware filter derived from the optimal linear denoiser, so
+that the gate responds to content rather than noise. We adopt the \sea gate unchanged; our contribution concerns what
+is written on the steps it skips.
+
+\paragraph{Forecasting and correcting cached features.}
+TaylorSeer~\cite{liu2025taylorseer} replaces reuse by a Taylor extrapolation from finite differences of cached features.
+HiCache~\cite{feng2026hicache} uses scaled Hermite polynomials, Spectrum~\cite{han2026spectrum} fits Chebyshev
+polynomials to the whole feature history by ridge regression, and FoCa~\cite{zheng2026foca} combines a BDF2
+predictor with a Heun-type calibration of the forecast feature. Other methods check or repair what is written on
+skipped steps: SpeCa~\cite{liu2025speca} accepts or rejects each forecast with a lightweight verification,
+OmniCache~\cite{chu2025omnicache} filters the noise introduced by reused features, ERTACache~\cite{peng2026ertacache}
+adjusts integration intervals and rectifies cache-induced errors with a closed-form model profiled offline, and
+GP-Refiner~\cite{shen2026gprefiner} regresses the deviation of forecast features online with a Gaussian process,
+using computed steps as noisy labels. All of these methods improve
+the value used at the \emph{current or upcoming} steps; none revises the latent of steps that have already been
+skipped. \pcgs is complementary to them: it leaves the forecast for upcoming steps unchanged and corrects the past gap
+once the next step has been computed.
+Contemporaneous with our work, SpecKCast~\cite{rajabi2026speckcast} tracks the DCT coefficients of the model output
+with damped-trend Kalman filters along band-specific warped time coordinates, and schedules computation by the
+filter's uncertainty. Our predictor uses the same state-space model, but applies it to the block-stack residual
+behind the \sea gate, so that the output layers run at every step; for the residual we find the frequency
+decomposition unnecessary (\cref{sec:ablations}). More importantly, SpecKCast uses the filter only as a predictor.
+\pcgs adds the smoother and the latent correction, and applies to any forecaster with a linear-Gaussian model.
+% TODO(owner): direct comparison with SpecKCast's full method (output forecasting + uncertainty scheduler) if its code
+% becomes available; CVPR asks to compare with contemporaneous work "to the degree feasible".
+
+\paragraph{Filtering, smoothing and predictor-corrector integration.}
+The Kalman filter~\cite{kalman1960new} and the RTS smoother~\cite{rauch1965maximum} are the exact recursive
+estimators of linear-Gaussian state-space models~\cite{sarkka2013bayesian}. Our forecaster uses the integrated Wiener
+process (constant-velocity) model of target tracking~\cite{barshalom2001estimation} with a damped
+trend~\cite{gardner1985forecasting}, and adapts its process noise from the innovations~\cite{mehra1972approaches}.
+Probabilistic ODE solvers place similar Gauss--Markov priors on the solution of an ODE and infer it from evaluations
+of the vector field by filtering and smoothing~\cite{schober2019probabilistic,tronarp2019probabilistic}. We instead use
+smoothing to infer the network evaluations that a cache skipped from the ones it computed.
+Predictor-corrector schemes are common in diffusion sampling: score-based SDE samplers alternate a numerical predictor
+with Langevin corrector steps~\cite{song2021score}, Heun's method corrects an Euler step with a second
+evaluation~\cite{karras2022edm}, and UniPC~\cite{zhao2023unipc} raises the accuracy of multistep solvers such
+as DPM-Solver++~\cite{lu2025dpmsolverpp} with a corrector that reuses the next model evaluation. \pcgs shares UniPC's
+principle of a corrector without extra evaluations, but corrects a gap of skipped steps instead of a single step.
+
+\paragraph{Other acceleration.}
+Fast ODE solvers~\cite{song2021ddim,lu2022dpmsolver,lu2025dpmsolverpp,zhao2023unipc,karras2022edm} reduce
+the number of steps, distillation~\cite{salimans2022progressive,song2023consistency,luo2023lcm,sauer2024add}
+trains few-step students, and quantization~\cite{li2023qdiffusion} lowers the cost of each step. These directions are
+orthogonal to caching, which keeps the weights and the sampler unchanged.

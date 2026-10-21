@@ -1,0 +1,297 @@
+{
+ "delta": "0.6",
+ "rule": {
+  "quantiles": [
+   50.0,
+   75.0
+  ],
+  "k": 2,
+  "window": [
+   256,
+   128
+  ],
+  "stride": 8,
+  "n_identical_steps": 182,
+  "n_total": 200,
+  "gain_quantiles": {
+   "25": 0.17186556877863168,
+   "50": 1.1690593592979983,
+   "75": 2.3758622806387857
+  }
+ },
+ "nfe": 13.0,
+ "prompts": [
+  {
+   "quantile": 50.0,
+   "target": 1.1690593592979983,
+   "gain": 1.1542162958393334,
+   "idx": 67,
+   "prompt": "A stack of 3 cubes. A red cube is on the top, sitting on a red cube. The red cube is in the middle, sitting on a green cube. The green cube is on the bottom.",
+   "window": [
+    344,
+    536,
+    256,
+    128
+   ],
+   "window_disagreement": 15.285884857177734,
+   "size": [
+    1024,
+    1024
+   ],
+   "n_same_steps": 182,
+   "compute_steps": [
+    0,
+    1,
+    2,
+    4,
+    6,
+    9,
+    13,
+    18,
+    24,
+    32,
+    39,
+    46,
+    49
+   ],
+   "nfe": 13,
+   "psnr": {
+    "seacache": 30.303713287216482,
+    "kalsea": 32.23610709429628,
+    "ours": 31.457929583055815
+   },
+   "ssim": {
+    "seacache": 0.9777652019987239,
+    "kalsea": 0.9819772904992531,
+    "ours": 0.9782036464576969
+   },
+   "lpips": {
+    "seacache": 0.02803976461291313,
+    "kalsea": 0.016302242875099182,
+    "ours": 0.021277599036693573
+   },
+   "tiles": {
+    "reference": {
+     "full": "067_reference_full.jpg",
+     "crop": "067_reference_crop.jpg"
+    },
+    "seacache": {
+     "full": "067_seacache_full.jpg",
+     "crop": "067_seacache_crop.jpg"
+    },
+    "kalsea": {
+     "full": "067_kalsea_full.jpg",
+     "crop": "067_kalsea_crop.jpg"
+    },
+    "ours": {
+     "full": "067_ours_full.jpg",
+     "crop": "067_ours_crop.jpg"
+    }
+   }
+  },
+  {
+   "quantile": 50.0,
+   "target": 1.1690593592979983,
+   "gain": 1.1839024227566632,
+   "idx": 125,
+   "prompt": "A couch on the left of a chair.",
+   "window": [
+    232,
+    680,
+    256,
+    128
+   ],
+   "window_disagreement": 30.458086013793945,
+   "size": [
+    1024,
+    1024
+   ],
+   "n_same_steps": 182,
+   "compute_steps": [
+    0,
+    1,
+    2,
+    4,
+    6,
+    9,
+    13,
+    18,
+    25,
+    33,
+    41,
+    47,
+    49
+   ],
+   "nfe": 13,
+   "psnr": {
+    "seacache": 19.088262848877108,
+    "kalsea": 20.144460748945292,
+    "ours": 20.27216527163377
+   },
+   "ssim": {
+    "seacache": 0.7153566089498735,
+    "kalsea": 0.7522903881717489,
+    "ours": 0.7648058757473549
+   },
+   "lpips": {
+    "seacache": 0.3295479118824005,
+    "kalsea": 0.27110394835472107,
+    "ours": 0.25772255659103394
+   },
+   "tiles": {
+    "reference": {
+     "full": "125_reference_full.jpg",
+     "crop": "125_reference_crop.jpg"
+    },
+    "seacache": {
+     "full": "125_seacache_full.jpg",
+     "crop": "125_seacache_crop.jpg"
+    },
+    "kalsea": {
+     "full": "125_kalsea_full.jpg",
+     "crop": "125_kalsea_crop.jpg"
+    },
+    "ours": {
+     "full": "125_ours_full.jpg",
+     "crop": "125_ours_crop.jpg"
+    }
+   }
+  },
+  {
+   "quantile": 75.0,
+   "target": 2.3758622806387857,
+   "gain": 2.3870071736587875,
+   "idx": 38,
+   "prompt": "Four cars on the street.",
+   "window": [
+    0,
+    0,
+    256,
+    128
+   ],
+   "window_disagreement": 32.71481704711914,
+   "size": [
+    1024,
+    1024
+   ],
+   "n_same_steps": 182,
+   "compute_steps": [
+    0,
+    1,
+    2,
+    4,
+    6,
+    9,
+    13,
+    18,
+    25,
+    33,
+    41,
+    47,
+    49
+   ],
+   "nfe": 13,
+   "psnr": {
+    "seacache": 16.77419698526716,
+    "kalsea": 18.188844228491373,
+    "ours": 19.161204158925948
+   },
+   "ssim": {
+    "seacache": 0.5894622634078296,
+    "kalsea": 0.6946428786859467,
+    "ours": 0.7617906751755484
+   },
+   "lpips": {
+    "seacache": 0.3909752368927002,
+    "kalsea": 0.264556348323822,
+    "ours": 0.20641937851905823
+   },
+   "tiles": {
+    "reference": {
+     "full": "038_reference_full.jpg",
+     "crop": "038_reference_crop.jpg"
+    },
+    "seacache": {
+     "full": "038_seacache_full.jpg",
+     "crop": "038_seacache_crop.jpg"
+    },
+    "kalsea": {
+     "full": "038_kalsea_full.jpg",
+     "crop": "038_kalsea_crop.jpg"
+    },
+    "ours": {
+     "full": "038_ours_full.jpg",
+     "crop": "038_ours_crop.jpg"
+    }
+   }
+  },
+  {
+   "quantile": 75.0,
+   "target": 2.3758622806387857,
+   "gain": 2.3424276015787804,
+   "idx": 186,
+   "prompt": "A sign that says 'Hello World'.",
+   "window": [
+    664,
+    704,
+    256,
+    128
+   ],
+   "window_disagreement": 14.334465026855469,
+   "size": [
+    1024,
+    1024
+   ],
+   "n_same_steps": 182,
+   "compute_steps": [
+    0,
+    1,
+    2,
+    4,
+    6,
+    9,
+    13,
+    18,
+    25,
+    33,
+    41,
+    47,
+    49
+   ],
+   "nfe": 13,
+   "psnr": {
+    "seacache": 22.31869425773675,
+    "kalsea": 24.06061366333262,
+    "ours": 24.661121859315532
+   },
+   "ssim": {
+    "seacache": 0.8502069383813923,
+    "kalsea": 0.8918332826093963,
+    "ours": 0.9366717440115181
+   },
+   "lpips": {
+    "seacache": 0.20380821824073792,
+    "kalsea": 0.12384072691202164,
+    "ours": 0.08182010054588318
+   },
+   "tiles": {
+    "reference": {
+     "full": "186_reference_full.jpg",
+     "crop": "186_reference_crop.jpg"
+    },
+    "seacache": {
+     "full": "186_seacache_full.jpg",
+     "crop": "186_seacache_crop.jpg"
+    },
+    "kalsea": {
+     "full": "186_kalsea_full.jpg",
+     "crop": "186_kalsea_crop.jpg"
+    },
+    "ours": {
+     "full": "186_ours_full.jpg",
+     "crop": "186_ours_crop.jpg"
+    }
+   }
+  }
+ ]
+}

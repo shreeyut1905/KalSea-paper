@@ -1,0 +1,59 @@
+%% Method figure (Fig. 2), full text width.  Compile with ./build.sh (pdfLaTeX, TeX Live 2026).
+%% Panel (a): TikZ.  Panels (b) and (c): matplotlib PGF output (real data, see make_panels.py), typeset here.
+\documentclass[10pt]{article}
+\usepackage[paperwidth=6.875in,paperheight=8.82cm,margin=0pt]{geometry}
+\usepackage{times}
+\usepackage{amsmath,amssymb,bm,mathtools}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,positioning,decorations.pathreplacing,backgrounds,shapes.geometric}
+\input{../palette.tex}
+\input{method_macros.tex}
+\pagestyle{empty}
+%% double-blind / reproducible output: no file names, dates or IDs in the PDF
+\pdfsuppressptexinfo=-1 \pdfinfoomitdate=1 \pdftrailerid{}
+\pdfinfo{/Creator () /Producer ()}
+\setlength{\parindent}{0pt}
+
+\tikzset{
+  >={Stealth[length=3.0pt,width=2.4pt]},
+  every node/.style={font=\scriptsize, text=cInk},
+  data/.style={->, line width=0.55pt, draw=cInk, line cap=round, line join=round},
+  wire/.style={line width=0.55pt, draw=cInk, line cap=round, line join=round},
+  ctrl/.style={->, line width=0.5pt, draw=cSeaCache, dash pattern=on 1.8pt off 1.1pt},
+  module/.style={draw=cInk!60, line width=0.45pt, fill=black!6, rounded corners=1.2pt, minimum height=0.56cm,
+                 inner sep=1.5pt, align=center},
+  comp/.style={draw=#1, line width=0.6pt, fill=#1!7, rounded corners=1.6pt},
+  title/.style={font=\footnotesize\bfseries, inner sep=0pt, anchor=north west},
+  lbl/.style={font=\scriptsize, inner sep=1pt},
+  note/.style={font=\scriptsize\itshape, text=cInkTwo, inner sep=1pt},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1cm,y=1cm]
+\useasboundingbox (0,0) rectangle (17.4625,8.82);
+%% ---------------------------------------------------------------- (a) top
+\begin{scope}[shift={(0,5.2)}]
+\input{panel_a.tex}
+\end{scope}
+%% ---------------------------------------------------------------- (b), (c) bottom: real trace
+\node[anchor=south west, inner sep=0] at (0,0) {\input{panel_b.pgf}};
+\node[anchor=south west, inner sep=0] at (10.26,0) {\input{panel_c.pgf}};
+\node[anchor=north west, inner sep=0] at (0,4.66) {\footnotesize\textbf{(b)}\ \ Residual over two gaps: extrapolate, observe, smooth};
+\node[anchor=north west, inner sep=0] at (10.26,4.66) {\footnotesize\textbf{(c)}\ \ Latent: drift and correction};
+%% shared legend for (b) and (c)
+\begin{scope}[shift={(0.75,4.03)}]
+  \fill[cInk] (0.10,0) circle (1.25pt);
+  \node[lbl, anchor=west] at (0.2,0) {observed at a computed step};
+  \draw[cMuted!95!black, line width=0.5pt] (3.75,0) -- (4.25,0);
+  \draw[cMuted!95!black, line width=0.5pt, fill=white] (4.00,0) circle (1.0pt);
+  \node[lbl, anchor=west] at (4.3,0) {full computation (oracle, not used)};
+  \fill[cKalSea, opacity=0.13] (8.72,-0.09) rectangle (9.32,0.09);
+  \draw[cKalSea, line width=0.8pt, dash pattern=on 2.6pt off 1.3pt] (8.72,0) -- (9.32,0);
+  \node[lbl, anchor=west] at (9.37,0) {Kalman extrapolation ${\pm}1$\,s.d.\ (KalSea)};
+  \draw[cOurs, line width=0.8pt] (13.55,0) -- (14.15,0);
+  \fill[cOurs] (13.85,0) circle (1.0pt);
+  \node[lbl, anchor=west] at (14.2,0) {PCGS (ours)};
+\end{scope}
+\end{tikzpicture}
+\end{document}

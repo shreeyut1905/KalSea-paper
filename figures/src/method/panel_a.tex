@@ -1,0 +1,92 @@
+%% Panel (a): one sampler step with the residual cache.  TikZ commands in a local frame:
+%% x in [0, 17.4625] cm (full text width), y in [-0.40, 3.62] cm.  Included by method.tex inside a shifted scope.
+%% ------------------------------------------------------------------------------------------------ geometry
+\def\yS{2.95}                 % spine
+\def\Gx{1.40}\def\Gw{3.80}    % SEA gate box
+\def\Fx{5.50}\def\Fw{4.46}    % block stack / Kalman column
+\def\yF{2.24}\def\Fh{0.40}    % block stack centre, height
+\def\Mx{10.80}                % residual selector (mux), left edge
+\def\Px{11.44}                % adder
+\def\Bx{11.86}                % PCGS box, left edge
+\def\Ox{12.42}                % Out box centre
+\def\Ex{14.88}                % Euler box centre
+%% panel title
+\node[anchor=north west, inner sep=0] at (0,3.62) {\footnotesize\textbf{(a)}\ \ One sampler step $i$ with the residual cache};
+
+%% ------------------------------------------------------------------------------------------------ spine
+\node[lbl, anchor=west] (xi) at (0,\yS) {$\lat_i$};
+\node[module, minimum width=0.74cm] (emb) at (0.86,\yS) {$\Emb$};
+\draw[data] (xi.east) -- (emb.west);
+\node[circle, draw=cInk, line width=0.5pt, inner sep=0pt, minimum size=0.25cm, fill=white] (plus) at (\Px,\yS) {};
+\draw[line width=0.5pt] (plus.north) -- (plus.south) (plus.west) -- (plus.east);
+\draw[data] (emb.east) -- (plus.west);
+\node[lbl, anchor=south] at (1.62,\yS) {$\hin_i$};
+\node[note, anchor=north] at (0.86,\yS-0.29) {every step};
+
+%% ------------------------------------------------------------------------------------------------ SEA gate
+\draw[comp=cSeaCache] (\Gx,0.50) rectangle (\Gx+\Gw,2.45);
+\node[title] at (\Gx+0.1,2.37) {SEA gate {\normalfont\scriptsize(SeaCache)}};
+\node[lbl, anchor=north west, align=left] at (\Gx+0.1,2.0) {%
+  $\modin_i=\mathrm{AdaLN}_0(\hin_i,\cond_i)$\\[2pt]
+  $S_i=\seaop_{\sigma_i}(\modin_i)$\\[2pt]
+  $d_i=\|S_i-S_{i-1}\|_1/\|S_{i-1}\|_1$\\[2pt]
+  compute iff $A_i=A_{i-1}+d_i\ge\delta$};
+\draw[data] (\Gx+1.9,\yS) -- (\Gx+1.9,2.45);
+
+%% ------------------------------------------------------------------------------------------------ block stack
+\pgfmathsetmacro{\unit}{\Fw/(19*2.4+38)}
+\foreach \k in {0,...,18} {
+  \pgfmathsetmacro{\xa}{\Fx+\k*2.4*\unit}
+  \fill[black!24] (\xa+0.011,\yF-\Fh/2) rectangle (\xa+2.4*\unit-0.011,\yF+\Fh/2);
+}
+\foreach \k in {0,...,37} {
+  \pgfmathsetmacro{\xa}{\Fx+19*2.4*\unit+\k*\unit}
+  \fill[black!12] (\xa+0.009,\yF-\Fh/2) rectangle (\xa+\unit-0.009,\yF+\Fh/2);
+}
+\draw[cInk!60, line width=0.45pt, rounded corners=0.8pt] (\Fx-0.03,\yF-\Fh/2-0.03) rectangle (\Fx+\Fw+0.03,\yF+\Fh/2+0.03);
+\node[lbl, anchor=south] at (\Fx+\Fw/2,\yF+\Fh/2+0.03) {$\blocks$: 19 double- + 38 single-stream blocks};
+\draw[data] (\Fx-0.2,\yS) -- (\Fx-0.2,\yF) -- (\Fx-0.03,\yF);
+
+%% ------------------------------------------------------------------------------------------------ Kalman filter
+\draw[comp=cKalSea] (\Fx-0.03,0.28) rectangle (\Fx+\Fw+0.03,1.92);
+\node[title] at (\Fx+0.07,1.84) {Kalman filter {\normalfont\scriptsize(KalSea)}};
+\node[lbl, anchor=north west, align=left] at (\Fx+0.07,1.53) {%
+  predict: $\prior{\kstate}_i=\kA_i\post{\kstate}_{i-1}$,\ \ $\kA_i=\begin{psmallmatrix}1&\ds_i\\0&\rho_i\end{psmallmatrix}$\\[0.5pt]
+  update (computed): $z_i=\DCT(\res_i)$\\[0.5pt]
+  forecast (skipped): $\resf_i=\DCT^{-1}(\prior{m}_i)$};
+
+%% ------------------------------------------------------------------------------------------------ residual selector
+\draw[wire, fill=white] (\Mx,0.38) -- (\Mx,2.40) -- (\Mx+0.34,2.18) -- (\Mx+0.34,0.60) -- cycle;
+\draw[data] (\Fx+\Fw+0.03,\yF) -- node[lbl, above, pos=0.30] {$\res_i$} (\Mx,\yF);
+\draw[data] (\Fx+\Fw+0.40,\yF) -- (\Fx+\Fw+0.40,0.885) -- (\Fx+\Fw+0.03,0.885);
+\draw[data] (\Fx+\Fw+0.03,0.535) -- node[lbl, below, pos=0.45] {$\resf_i$} (\Mx,0.535);
+\draw[wire] (\Mx+0.34,1.39) -- (\Px,1.39);
+\draw[data] (\Px,1.39) -- (plus.south);
+%% gate decision
+\draw[ctrl] (\Gx+1.9,0.50) -- (\Gx+1.9,0.10) -- (\Mx+0.17,0.10) -- (\Mx+0.17,0.47);
+\node[lbl, anchor=south west] at (\Gx+1.97,0.10) {$A_i\ge\delta$?};
+
+%% ------------------------------------------------------------------------------------------------ output + Euler
+\node[module, minimum width=0.76cm] (out) at (\Ox,\yS) {$\Out$};
+\draw[data] (plus.east) -- (out.west);
+\node[lbl, anchor=south east] at (\Px-0.08,\yS+0.02) {$\hout_i$};
+\node[module, minimum width=3.42cm] (eul) at (\Ex,\yS) {$\lat_{i+1}=\lat_i+(\sigma_{i+1}-\sigma_i)\,\vel_i$};
+\draw[data] (out.east) -- (eul.west);
+\node[lbl, anchor=south] at ($(out.east)!0.5!(eul.west)$) {$\vel_i$};
+\draw[data] (eul.east) -- (17.44,\yS);
+\node[lbl, anchor=south east] at (17.46,\yS+0.01) {$\lat_{i+1}$};
+\node[note, anchor=north] at (\Ox,\yS-0.29) {every step};
+
+%% ------------------------------------------------------------------------------------------------ PCGS
+\draw[comp=cOurs] (\Bx,-0.22) rectangle (17.4625,2.30);
+\node[title] at (\Bx+0.1,2.22) {Gap smoothing {\normalfont\scriptsize(PCGS, ours)}};
+\node[lbl, anchor=north west, align=left] at (\Bx+0.1,1.86) {%
+  at computed step $b$ ending a gap $a{+}1,\dots,b{-}1$:\\[2pt]
+  (1) RTS: $\smooth{m}_i=\prior{m}_i+g_i\,e_b$,\ \ $e_b=z_b-\prior{m}_b$\\[2pt]
+  (2) re-integrate $\lat_{a+1}\!\to\lat_b'$ with $\Emb,\Out$ only\\[2pt]
+  (3) continue from $\lat_b'$;\ refresh the gate input\\[2pt]
+  \textit{0 extra transformer-block evaluations}};
+\draw[data] (\Fx+\Fw-0.25,0.28) -- (\Fx+\Fw-0.25,-0.10) -- (\Bx,-0.10);
+\node[lbl, anchor=north east] at (\Fx+\Fw-0.29,0.06) {$e_b,\ \prior{\kP}_{a+1:b}$};
+\draw[data] (\Ex,2.30) -- (\Ex,\yS-0.28);
+\node[lbl, anchor=west] at (\Ex+0.05,2.55) {$\lat_b\to\lat_b'$};

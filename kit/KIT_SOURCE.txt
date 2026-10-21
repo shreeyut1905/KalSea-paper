@@ -1,0 +1,36 @@
+Official CVPR author kit used by this paper
+============================================
+
+Repository : https://github.com/cvpr-org/author-kit  (LaTeX template, branch main)
+Tag        : CVPR2026-v1(latex)   (GitHub release "CVPR2026", published 2025-09-17)
+Commit     : 12909ae437f6dbc7435069cfdb4ca44c18e6a02f  "CVPR 2026 changes by Vladimir Pavlovic"
+Archive    : author-kit-CVPR2026-v1-latex.tar.gz (from codeload.github.com)
+             sha256 f86b40c00412e659e34981742ae680c387e12200fbf9caf70ed62b61394cbf96
+Retrieved  : 2026-10-21
+Pristine copy of the kit: CVPR2026-v1-latex/ (do not edit; the example main.tex compiles in review mode,
+see "make kit-test").
+
+Files copied unchanged into the paper root (sha256):
+  cvpr.sty              2602473285d1a7df2a445ac89b76e1afa0acab78e056f0369d19770245190153
+  ieeenat_fullname.bst  e38e6166bd7b1e6d23a1b79dcdb55c656e4fcdbe91bdf6b50d827e6b5d1aacfc
+  preamble.tex          f666a85903f49929395951e7afb620e96d4e208334623f23135298b4d7f06228
+"make check" verifies these hashes.
+
+Why this is not a CVPR 2027 kit (checked 2026-10-21)
+----------------------------------------------------
+- cvpr-org/author-kit has no 2027 tag or release. The newest tag is CVPR2026-v1(latex).
+- main is 4 commits ahead of that tag (last commit 2026-05-28, "teaser w/ strip and preamble tweaks (#65)").
+  Those commits touch only README.md, fig/teaser.tex, main.tex, preamble.tex and sec/2_formatting.tex.
+  cvpr.sty and ieeenat_fullname.bst are identical on main and on the tag.
+- https://cvpr.thecvf.com/Conferences/2027/AuthorGuidelines returns HTTP 404.
+- The CVPR 2027 Call for Papers (posted 2026-09-03) does not link a template.
+
+TODO(kit): switch to the CVPR 2027 kit as soon as it is released
+-----------------------------------------------------------------
+1. Check https://github.com/cvpr-org/author-kit/tags for a CVPR2027 tag, and
+   https://cvpr.thecvf.com/Conferences/2027/AuthorGuidelines for the 2027 rules (page limit, anonymity,
+   LLM policy).
+2. Unpack the 2027 kit into kit/CVPR2027-.../. Copy its cvpr.sty, *.bst and preamble.tex into the paper root
+   unchanged, and update the hashes above and in tools/pdfcheck.py (KIT_HASHES).
+3. Diff the 2027 example main.tex against our main.tex: package options, hyperref line, \confYear, and any new
+   macros or required statements. Then rebuild and re-check the page count.

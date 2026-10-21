@@ -1,0 +1,17 @@
+\begin{abstract}
+% Numbers: research_v2/runs/drawbench_eval/eval_two_budgets_vs_seacache.txt (vs. SeaCache) and the paired bootstrap of
+% kalsea_dct_pcgs_<d> vs. speckcast_<d> (vs. the predictor alone; eval_sweep_vs_kalsea.txt for delta 0.3).
+Diffusion transformers spend most of their sampling time in the block stack, which runs at every one of tens of
+sampling steps. Training-free caches skip it on some steps: a gate decides \emph{when} to compute, and a filler
+decides \emph{what} to write on the skipped steps, typically the last residual of the block stack or a forecast of
+it. Both fillers are open loop. When the next computed step reveals how wrong the filler was, its error has already
+been integrated into the latent, and it is never corrected. We propose \ours, a training-free cache that closes this
+loop. Behind the spectrally aligned gate of \seacache, a damped-trend Kalman filter forecasts the block-stack
+residual on skipped steps. When the next step is computed, the filter's innovation and covariances yield, through a
+Rauch--Tung--Striebel smoother, the minimum-mean-square-error residuals of the whole skipped gap. We re-integrate the
+gap through the output layers only and continue sampling from the corrected latent. This predictor-corrector gap
+smoothing (\pcgs) requires no additional transformer evaluations. On \flux, at a matched number of transformer
+evaluations and on held-out DrawBench prompts, \ours raises PSNR with respect to the 50-step sampler by 2.73\,dB
+(95\% CI [2.34, 3.12]) over \seacache at 20.8 of 50 evaluations and by 1.27\,dB [1.02, 1.52] at 13; \pcgs alone
+contributes 0.83 and 0.61\,dB. \TODO{Video results (HunyuanVideo, Wan2.1) once available.}
+\end{abstract}

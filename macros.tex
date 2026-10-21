@@ -1,0 +1,107 @@
+%% macros.tex -- packages, method names and notation for the paper.
+%% Loaded by main.tex after the kit's preamble.tex and BEFORE hyperref.
+%%
+%% Already loaded by cvpr.sty, do not load again: times, xspace, xcolor[dvipsnames], graphicx, amsmath, amssymb,
+%% booktabs, natbib[numbers,sort&compress], caption, subcaption, url, etoolbox, enumitem, lineno (review mode),
+%% and cleveref (\AtEndPreamble, i.e. after hyperref).  cvpr.sty also defines \eg \ie \cf \etc \vs \wrt \etal.
+%% The kit's preamble.tex defines \red{..}, \todo{..} and \TODO{..} (red, in the PDF).
+
+%% ------------------------------------------------------------------ packages
+%% Engine guard: the kit loads \usepackage{times} without fontenc.  Under XeTeX/LuaTeX (TU encoding) that silently
+%% falls back to Latin Modern body text (checked with tectonic 0.17), so only pdfLaTeX gives the CVPR typography.
+\usepackage{iftex}
+\ifPDFTeX\else
+  \PackageError{macros}{Compile with pdfLaTeX (./build.sh or Overleaf's pdfLaTeX).
+    XeTeX/LuaTeX replace the template's Times body font by Latin Modern}{Use pdflatex, e.g. ./build.sh}
+\fi
+\usepackage{microtype}  % pdfTeX: character protrusion + font expansion. Enabled from day one so that the page
+                        % count seen while writing is the final one (the kit suggests it to save space).
+\usepackage{bm}         % bold math, incl. Greek (\bm{\Phi})
+\usepackage{multirow}
+\usepackage{pifont}     % \cmark / \xmark in ablation tables
+\usepackage{algorithm}      % float for the algorithm box (sections/method.tex, \label{alg:kalsea})
+\usepackage[noend]{algpseudocode}  % algorithmicx syntax (\State, \If, \For, \Comment); noend saves lines
+\usepackage{siunitx}    % S columns; numbers follow the text font and weight (\bfseries works in S columns)
+\sisetup{mode=match, propagate-math-font=true, reset-math-version=false, reset-text-family=false,
+  reset-text-series=false, reset-text-shape=false, text-family-to-math=true, text-series-to-math=true,
+  group-digits=false}
+
+%% Double-blind hygiene: do not copy file names or info dictionaries of included PDFs into the output.
+\ifdefined\pdfsuppressptexinfo \pdfsuppressptexinfo=-1 \fi
+
+%% Shared method colors (figures/src/palette.tex: cOurs, cKalSea, cSeaCache, cReference, ...), so text,
+%% captions and tables can use the same colors as the figures.  Skipped silently if the file does not exist.
+\InputIfFileExists{figures/src/palette.tex}{}{}
+
+%% ------------------------------------------------------------------ method names
+%% Use these macros everywhere (text, tables, captions), never the literal names.
+%% TODO(name): \ours stays "Ours" until the full method has a name.  Then change it here and in
+%% figures/src/figstyle.py (LABEL["ours"]) at the same time.
+\newcommand{\ours}{Ours\xspace}          % full method: Kalman residual forecasting + predictor-corrector gap smoothing
+\newcommand{\kalsea}{KalSea\xspace}      % Kalman residual forecasting on the SEA gate, no gap smoothing
+\newcommand{\seacache}{SeaCache\xspace}  % SEA gate + residual reuse (Chung et al., CVPR 2026)
+\newcommand{\pcgs}{PCGS\xspace}          % predictor-corrector gap smoothing (the new component)
+\newcommand{\sea}{SEA\xspace}            % Spectral-Evolution-Aware (filter / gate) of SeaCache
+\newcommand{\nfe}{NFE\xspace}            % number of transformer (block-stack) evaluations per image
+\newcommand{\flux}{FLUX.1-dev\xspace}
+
+%% ------------------------------------------------------------------ notation
+%% One symbol per quantity, everywhere.  i: sampler step (1..N); a < b: consecutive computed steps; a+1..b-1: gap.
+%%   \lat_i  latent x_i            \vel_i  velocity             \sigma_i  noise level (Euler: x_{i+1} = x_i + (\sigma_{i+1}-\sigma_i) v_i)
+%%   \hin_i, \hout_i  input / output of the transformer block stack \blocks (image tokens);  \cond_i  conditioning (temb)
+%%   \res_i = \hout_i - \hin_i  block-stack residual;  \resf_i  forecast or smoothed residual used on skipped steps
+%%   \Emb(.)  input embedding (x_embedder);  \Out(., \cond_i)  output layers (norm_out + proj_out), always run
+%%   \modin_i  timestep-modulated input of the first block;  \seaop(.)  SEA filter;  \gdist_i  SEA-filtered
+%%             relative L1 change;  \delta  gate threshold (skip while the accumulated \gdist stays below \delta)
+%%   Kalman, per element (or per DCT band k):  state \kstate_i = [m_i, \nu_i]^T (value, derivative), warped time s,
+%%             \ds_i step, \rho = exp(-\ds/\tau), \kA transition, \kP covariance, \kQ = q \kappa [[ds^3/3, ds^2/2],
+%%             [ds^2/2, ds]] process noise (\kappa adapted online), R measurement noise, z_b observation,
+%%             e_b = z_b - \prior{m}_b innovation, \kPhi(b,i) transition from i to b, g_i smoother gain
+%%   \prior{m}_i  predicted (prior);  \post{m}_i  filtered (posterior);  \smooth{m}_i  RTS-smoothed
+\newcommand{\lat}{\mathbf{x}}
+\newcommand{\vel}{\mathbf{v}}
+\newcommand{\hin}{\mathbf{h}^{\mathrm{in}}}
+\newcommand{\hout}{\mathbf{h}^{\mathrm{out}}}
+\newcommand{\res}{\mathbf{r}}
+\newcommand{\resf}{\tilde{\mathbf{r}}}
+\newcommand{\cond}{\mathbf{c}}
+\newcommand{\blocks}{\mathcal{F}}
+\DeclareMathOperator{\Emb}{Emb}
+\DeclareMathOperator{\Out}{Out}
+\DeclareMathOperator{\seaop}{SEA}
+\DeclareMathOperator{\DCT}{DCT}
+\newcommand{\modin}{\mathbf{I}}
+\newcommand{\gdist}{d}
+\newcommand{\kstate}{\mathbf{s}}
+\newcommand{\kA}{\mathbf{A}}
+\newcommand{\kP}{\mathbf{P}}
+\newcommand{\kQ}{\mathbf{Q}}
+\newcommand{\kPhi}{\bm{\Phi}}
+\newcommand{\ds}{\Delta s}
+\newcommand{\prior}[1]{#1^{-}}
+\newcommand{\post}[1]{#1^{+}}
+\newcommand{\smooth}[1]{#1^{\mathrm{s}}}
+\newcommand{\E}{\mathbb{E}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+%% ------------------------------------------------------------------ tables
+\newcommand{\best}[1]{\textbf{#1}}          % best value in a column
+\newcommand{\second}[1]{\underline{#1}}     % second best
+\newcommand{\nodata}{--}                    % intentionally blank cell (TFLOPs / latency until measured)
+\newcommand{\tbd}{\textcolor{red}{TBD}\xspace} % result not available yet (video); must be gone before submission
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+%% ------------------------------------------------------------------ placeholders for parallel work
+%% \maybeinput{tables/foo}  inputs tables/foo.tex if it exists, else draws a red box.
+%% \maybegraphics[opts]{figures/foo.pdf}  includes the figure if it exists, else draws a red box of the same width.
+%% Missing files are logged as "MISSING-FILE: <name>"; build.sh / tools/pdfcheck.py report them.
+\newcommand{\missingbox}[2]{%
+  \typeout{MISSING-FILE: #2}%
+  \fbox{\parbox[c][1.5cm][c]{\dimexpr#1-2\fboxsep-2\fboxrule\relax}{\centering\footnotesize\color{red}%
+    missing: \texttt{\detokenize{#2}}}}}
+\newcommand{\maybeinput}[1]{\IfFileExists{#1.tex}{\input{#1.tex}}{\IfFileExists{#1}{\input{#1}}{%
+  \missingbox{\linewidth}{#1}}}}
+\newcommand{\maybegraphics}[2][width=\linewidth]{\IfFileExists{#2}{\includegraphics[#1]{#2}}{%
+  \missingbox{\linewidth}{#2}}}
