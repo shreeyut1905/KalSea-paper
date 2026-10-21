@@ -31,3 +31,12 @@ ABL_DELTAS = ["0.37", "0.6"]
 
 def run_dir(run):
     return f"{EVAL_DIR}/{run}"
+
+# ---------------------------------------------------------------- supplementary material (make_supp_tables.py)
+RUN_DIR = "/home/ubuntu/KalSea-dev/research_v2/runs/drawbench"          # stats_shard*.jsonl (plugin_stats) of our runs
+PCGS_RUN = "kalsea_dct_pcgs_{d}"                                        # Ours, per delta (latent-correction statistics)
+CALIB_JSON = "/home/ubuntu/KalSea-dev/flux_data/speckcast_calib_flux.json"     # FLUX calibration of the DCT forecaster (16 COCO prompts)
+CALIB_TRAJ = "/home/ubuntu/KalSea-dev/flux_data/calib_data/traj_000.pt"         # one calibration trajectory (only its sigma schedule is read)
+DEV_HALVES = "/home/ubuntu/KalSea-dev/research_v2/techA/halves_core.txt"         # COCO-64 development set, halves A/B
+DEV_ABL = "/home/ubuntu/KalSea-dev/research_v2/ablations/eval/eval_devset.txt"  # COCO-64 development-set ablations
+OPENLOOP = "/home/ubuntu/KalSea-dev/research_v2/techB/diag_summary.txt"         # open-loop forecast error, 6 dev trajectories

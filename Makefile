@@ -1,9 +1,12 @@
 # Paper build (thin wrapper around build.sh) + figure helpers.
-#   make                 build main.pdf, render pages to render/page-XX.png, run checks
+#   make                 build main.pdf and supp.pdf, render pages to render/page-XX.png and render/supp-page-XX.png,
+#                        run checks on both
+#   make main            main paper only (no supplement)
+#   make supp            same as make (the supplement needs the main paper's build/main.aux)
 #   make nopng           build + checks, no PNGs
-#   make render          re-render main.pdf (DPI=150 by default; e.g. make render DPI=220)
-#   make strict          build and fail on submission blockers (see build.sh --help)
-#   make check           checks only, on the existing main.pdf
+#   make render          re-render main.pdf and supp.pdf (DPI=150 by default; e.g. make render DPI=220)
+#   make strict          build and fail on submission blockers of either PDF (see build.sh --help)
+#   make check           checks only, on the existing main.pdf and supp.pdf
 #   make kit-test        compile the pristine official kit example (review mode) -> render/kit-test-01.png
 #   make fig F=figures/src/foo.tex   compile a standalone LaTeX/TikZ figure -> figures/foo.pdf, 300-dpi PNG in
 #                                    render/fig-foo-01.png, size + font check
@@ -15,10 +18,13 @@ PY     ?= $(HOME)/.local/share/paper-tools/venv/bin/python
 DPI    ?= 150
 export PATH := $(TL_BIN):$(PATH)
 
-.PHONY: all pdf nopng render strict check kit-test fig figcheck clean
+.PHONY: all pdf main supp nopng render strict check kit-test fig figcheck clean
 
-all pdf:
+all pdf supp:
 	DPI=$(DPI) ./build.sh
+
+main:
+	DPI=$(DPI) ./build.sh --no-supp
 
 nopng:
 	./build.sh --no-render
@@ -31,6 +37,7 @@ strict:
 
 check:
 	$(PY) -I tools/pdfcheck.py main.pdf --aux build/main.aux --log build/main.log
+	$(PY) -I tools/pdfcheck.py supp.pdf --supp --aux build/supp_main.aux --log build/supp_main.log
 
 kit-test:
 	rm -rf build/kit-test && mkdir -p build render && cp -a kit/CVPR2026-v1-latex build/kit-test

@@ -7,7 +7,7 @@ estimates the residuals of the skipped gap with the RTS smoother of the forecast
 re-integrates the gap through the output layers. With the \sea gate and a Kalman residual forecaster, it improves
 fidelity to the 50-step sampler at every budget we tested on \flux. The benefit lies in the re-integration itself: a
 linear interpolation of the residual across the gap works as well as the RTS gains, and the correction also repairs
-reuse and linear extrapolation. \TODO{video results} Promising directions are to choose the computed steps jointly
+reuse and linear extrapolation. Video: \tbd. Promising directions are to choose the computed steps jointly
 with the corrector and to correct caches that operate on features inside the block stack.
 
 \paragraph{Limitations.}

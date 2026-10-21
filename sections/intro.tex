@@ -47,10 +47,11 @@ evaluations. Our contributions are:
   smoother of the forecaster's own state-space model gives the residuals of the gap, which is re-integrated with the
   output layers only. We give the smoother gain in closed form for the damped-trend model under the irregular
   observations of an adaptive gate. \pcgs adds neither transformer evaluations nor hyperparameters.
-  \item On \flux at matched \nfe and on held-out DrawBench prompts~\cite{saharia2022imagen}, our cache improves PSNR
-  with respect to the 50-step sampler by 2.73\,dB [2.34, 3.12] over \seacache at 20.8 of 50 evaluations and by
-  1.27\,dB [1.02, 1.52] at 13, of which \pcgs contributes 0.83 and 0.61\,dB. \pcgs improves on the predictor at every
-  budget from 9 to 27 evaluations and also improves reuse and linear extrapolation; its gain comes from re-integrating
-  the gap rather than from the exact form of the smoother gains. \TODO{video results}
+  \item On \flux and held-out DrawBench prompts~\cite{saharia2022imagen}, our cache reaches 27.72\,dB PSNR with
+  respect to the 50-step sampler at 18.1 of 50 evaluations, against 26.29\,dB published for \seacache at 18.4, and
+  22.53 against 21.33\,dB at 13. Against our re-run of \seacache in the same setup, the paired gains are 2.39\,dB
+  [2.03, 2.75] and 1.27\,dB [1.02, 1.52], of which \pcgs contributes 0.81 and 0.61\,dB. \pcgs improves on the
+  predictor at every budget from 9 to 27 evaluations and also improves reuse and linear extrapolation; its gain comes
+  from re-integrating the gap rather than from the exact form of the smoother gains. Video results: \tbd.
 \end{itemize}
 Code will be released.

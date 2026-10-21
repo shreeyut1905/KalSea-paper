@@ -9,6 +9,11 @@ Paper mode (default; build.sh runs this after every build):
   path leaks (double-blind), and whether the kit files are unchanged.
   --strict exits non-zero on anything that would block submission.
 
+Supplement mode (build.sh runs this for supp.pdf):
+  pdfcheck.py supp.pdf --supp --aux build/supp_main.aux --log build/supp_main.log [--strict]
+  The same checks without the page limit and the end-of-body / references position; TODO/TBD markers are counted in
+  the supplement's own sources (supp_main.tex, sections/supp*.tex, tables/supp_*.tex), which the paper mode skips.
+
 Figure mode:
   pdfcheck.py figures/foo.pdf --figure
   Prints the size in inches relative to the CVPR \\columnwidth (3.28 in) and \\textwidth (6.875 in), and lists
@@ -36,6 +41,11 @@ KIT_HASHES = {
     "preamble.tex": "f666a85903f49929395951e7afb620e96d4e208334623f23135298b4d7f06228",
 }
 SOURCE_GLOBS = ["main.tex", "macros.tex", "sections/*.tex", "tables/*.tex"]
+SUPP_GLOBS = ["supp_main.tex", "sections/supp*.tex", "tables/supp_*.tex"]     # supplement-only sources
+
+
+def _is_supp_source(rel):
+    return rel == "supp_main.tex" or os.path.basename(rel).startswith("supp")
 MARKER_RE = re.compile(r"\\(TODO|todo|tbd)\b")
 COMMENT_RE = re.compile(r"(?<!\\)%.*$", flags=re.S)
 LEAK_PATTERNS = [rb"/home/", rb"ubuntu", rb"PTEX.FileName", rb"PTEX.InfoDict"]
@@ -92,10 +102,12 @@ def log_issues(log):
     return out
 
 
-def source_markers():
+def source_markers(supp=False):
     hits = []
-    for g in SOURCE_GLOBS:
+    for g in (SUPP_GLOBS if supp else SOURCE_GLOBS):
         for path in sorted(glob.glob(os.path.join(PAPER_DIR, g))):
+            if not supp and _is_supp_source(os.path.relpath(path, PAPER_DIR)):
+                continue
             for i, line in enumerate(open(path, encoding="utf-8", errors="replace"), start=1):
                 code = COMMENT_RE.sub("", line)  # drop comments (unescaped % to end of line)
                 if MARKER_RE.search(code) and "\\newcommand" not in code and "\\renewcommand" not in code:
@@ -147,12 +159,15 @@ def paper_mode(a):
     n = doc.page_count
     r = doc[0].rect
     size_ok = abs(r.width - 612) < 1 and abs(r.height - 792) < 1
-    body = endofbody_page(a.aux)
+    body = None if a.supp else endofbody_page(a.aux)
     refs = references_heading(doc)
-    print(f"PDF        {a.pdf}: {n} pages, {'US letter' if size_ok else f'{r.width:.0f}x{r.height:.0f} pt'}")
+    print(f"PDF        {a.pdf}: {n} pages, {'US letter' if size_ok else f'{r.width:.0f}x{r.height:.0f} pt'}"
+          + ("  (supplementary material: no page limit)" if a.supp else ""))
     if not size_ok:
         problems.append("page size is not US letter")
-    if body is None:
+    if a.supp:
+        pass
+    elif body is None:
         notes.append("no \\label{endofbody} found in the aux file; body length unknown")
         print("Body       end page unknown (no \\label{endofbody})")
     else:
@@ -161,7 +176,7 @@ def paper_mode(a):
             problems.append(f"body ends on page {body} > {PAGE_LIMIT}")
     if refs:
         print(f"References heading on page {refs[0]} (y = {refs[1]:.0f} pt)")
-        if refs[0] > PAGE_LIMIT + 1 or (refs[0] == PAGE_LIMIT + 1 and refs[1] > 110):
+        if not a.supp and (refs[0] > PAGE_LIMIT + 1 or (refs[0] == PAGE_LIMIT + 1 and refs[1] > 110)):
             problems.append(f"material before the references on page {refs[0]} (floats or text past page {PAGE_LIMIT}?)")
     else:
         print("References heading not found")
@@ -180,7 +195,7 @@ def paper_mode(a):
         notes.append("LaTeX asked for a rerun (labels may have changed)")
     if li["overfull"]:
         notes.append(f"{li['overfull']} overfull hbox warnings beyond cvpr.sty's 30pt hfuzz")
-    marks = source_markers()
+    marks = source_markers(supp=a.supp)
     if marks:
         problems.append(f"{len(marks)} TODO/TBD markers left in the sources (first: {', '.join(marks[:6])})")
     lk = leaks(a.pdf, doc)
@@ -189,9 +204,9 @@ def paper_mode(a):
     kc = kit_changes()
     if kc:
         problems.append(f"official kit files modified: {', '.join(kc)}")
-    main_tex = os.path.join(PAPER_DIR, "main.tex")
+    main_tex = os.path.join(PAPER_DIR, "supp_main.tex" if a.supp else "main.tex")
     if os.path.exists(main_tex) and re.search(r"\\def\\paperID\{\*+\}", open(main_tex, encoding="utf-8").read()):
-        problems.append("paper ID not set in main.tex (\\def\\paperID{*****}); use the OpenReview ID")
+        problems.append(f"paper ID not set in {os.path.basename(main_tex)} (\\def\\paperID{{*****}}); use the OpenReview ID")
     meta = doc.metadata or {}
     print(f"Metadata   title={meta.get('title')!r} author={meta.get('author')!r} producer={meta.get('producer')!r}")
     for x in notes:
@@ -210,6 +225,7 @@ def main():
     ap.add_argument("--log", default=os.path.join(PAPER_DIR, "build", "main.log"))
     ap.add_argument("--strict", action="store_true", help="non-zero exit on any blocking problem")
     ap.add_argument("--figure", action="store_true", help="figure mode: size + fonts of a figure PDF")
+    ap.add_argument("--supp", action="store_true", help="supplement mode: no page limit, supplement sources")
     a = ap.parse_args()
     sys.exit(figure_mode(a.pdf) if a.figure else paper_mode(a))
 

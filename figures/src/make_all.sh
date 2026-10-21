@@ -24,3 +24,4 @@ PYPDF="${PYPDF:-$HOME/.local/share/paper-tools/venv/bin/python}"
     ../fig_qualitative_supp_nfe21.pdf
 "$PY" make_tables.py                                  # ../../tables/tab_*.tex
 "$PY" make_captions.py                                # ../fig_*_caption.tex
+"$PY" make_supp_tables.py                             # ../../tables/supp_*.tex (supplementary material; needs torch)

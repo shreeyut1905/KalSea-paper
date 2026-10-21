@@ -22,7 +22,9 @@ import figstyle as S  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIG_DIR = os.path.dirname(HERE)
 METHODS = ("seacache", "kalsea", "ours")
-MAIN_BUDGETS = {"0.3": r"$\delta\!=\!0.3$", "0.6": r"$\delta\!=\!0.6$"}
+# SeaCache curve = our same-setup re-run of its released gate + reuse (the main table cites its published numbers)
+LABEL = {**S.LABEL, "seacache": "SeaCache (re-run)"}
+MAIN_BUDGETS = {"0.37": r"$\delta\!=\!0.37$", "0.6": r"$\delta\!=\!0.6$"}   # budgets of the main table (18.1 / 13 NFE)
 
 
 def load():
@@ -66,7 +68,7 @@ def metric_panel(ax, series, budget_nfe, key, ylabel, direct_labels=False, label
         ax.plot(x, y, color=S.C[m], lw=1.6 if m == "ours" else 1.2, zorder=S.ZORDER[m],
                 marker=S.MARKER[m], ms=S.MSIZE[m], mfc=S.C[m], mec="white", mew=0.6)
         if direct_labels:
-            ax.annotate(S.LABEL[m], (x[-1], y[-1]), xytext=(4, 0), textcoords="offset points",
+            ax.annotate(LABEL[m], (x[-1], y[-1]), xytext=(4, 0), textcoords="offset points",
                         ha="left", va="center", fontsize=7, color=S.INK)
     budget_marks(ax, budget_nfe, label=label_budgets)
     ax.set_ylabel(ylabel, labelpad=2)
@@ -103,13 +105,13 @@ def gain_panel(ax, gains, budget_nfe, label_budgets=True, annotate=True):
     nfe_ticks(ax, budget_nfe)
     # same color + marker as the baseline the gain is measured against
     handles = [Line2D([], [], color=S.C[b], lw=1.2, marker=S.MARKER[b], ms=S.MSIZE[b], mfc=S.C[b], mec="white", mew=0.6,
-                      label=f"vs. {S.LABEL[b]}") for b in ("seacache", "kalsea")]
+                      label=f"vs. {LABEL[b]}") for b in ("seacache", "kalsea")]
     ax.legend(handles=handles, loc="upper left", borderaxespad=0.3, handlelength=1.8, labelspacing=0.35)
 
 
 def method_legend(fig, y, x=0.5, ncol=3):
     handles = [Line2D([], [], color=S.C[m], lw=1.6 if m == "ours" else 1.2, marker=S.MARKER[m], ms=S.MSIZE[m] + 0.4,
-                      mfc=S.C[m], mec="white", mew=0.6, label=S.LABEL[m]) for m in METHODS]
+                      mfc=S.C[m], mec="white", mew=0.6, label=LABEL[m]) for m in METHODS]
     fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(x, y), ncol=ncol, columnspacing=1.6,
                handlelength=2.0, borderaxespad=0.0)
 

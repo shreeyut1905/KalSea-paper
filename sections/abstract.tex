@@ -1,6 +1,8 @@
 \begin{abstract}
-% Numbers: research_v2/runs/drawbench_eval/eval_two_budgets_vs_seacache.txt (vs. SeaCache), eval_sweep_vs_kalsea.txt
-% (vs. the predictor alone); gains on reuse / linear extrapolation: research_v2/ablations/eval/eval_all.json.
+% Numbers: published SeaCache Table 1 (26.285 dB at 1098 TFLOPs = 18.4 NFE; 21.332 dB at 773 TFLOPs = 13.0 NFE) vs.
+% research_v2/runs/drawbench_eval/eval_dct_pcgs.txt (Ours, delta 0.37 / 0.6); PCGS alone: paired vs. the predictor
+% (speckcast_<d>), figures/src/data/flux_drawbench_stats.json (eval_sweep_vs_kalsea.json per-image metrics, eval2 bootstrap);
+% gains on reuse / linear extrapolation: research_v2/ablations/eval/eval_all.json.
 Diffusion transformers spend most of their sampling time in the block stack, which runs at each of tens of sampling
 steps. Training-free caches skip it on some steps: a gate decides \emph{when} to compute, and a filler decides
 \emph{what} to write on the skipped steps, typically the last block-stack residual or a forecast of it. Both fillers
@@ -9,9 +11,10 @@ into the latent and is never corrected. We close this loop with predictor-correc
 spectrally aligned gate of \seacache, a damped-trend Kalman filter forecasts the block-stack residual on skipped
 steps. When the next step is computed, a Rauch--Tung--Striebel smoother turns the filter's innovation into corrected
 residuals for the whole skipped gap, which we re-integrate through the output layers only before sampling continues
-from the corrected latent. \pcgs requires no additional transformer evaluations. On \flux, at a matched number of
-transformer evaluations and on held-out DrawBench prompts, our cache raises PSNR with respect to the 50-step sampler
-by 2.73\,dB (95\% CI [2.34, 3.12]) over \seacache at 20.8 of 50 evaluations and by 1.27\,dB [1.02, 1.52] at 13.
-\pcgs alone contributes 0.83 and 0.61\,dB, and it also improves plain reuse and linear extrapolation.
-\TODO{video results}
+from the corrected latent. \pcgs requires no additional transformer evaluations. On \flux and held-out DrawBench
+prompts, our cache reaches a PSNR of 27.72\,dB with respect to the 50-step sampler at 18.1 of 50 transformer
+evaluations, against 26.29\,dB reported for \seacache at 18.4, and 22.53 against 21.33\,dB at 13 evaluations. In
+paired comparisons, \pcgs alone contributes 0.81\,dB (95\% CI [0.63, 1.00]) and 0.61\,dB [0.48, 0.76], and it also
+improves plain reuse and linear extrapolation.
+Video results: \tbd.  % pending (video runs in progress)
 \end{abstract}

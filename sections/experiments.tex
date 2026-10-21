@@ -3,6 +3,12 @@
 
 % Correction size by gap (delta 0.6, kalsea_dct_pcgs_0.6 stats, 0-based steps): gaps (2,4),(4,6): 0.26%, 0.22% (n=200);
 % (33,41): 5.2%, (41,47): 6.1% (n=147, the modal schedule); mean over all gaps 2.0%; delta 0.3: 0.7%.
+% Published baselines (Tab. 1, rows with \dagger): SeaCache Table 1 (KalSea-dev/SeaCache_paper_2602.18993.txt), NFE =
+%   50 x TFLOPs / 2976. Our delta-0.37 runs: eval_dct_pcgs.txt / eval_final.txt; paired stats at delta 0.37 (vs. our
+%   SeaCache re-run reuse_0.37 and vs. KalSea speckcast_0.37): figures/src/data/flux_drawbench_stats.json (same
+%   per-image metrics and bootstrap as eval2). Median / worst per-prompt PCGS gain and identical-step counts at 0.37:
+%   per-image metrics of the eval_*.json files (computed 2026-10-21: median +0.57 dB, 19.5% of prompts lower, min -4.75 dB;
+%   SeaCache/KalSea/Ours identical steps on 191 / 188 / 182 prompts at delta 0.37 / 0.3 / 0.6).
 % Number sources (all FLUX.1-dev, DrawBench-200, eval2 paired bootstrap, 10k resamples, seed 0):
 %   research_v2/runs/drawbench_eval/eval_two_budgets_vs_seacache.txt, eval_sweep_vs_seacache.txt,
 %   eval_sweep_vs_kalsea.txt, eval_final.txt, eval_dct_pcgs.txt, eval_pairs2.txt (via figures/src/data); linear
@@ -11,6 +17,21 @@
 %   research_v2/ablations/eval/eval_all.json (make_paper_table.py, ABLATIONS.md). Correction sizes: plugin_stats
 %   (dx_rel, gap_len) in the stats files of research_v2/runs/drawbench/kalsea_dct_pcgs_<d>.
 
+% Full-width floats (Fig. 3, Tab. 2) are defined here, on the first page of the section, so that they appear at the top
+% of the next page (a figure* cannot appear on the page where it is defined). Tab. 1 comes first to keep the table order.
+\maybeinput{tables/tab_flux_main}
+
+\begin{figure*}[t]
+  \centering
+  \maybegraphics[width=\textwidth]{figures/fig_tradeoff.pdf}
+  \IfFileExists{figures/fig_tradeoff_caption.tex}{\input{figures/fig_tradeoff_caption}}{%
+  \caption{\textbf{Fidelity versus compute on \flux} (DrawBench, 200 held-out prompts).}
+  \label{fig:tradeoff}}
+\end{figure*}
+
+% Video table (full width), placed right after Fig. 3 on the same page.
+\maybeinput{tables/tab_video_main}
+
 \subsection{Setup}
 \label{sec:setup}
 
@@ -18,28 +39,29 @@
 We follow the protocol of \seacache~\cite{chung2026seacache}. For text-to-image generation we use
 \flux~\cite{blackforestlabs2024flux} at $1024{\times}1024$ with 50 Euler steps of its default flow-matching schedule,
 embedded guidance 3.5, and the 200 DrawBench prompts~\cite{saharia2022imagen}; the seed of each image is its prompt
-index. For text-to-video generation we use HunyuanVideo~\cite{kong2024hunyuanvideo} at $480{\times}640$ with 65 frames
-and Wan2.1-T2V-1.3B~\cite{wan2025wan} at $832{\times}480$ with 81 frames, both with 50 steps and seed 42, on the 944
+index. For text-to-video generation we use HunyuanVideo~\cite{kong2024hunyuanvideo} at $480{\times}640$ and
+Wan2.1-T2V-1.3B~\cite{wan2025wan} at $832{\times}480$, both with 65 frames, 50 steps and seed 42, on the 944
 unique VBench prompts~\cite{huang2024vbench}. All methods share the seeds, and each accelerated sample is compared with
 the output of the uncached 50-step sampler for the same prompt and seed.
 
 \paragraph{Budgets and baselines.}
-All caches use the official \sea gate, and its threshold $\delta$ sets the budget. We report the mean number of
-block-stack evaluations per image (\nfe, out of 50), counted by hooks on every block, and compare only at matched
-\nfe, since the closed-loop gate can produce slightly different schedules for different fillers. On \flux,
-$\delta=0.3$ and $0.6$ give 20.8 and 13.0 \nfe; at $\delta=0.6$ our run of \seacache reproduces its published PSNR
-(21.26 vs.\ 21.33\,dB~\cite{chung2026seacache}). At these thresholds, \seacache, \kalsea and \ours computed exactly
-the same steps for 188 and 182 of the 200 prompts, and the per-prompt \nfe never differs by more than one, so the
-comparison isolates what is written on skipped steps. Behind the same gate we compare four fillers: reuse
-(\seacache), linear extrapolation of the residual from the last two computed steps (the first-order finite-difference
-forecast of TaylorSeer~\cite{liu2025taylorseer}), the Kalman forecast (\kalsea), and the Kalman forecast with \pcgs
-(\ours).
+We report the mean number of block-stack evaluations per image (\nfe, of 50), counted by hooks on every block, and
+compare only at matched \nfe. \cref{tab:flux-main} lists the results that \seacache published for itself, TeaCache,
+TaylorSeer, $\Delta$-DiT, ToCa and fewer steps~\cite{chung2026seacache}, with TFLOPs converted to \nfe. Our caches
+use the official \sea gate, whose threshold $\delta$ sets the budget. At $\delta=0.6$ it computes 13.0 steps both in
+\seacache's table and in our setup, where our re-run of \seacache reproduces the published PSNR (21.26 vs.\
+21.33\,dB); at $\delta=0.3$ it computes 20.9 steps in our setup but 18.4 according to the TFLOPs, so we run our cache
+at $\delta=0.37$ (18.1 \nfe) and $0.6$. For controlled comparisons (same code, seeds and hardware), four fillers run
+behind the same gate: reuse (\seacache), linear extrapolation of the residual from the last two computed steps (the
+first-order forecast of TaylorSeer~\cite{liu2025taylorseer}), the Kalman forecast (\kalsea), and \ours. At
+$\delta=0.37$, 0.3 and 0.6, the three caches computed the same steps for 191, 188 and 182 of the 200 prompts, and the
+per-prompt \nfe never differs by more than one.
 
 \paragraph{Metrics.}
 PSNR on 8-bit RGB, SSIM~\cite{wang2004ssim} (scikit-image, $7{\times}7$ window) and LPIPS (AlexNet
 features~\cite{zhang2018lpips}) are computed against the 50-step reference and averaged over prompts. Differences
-between methods come with paired bootstrap 95\% confidence intervals over prompts (10{,}000 resamples, percentile)
-and the fraction of prompts on which a method is better.
+between methods run in the same setup come with paired bootstrap 95\% confidence intervals over prompts (10{,}000
+resamples, percentile) and the fraction of prompts on which a method is better.
 
 \paragraph{Development and test prompts.}
 All design decisions (the smoother, the re-integration and continuation rules, $\tau$ and $R$) were made on a
@@ -50,35 +72,22 @@ supplement).
 \paragraph{Implementation.}
 For \flux, our cache replaces the forward pass of the transformer in diffusers; the scheduler is unchanged, and the
 re-integration \eqref{eq:reint} reproduces its arithmetic. All runs use bf16 on NVIDIA B200 GPUs. For video we use the
-per-element filter, since the DCT bands are defined on 2D token grids. \TODO{video implementation details}
-
-\maybeinput{tables/tab_flux_main}
+calibration-free per-element filter, since the DCT bands are defined on 2D token grids.
 
 \subsection{Comparison at matched \nfe}
 \label{sec:main-results}
 
-\cref{tab:flux-main} compares the fillers at the two budgets of the protocol. At 20.8 \nfe, \ours improves over
-\seacache by 2.73\,dB PSNR (95\% CI [2.34, 3.12]; better on 88\% of the prompts), 0.031 SSIM [0.027, 0.036] and
-0.033 LPIPS [0.029, 0.037]; at 13 \nfe, by 1.27\,dB [1.02, 1.52] (79\% of the prompts), 0.042 SSIM [0.035, 0.048] and
-0.060 LPIPS [0.052, 0.068]. Both forecasters improve over reuse, and \pcgs adds 0.83\,dB [0.63, 1.02] at 20.8 \nfe and
-0.61\,dB [0.48, 0.76] at 13 \nfe on top of \kalsea, with better PSNR on 81\% and 78\% of the prompts; \ours exceeds
-linear extrapolation by 1.11\,dB [0.89, 1.34] and 0.73\,dB [0.54, 0.92]. The median per-prompt gain of \pcgs over
-\kalsea is 0.60 and 0.44\,dB; on the remaining 19\% and 22\% of the prompts it lowers PSNR, by at most 3.6 and 2.3\,dB.
-
-\begin{figure*}[t]
-  \centering
-  \maybegraphics[width=\textwidth]{figures/fig_tradeoff.pdf}
-  \IfFileExists{figures/fig_tradeoff_caption.tex}{\input{figures/fig_tradeoff_caption}}{%
-  \caption{\textbf{Fidelity versus compute on \flux} (DrawBench, 200 held-out prompts).}
-  \label{fig:tradeoff}}
-\end{figure*}
-
-% Video table (full width) defined here so that it floats to the top of the page after Fig. 3 (within the 8 pages).
-\maybeinput{tables/tab_video_main}
+\cref{tab:flux-main} compares \ours with published results. At 18.1 \nfe, \ours reaches 27.72\,dB PSNR, 1.43\,dB
+above the 26.29\,dB reported for \seacache at 18.4 \nfe, with better SSIM and LPIPS, and it exceeds all baselines that
+use more evaluations. At 13 \nfe, it reaches 22.53 vs.\ 21.33\,dB, again with better SSIM and LPIPS. In our same-setup
+runs, \ours improves over \seacache by 2.39\,dB
+[2.03, 2.75] (better on 88\% of the prompts) at 18.1 \nfe and by 1.27\,dB [1.02, 1.52] (79\%) at 13 \nfe, and \pcgs
+adds 0.81\,dB [0.63, 1.00] and 0.61\,dB [0.48, 0.76] to \kalsea. The median per-prompt gain of \pcgs is 0.57 and
+0.44\,dB; on 20\% and 22\% of the prompts it lowers PSNR, by at most 4.8 and 2.3\,dB.
 
 \paragraph{Budget sweep.}
-\cref{fig:tradeoff} varies $\delta$ from 0.2 to 1.0. \ours attains the highest PSNR and the lowest LPIPS
-at every budget. Its PSNR gain over \seacache grows with the budget, from 0.74\,dB [0.46, 1.04] at 11 \nfe to 3.89\,dB
+\cref{fig:tradeoff} varies $\delta$ from 0.2 to 1.0 in the same setup. \ours attains the highest PSNR and the
+lowest LPIPS at every budget. Its PSNR gain over our re-run of \seacache grows with the budget, from 0.74\,dB [0.46, 1.04] at 11 \nfe to 3.89\,dB
 [3.49, 4.28] at 27 \nfe; at 9 \nfe it is not significant (0.21\,dB [$-$0.005, 0.42]), whereas LPIPS still improves by
 0.043 [0.033, 0.053]. The predictor alone behaves as the open-loop argument predicts: its gain over reuse shrinks from
 2.37\,dB at 27 \nfe to 0.11\,dB [$-$0.14, 0.34] at 11 and $-$0.10\,dB [$-$0.31, 0.10] at 9 \nfe, and linear
@@ -86,10 +95,7 @@ extrapolation falls below reuse at 11 and 9 \nfe ($-$0.58 and $-$0.77\,dB), as f
 gaps. \pcgs improves on \kalsea at every budget, by 0.31\,dB [0.24, 0.39] at 9 \nfe and up to
 1.52\,dB [1.30, 1.75] at 27 \nfe.
 
-\paragraph{Size of the correction.}
-The relative latent correction $\|\lat'_b-\lat_b\|/\|\lat_b\|$ averages 0.7\% at 20.8 \nfe, where most skipped steps
-lie in three-step gaps, and 2.0\% at 13 \nfe. It is larger after long and late gaps: at 13 \nfe, 0.2--0.3\% after the
-single skipped steps early in sampling and 5--6\% after the last two long gaps of the most common schedule.
+% Size of the latent correction: moved to the supplement (sections/supp.tex) for space.
 
 \paragraph{Qualitative results.}
 \cref{fig:teaser} shows two prompts selected by a fixed rule. With the same computed steps, reuse alters
@@ -103,7 +109,7 @@ closer to the reference than \ours. The supplement shows more examples at 13 and
 We apply our cache with the per-element filter to HunyuanVideo and Wan2.1-1.3B at the thresholds of \seacache
 (\cref{tab:video-main}). HunyuanVideo samples with Euler steps and a single guidance-distilled branch, so \pcgs
 applies as in \cref{sec:pcgs}; Wan2.1 uses UniPC with classifier-free guidance and needs the solver replay described
-there. \TODO{video results and discussion}
+there. Results and discussion: \tbd.
 
 \subsection{Ablations}
 \label{sec:ablations}
@@ -114,7 +120,7 @@ there. \TODO{video results and discussion}
 \maybeinput{tables/tab_ablation_compact}
 
 \paragraph{Anatomy of the corrector.}
-\cref{tab:ablation} reports paired PSNR differences to \ours. We do not interpret differences below 0.1\,dB: the
+\cref{tab:ablation} reports paired PSNR differences to \ours at $\delta=0.3$ (20.8 \nfe) and $0.6$. We do not interpret differences below 0.1\,dB: the
 filter's band statistics are accumulated with atomic GPU additions, and a second run of \ours differs by
 $+$0.02\,dB [$-$0.04, 0.08] and $+$0.04\,dB [$-$0.003, 0.10] at the two budgets. The gain comes from re-integrating the latent: feeding
 the smoothed residuals only into the filter state is no better than no correction ($-$0.86 vs.\ $-$0.83\,dB at 20.8
@@ -135,5 +141,5 @@ decomposition of SpecKCast is thus unnecessary for the residual, and we use the 
 \pcgs tied to a Kalman forecaster: with the forecast plus a linearly weighted innovation as smoother, it improves
 reuse by 1.69\,dB [1.51, 1.88] and 0.74\,dB [0.62, 0.86] and linear extrapolation by 1.15\,dB [0.92, 1.38] and
 0.80\,dB [0.62, 0.98]. Linear extrapolation with \pcgs then ties \ours, while reuse with \pcgs stays 1.03 and
-0.53\,dB below, so a forecasting predictor remains useful. Forecasting a sampler quantity (the clean-image, noise or
-velocity prediction reconstructed from the current latent) instead of the residual is not better (supplement).
+0.53\,dB below, so a forecasting predictor remains useful. Forecasting a sampler quantity (clean image, noise or
+velocity) instead of the residual is not better (supplement).

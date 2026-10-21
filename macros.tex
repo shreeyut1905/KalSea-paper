@@ -33,6 +33,10 @@
 %% captions and tables can use the same colors as the figures.  Skipped silently if the file does not exist.
 \InputIfFileExists{figures/src/palette.tex}{}{}
 
+%% ------------------------------------------------------------------ title
+%% Shared by main.tex and supp_main.tex (the supplement repeats the title). Candidates: TITLES.md.
+\newcommand{\papertitle}{Closing the Loop on Diffusion Transformer Caching with Kalman Gap Smoothing}
+
 %% ------------------------------------------------------------------ method names
 %% Use these macros everywhere (text, tables, captions), never the literal names.
 %% TODO(name): \ours stays "Ours" until the full method has a name.  Then change it here and in

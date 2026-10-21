@@ -2,7 +2,7 @@
 
 % DCT/off = KalSea (DCT bands) run in the same harness as DCT/on; per-element/off = KalSea per-element.
 % Mean NFE per budget (all four cells): 18.13/18.14 at delta=0.37 and 13.00 at delta=0.6.
-\begin{table}[t]
+\begin{table*}[t]
   \centering
   \caption{\textbf{Gap smoothing helps both forecaster variants.} \flux on DrawBench-200 at matched \nfe; rows: Kalman forecaster on DCT bands (with band-specific warped time) or per element, without (\xmark) or with (\cmark) predictor-corrector gap smoothing (\pcgs). $\Delta$: paired PSNR gain of \pcgs with 95\% bootstrap CI over prompts. With \pcgs, the two forecasters do not differ significantly (DCT minus per-element: +0.02\,dB [$-$0.09, +0.15] at 18.1 \nfe, +0.01\,dB [$-$0.13, +0.15] at 13 \nfe). Best per column in bold.}
   \label{tab:ablation-2x2}
@@ -23,4 +23,4 @@
      & $\Delta$ & \multicolumn{3}{c}{\scriptsize +0.83\,dB [+0.66, +1.01]} & \multicolumn{3}{c}{\scriptsize +0.58\,dB [+0.44, +0.73]} \\
     \bottomrule
   \end{tabular}
-\end{table}
+\end{table*}

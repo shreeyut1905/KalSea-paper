@@ -1,9 +1,153 @@
-%% sections/supp.tex -- OUTLINE and first draft of the supplementary material.
-%% The supplement is a separate, anonymized PDF (due Mon Nov 23, 2026 AoE); main.tex does NOT input this file.
-%% Intended use: a supp.tex driver with the same preamble/macros that inputs this file (references to the main
-%% paper are written as "main paper, Sec. X" because labels of the main PDF are not available here).
-%% Content marked \TODO is planned but not written yet; every number must come from a logged run.
+%% sections/supp.tex -- supplementary material; input by supp_main.tex only (main.tex does NOT input this file).
+%% References into the main paper: \maincref{<label of main.tex>} (Sec./Tab./Fig. number, no hyperlink).
+%% Number sources: tables/supp_*.tex and tables/supp_numbers.tex (figures/src/make_supp_tables.py: eval2 per-image
+%% metrics of the DrawBench runs, run stats, FLUX calibration json, development-set eval texts, open-loop diagnostic);
+%% tables/tab_ablation_full.tex (research_v2/ablations/make_tables.py, eval_all.json); tables/tab_ablation_2x2.tex and
+%% tables/tab_flux_sweep.tex (figures/src/make_tables.py). Numbers quoted in the text come from the same files; the
+%% sources of the others are given in comments next to them. \tbd: results of runs in progress (video, TFLOPs/latency).
 
+\noindent This supplement gives implementation details (\cref{supp:impl}), the derivation of the gap smoother
+(\cref{supp:smoother}), the evaluation protocol, including the comparison with published results
+(\cref{supp:protocol}), additional results on \flux, including more qualitative examples (\cref{supp:results}),
+results on the development set (\cref{supp:devset}), approaches that did not help (\cref{supp:negative}), the video
+protocol (\cref{supp:video}) and cost measurements (\cref{supp:cost}). Sections, tables,
+figures and equations of this document are numbered A, B, \dots\ and S1, S2, \dots; plain numbers refer to the main
+paper.
+
+%% ====================================================================================================================
+\section{Implementation details}
+\label{supp:impl}
+
+\subsection{Kalman residual forecaster}
+\label{supp:forecaster}
+
+\paragraph{Forecast quantity and coordinates.}
+The forecaster tracks the block-stack residual of the image tokens, $\res_i=\hout_i-\hin_i$, which for \flux at
+$1024^2$ has 4096 tokens on a $64{\times}64$ grid and 3072 channels. In the DCT variant, every channel is transformed
+with the orthonormal 2D DCT-II $\mathcal D$ on the token grid, and the coefficient with frequency indices $(u,v)$
+belongs to band $\ell$ if its normalized radius $r=\sqrt{(u/64)^2+(v/64)^2}/\sqrt2$ lies in $[e_\ell,e_{\ell+1})$, with
+edges $\{0,\frac1{64},\frac1{32},\frac1{16},\frac18,\frac14,\frac12,1\}$ (seven bands, \cref{tab:supp-calib}). The
+coefficients of band $\ell$ are divided by $\varsigma_\ell$, where $\varsigma^2_\ell$ is the calibrated mean power of the
+residual's coefficients in that band, so that the filter operates in relative units; this scaling cancels in the correction
+(\cref{supp:smoother}). The per-element variant omits the DCT and uses a single band whose scale is derived from the mean of
+the seven calibrated powers.
+
+\paragraph{Time coordinate.}
+Following SpecKCast~\cite{rajabi2026speckcast}, every band has its own time coordinate derived from the noise schedule.
+With the log signal-to-noise ratio $\lambda_i=2\log((1-\sigma_i)/\sigma_i)$ ($\sigma_i$ clamped to
+$[10^{-4},1-10^{-4}]$) and $t_\ell(i)=\mathrm{sigmoid}\big((\lambda_i+\log p_\ell)/T_w\big)$ with $T_w=2$,
+\begin{equation}
+  s_\ell(i)=2\,\frac{t_\ell(i)-t_\ell(0)}{t_\ell(N{-}1)-t_\ell(0)}-1
+  \label{eq:supp-time}
+\end{equation}
+increases from $-1$ to $1$ over the $N=50$ steps, and $\ds_{\ell,i}=s_\ell(i)-s_\ell(i-1)$. Here $p_\ell$ is the calibrated power of the
+clean-image estimate in band $\ell$: the clock of a band advances fastest when the signal-to-noise ratio of its
+frequencies is close to one. The per-element variant uses the count-weighted mean of the $p_\ell$.
+
+\paragraph{Filter.}
+Each coefficient (DCT variant) or element (per-element variant) has the state $\kstate=[m,\nu]^\top$, and all
+coefficients of a band share the covariance $\kP_\ell$, hence the Kalman and smoother gains. Prediction and update
+follow \maineqref{eq:predict} and \maineqref{eq:update} of the main paper with $\ds=\ds_{\ell,i}$, $\tau=0.5$ and
+$R=10^{-3}$. The filter predicts at every step and is updated only at computed steps. On skipped steps the cache writes
+the predicted values, transformed back to residual units: $\hat\res_i=\mathcal D^{-1}(\prior{\mathbf m}_i\odot
+\boldsymbol\varsigma)$, where the map $\boldsymbol\varsigma$ holds $\varsigma_\ell$ on the coefficients of band $\ell$.
+
+\paragraph{Initialization.}
+At the first computed step (step 0, which the gate always computes), $m=z_0$, $\nu=0$,
+$\kP_\ell=\mathrm{diag}(R,\,2q_\ell)$ and $\kappa_\ell=1$, where $q_\ell$ is the calibrated process-noise intensity.
+
+\paragraph{Process-noise adaptation.}
+At a computed step $b$, before the update, the filter compares the mean squared innovation over all coefficients and
+channels of band $\ell$, $\overline{e^2_{\ell,b}}$, with its predicted variance $S_{\ell,b}=[\prior{\kP}_{\ell,b}]_{00}+R$:
+\begin{equation}
+  \begin{split}
+    \gamma_{\ell,b}&=\mathrm{clip}_{[0.1,10]}\big(\overline{e^2_{\ell,b}}/S_{\ell,b}\big),\\
+    \kappa_\ell&\gets\mathrm{clip}_{[0.1,10]}\big(\kappa_\ell\,\gamma_{\ell,b}^{0.2}\big).
+  \end{split}
+  \label{eq:supp-adapt}
+\end{equation}
+The update at $b$ uses the gain computed before this change; the new $\kappa_\ell$ scales $\kQ$ from the next
+prediction on~\cite{mehra1972approaches}.
+
+\paragraph{Constants.}
+$\tau=0.5$, $R=10^{-3}$, $T_w=2$, the exponent $0.2$ and the clipping ranges in \eqref{eq:supp-adapt} are the same for
+all budgets and models. They were fixed on the development set; $\tau=0.1$ is the default of
+SpecKCast~\cite{rajabi2026speckcast} (ablated in \cref{tab:ablation-full}, group (d)).
+
+\input{tables/supp_calib}
+
+\subsection{Calibration}
+\label{supp:calib}
+The DCT variant is calibrated once for \flux from 16 uncached 50-step trajectories at $1024^2$ with guidance 3.5, one
+per COCO caption~\cite{lin2014coco}; the 16 captions are disjoint from the 64 development and the 200 DrawBench prompts.
+For a fixed random subset of 384 of the 3072 channels we record the block-stack residual at every step, together with
+the latent input and the velocity output of the transformer. From these,
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+  \item $\varsigma^2_\ell$ is the mean squared DCT coefficient of the residual in band $\ell$, over steps, channels and
+  trajectories;
+  \item $p_\ell$ is the mean power in band $\ell$ of the clean-image estimate $\hat\lat_0=\lat_i-\sigma_i\vel_i$ over
+  the last 25 steps (latent DCT coefficients, grouped by the same physical frequencies as the token-grid bands);
+  \item $q_\ell$ is, per trajectory, the median over steps of the mean squared change of the finite-difference trend
+  $\nu_i=(z_{i+1}-z_i)/\ds_{\ell,i+1}$ (relative units) divided by the mean of the two adjacent band-time steps,
+  averaged over the trajectories;
+  \item the initial trend variance is $2q_\ell$.
+\end{itemize}
+\cref{tab:supp-calib} lists the values. No evaluation prompt is used for calibration.
+
+\subsection{Per-element and calibration-free variants}
+\label{supp:variants}
+The \emph{per-element} variant uses the same calibration, reduced to one band (count-weighted means of $p_\ell$, $q_\ell$
+and the initial trend variance; scale: square root of the mean of the $\varsigma^2_\ell$). The \emph{calibration-free} per-element variant needs no
+trajectories: $q=7400$, initial trend variance $15000$, a time coordinate that is uniform in the step index (linear
+from $-1$ to $1$), and as scale the root mean square of the first observed residual. All other constants are those of
+\cref{supp:forecaster}. On \flux, both variants perform like the DCT filter once \pcgs is applied
+(\cref{tab:ablation-full}, group (d), and \cref{tab:ablation-2x2}); we use the calibration-free variant for video
+(\cref{supp:video}).
+
+\subsection{Predictor-corrector gap smoothing}
+\label{supp:pcgs-impl}
+
+\paragraph{Bookkeeping.}
+For each skipped step $i$ of the current gap, the cache keeps the latent input $\lat_i$, the conditioning $\cond_i$,
+the forecast $\hat\res_i$ and the prior covariances $\prior{\kP}_{\ell,i}$ of all bands. At the update of the closing
+computed step $b$ it records $\prior{\kP}_{\ell,b}$ and the innovation. The gains $g_{i,\ell}$ of
+\maineqref{eq:smooth} are computed by the backward recursion $\kPhi(b,i)=\kPhi(b,i{+}1)\,\kA_{i+1}$ over the gap,
+from quantities the filter maintains anyway (illustrative values: \cref{tab:supp-gains}).
+
+\paragraph{Correction in residual space.}
+For the DCT variant, $\resf_i=\hat\res_i+\mathcal D^{-1}\big(\mathbf G_i\odot\mathcal D(\res_b-\hat\res_b)\big)$, where the
+gain map $\mathbf G_i$ has the value $g_{i,\ell}$ on all coefficients of band $\ell$ (derivation in
+\cref{supp:smoother}); for the per-element variant $\mathbf G_i$ is the scalar $g_i$.
+
+\paragraph{Re-integration, continuation and gate refresh.}
+The gap is replayed from the latent that the sampler used at the first skipped step, $\lat_{a+1}$, with
+\maineqref{eq:reint}: $\Emb$ (the patch embedding) and $\Out$ (final adaptive normalization and linear projection) are
+evaluated once per skipped step, and each Euler step uses the arithmetic of the diffusers flow-matching scheduler (the
+bf16 velocity times the fp32 step size is added to the fp32 copy of the bf16 latent, then cast to bf16). With the
+identity smoother ($\resf_i=\hat\res_i$), the replay reproduces the uncorrected run of the per-element filter bitwise
+(unit test on the GPU). At step $b$, the returned velocity is \maineqref{eq:offset}, computed in fp32 and cast to bf16.
+The gate refresh recomputes the \sea gate's stored input of step $b$ from $\lat'_b$: one adaptive normalization of the
+first block on $\Emb(\lat'_b)$ and one \sea filter. The last step is always computed; its gap is corrected in the same
+way, and no refresh is needed.
+
+\paragraph{Tests.}
+In float64 on synthetic residuals with the \flux calibration and a gate-like schedule (9 gaps, 36 skipped steps), the
+implemented gains agree with brute-force joint-Gaussian conditioning of the damped-trend model to a relative error of
+$8\cdot10^{-16}$ (DCT bands) and $6\cdot10^{-16}$ (per element). With every step computed there is no gap, and the
+images are bitwise equal to the 50-step reference.
+% provenance: research_v2/ablations/ABLATIONS.md, unit tests T1 (tests/test_cpu_math.out), U1-U3 (tests/check_gpu_tests.out).
+
+\paragraph{\nfe accounting and cost.}
+\nfe is counted by forward pre-hooks on all 19 double-stream and 38 single-stream blocks (block calls / 57) and
+cross-checked against the forward pass's own record of computed steps: every DrawBench run has zero mismatches and no
+partial block stack, and \pcgs never calls a block. Per image, \ours evaluates $\Emb$ and $\Out$ 44.0 times at 18.1
+\nfe and 47.0 times at 13 \nfe (skipped steps plus corrected computed steps; \cref{tab:supp-correction}), each about
+3.4\,GFLOP (main paper, \maincref{sec:cost}), plus 11.2 and 9.0 gate refreshes, in total below 0.3\% of one transformer
+evaluation. The peak allocated memory exceeds that of the uncached sampler by 0.16\,GiB (\kalsea: 0.14\,GiB; \seacache:
+0.05\,GiB). Wall-clock measurements are pending (\cref{supp:cost}).
+% Memory: dMem column of research_v2/runs/drawbench_eval/eval_dct_pcgs.txt / eval_final.txt (0.164 / 0.141 / 0.047 GiB).
+
+%% ====================================================================================================================
 \section{Derivation of the gap smoother}
 \label{supp:smoother}
 
@@ -14,16 +158,16 @@ skipped step. No observation falls into the gap, so the predicted moments are pr
 $\prior{\kstate}_{i}=\kA_i\prior{\kstate}_{i-1}$ and $\prior{\kP}_i=\kA_i\prior{\kP}_{i-1}\kA_i^\top+\kQ_i$ for
 $a+1<i\le b$, starting from $\prior{\kstate}_{a+1}=\kA_{a+1}\post{\kstate}_a$. Define the transition
 $\kPhi(b,i)=\kA_b\kA_{b-1}\cdots\kA_{i+1}$, with $\kPhi(b,b)=\mathbf I$, and the innovation variance
-$S_b=\mathbf h^\top\prior{\kP}_b\mathbf h+R$.
+$S_b=\mathbf h^\top\prior{\kP}_b\mathbf h+R$ with $\mathbf h=[1,0]^\top$.
 
 \paragraph{Proposition.}
 For $a<i\le b$,
 \begin{equation}
   \E\!\left[\kstate_i\mid\mathcal Y_a,z_b\right]=\prior{\kstate}_i+\prior{\kP}_i\kPhi(b,i)^\top\mathbf h\,S_b^{-1}e_b,
-  \qquad e_b=z_b-\mathbf h^\top\prior{\kstate}_b,
+  \quad e_b=z_b-\mathbf h^\top\prior{\kstate}_b,
   \label{eq:supp-smooth}
 \end{equation}
-and the first component gives the gain $g_i=[\prior{\kP}_i\kPhi(b,i)^\top]_{00}/S_b$ of the main paper.
+and its first component gives the gain $g_i=[\prior{\kP}_i\kPhi(b,i)^\top]_{00}/S_b$ of \maineqref{eq:smooth}.
 
 \paragraph{Proof by conditioning.}
 Iterating the state equation, $\kstate_b=\kPhi(b,i)\kstate_i+\mathbf w_{i\to b}$, where $\mathbf w_{i\to b}$ is a sum of
@@ -41,127 +185,278 @@ $\smooth{\kstate}_b=\post{\kstate}_b=\prior{\kstate}_b+\prior{\kP}_b\mathbf h S_
 $\post{\kstate}_i=\prior{\kstate}_i$ and $\post{\kP}_i=\prior{\kP}_i$. We show by backward induction that
 $\smooth{\kstate}_i-\prior{\kstate}_i=\prior{\kP}_i\kPhi(b,i)^\top\mathbf h S_b^{-1}e_b$. The case $i=b$ holds because
 $\kPhi(b,b)=\mathbf I$. If it holds for $i+1$, then
-\begin{equation*}
+\begin{align*}
   \smooth{\kstate}_i-\prior{\kstate}_i
-  =\prior{\kP}_i\kA_{i+1}^\top(\prior{\kP}_{i+1})^{-1}\prior{\kP}_{i+1}\kPhi(b,i+1)^\top\mathbf h S_b^{-1}e_b
-  =\prior{\kP}_i\big(\kPhi(b,i+1)\kA_{i+1}\big)^\top\mathbf h S_b^{-1}e_b,
-\end{equation*}
-and $\kPhi(b,i+1)\kA_{i+1}=\kPhi(b,i)$. \hfill$\square$
+  &=\prior{\kP}_i\kA_{i+1}^\top(\prior{\kP}_{i+1})^{-1}\prior{\kP}_{i+1}\kPhi(b,i{+}1)^\top\mathbf h S_b^{-1}e_b\\
+  &=\prior{\kP}_i\big(\kPhi(b,i{+}1)\kA_{i+1}\big)^\top\mathbf h S_b^{-1}e_b,
+\end{align*}
+and $\kPhi(b,i{+}1)\kA_{i+1}=\kPhi(b,i)$. \hfill$\square$
 
 \paragraph{Consequences.}
-\begin{itemize}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
   \item At the newest observation the smoothed and filtered estimates coincide, so \pcgs leaves the predictor for the
-  next gap unchanged (main paper, Remarks of the \pcgs section).
+  next gap unchanged (main paper, \maincref{sec:pcgs}, Remarks).
   \item \emph{Random walk.} For the model without trend ($\kA=1$, $\kQ=q\ds$), an exact observation at $a$
   ($\post{\kP}_a=0$) and $R\to0$, the gain is $g_i=(s_i-s_a)/(s_b-s_a)$, \ie, linear interpolation in the time
-  coordinate. With the reuse forecast $\hat\res_i=\res_a$ this is the linear interpolation between $\res_a$ and
-  $\res_b$ used for \seacache + \pcgs in the ablations.
-  \item \emph{DCT variant.} Each band $\ell$ has its own $\kA$, $\kQ$, $\kP$ and hence its own gains $g_{i,\ell}$. Band
-  normalization cancels in \eqref{eq:supp-smooth}, so the correction in residual space is
-  $\resf_i=\hat\res_i+\mathcal D^{-1}\big(\mathbf G_i\odot\mathcal D(\res_b-\hat\res_b)\big)$ with the per-channel
-  orthonormal 2D DCT $\mathcal D$ and the gain map $\mathbf G_i$ (value $g_{i,\ell}$ on band $\ell$).
-  \item \emph{Gain shape.} \TODO{Figure: $g_i$ per band for the modal 13-NFE schedule of \flux
-  (0,1,2,4,6,9,13,18,25,33,41,47,49). Preliminary computation with the \flux calibration and $\kappa=1$ (no online
-  adaptation): within the seven-step gaps the gain rises monotonically from 0.04--0.19 at the first skipped step to
-  0.74--0.88 at the last one (high-frequency bands more convex); recompute with the logged $\kappa$.}
-  \item \emph{First-order optimality.} \TODO{Write out the linearized error propagation
-  $\lat_b-\lat^{\mathrm{ref}}_b\approx\sum_i\mathbf M_{b,i}(\sigma_{i+1}-\sigma_i)\mathbf J_i(\hat\res_i-\res_i)$ and the
-  conditional-mean argument of the main paper.}
+  coordinate. With the reuse forecast $\hat\res_i=\res_a$ this is the linear interpolation between $\res_a$ and $\res_b$
+  used for reuse with \pcgs in the ablations.
+  \item \emph{DCT variant.} Each band $\ell$ has its own $\kA$, $\kQ$ and $\kP$, hence its own gains $g_{i,\ell}$. The
+  band normalization multiplies $z_b$, $\prior{m}_b$ and $\prior{m}_i$ by the same factor and cancels in
+  \eqref{eq:supp-smooth}, which gives the residual-space correction of \cref{supp:pcgs-impl}.
+  \item \emph{Gain shape.} \cref{tab:supp-gains} shows the gains for the gap 33--41 of the most common 13-\nfe
+  schedule with $\kappa{=}1$: they rise from 0.04--0.11 at the first skipped step to 0.80--0.87 at the last one, and the
+  highest-frequency bands rise most slowly.
 \end{itemize}
 
-\section{Forecaster details}
-\label{supp:forecaster}
-\begin{itemize}
-  \item DCT bands: orthonormal DCT-II per channel on the $64{\times}64$ token grid; seven radial bands with normalized
-  radius $r=\sqrt{(u/H)^2+(v/W)^2}/\sqrt2$ and edges $\{0,\tfrac1{64},\tfrac1{32},\tfrac1{16},\tfrac18,\tfrac14,
-  \tfrac12,1\}$; band normalization by the calibrated residual power.
-  \item Time coordinate (following SpecKCast~\cite{rajabi2026speckcast}): $\lambda_i=2\log((1-\sigma_i)/\sigma_i)$
-  (clamped), $t_\ell(i)=\mathrm{sigmoid}((\lambda_i+\log p_\ell)/T_w)$ with $T_w=2$, rescaled to $[-1,1]$; $p_\ell$ is
-  the calibrated power of the clean-sample estimate in band $\ell$. Per-element variant: one band with the
-  count-weighted mean power.
-  \item Calibration (16 COCO captions, disjoint from the 64 development and the 200 DrawBench prompts): residual band
-  powers, $p_\ell$ from the last 25 steps, process-noise intensity $q_\ell$ as the median over steps of the mean squared
-  change of the finite-difference trend per unit warped time, initial trend variance $2q_\ell$.
-  \item Initialization at the first computed step: $m=z_0$, $\nu=0$, $\kP=\mathrm{diag}(R,2q)$.
-  \item Process-noise adaptation: $\gamma_b=\mathrm{clip}_{[0.1,10]}(\overline{e_b^2}/S_b)$ with the band-mean squared
-  innovation, $\kappa\gets\mathrm{clip}_{[0.1,10]}(\kappa\gamma_b^{0.2})$.
-  \item Calibration-free variant: unit band powers, $q=7400$, initial trend variance $15000$, uniform step time.
-  \TODO{state which variant is used for video.}
-\end{itemize}
+\input{tables/supp_gains}
 
-\section{Implementation of \pcgs}
-\label{supp:impl}
-\begin{itemize}
-  \item Bookkeeping per skipped step: latent $\lat_i$ (only $\lat_{a+1}$ is needed for the exact replay), conditioning
-  $\cond_i$, forecast $\hat\res_i$, and the prior covariance of every band; memory cost (\flux): \TODO{MiB}.
-  \item Exact replay: same tensors and arithmetic as the diffusers flow-matching Euler step (fp32 accumulation of the
-  bf16 product, cast to bf16); with the identity smoother ($\resf_i=\hat\res_i$) the replay reproduces the uncorrected
-  run bitwise (unit test).
-  % provenance: research_v2/ablations/ABLATIONS_tests.md, test U3; T1 for the next item.
-  \item The implemented gains match brute-force joint-Gaussian conditioning of the damped-trend model to a relative
-  error below $10^{-15}$ for both parametrizations (unit test T1, float64, synthetic residuals, \flux calibration).
-  \item Continuation at $b$ and the gate refresh (first-block adaptive normalization and \sea filter); the last step is
-  corrected but needs no refresh.
-  \item NFE accounting: forward pre-hooks on all 19+38 blocks, cross-checked against the forward pass (zero mismatches,
-  zero partial block stacks in every run).
-  \item HunyuanVideo port: Euler sampler, single guidance-distilled branch; the official gate binds the scheduler that
-  exists at load time, so its \sea filter reads $\sigma=1-i/1000$ instead of the sampling schedule. We reproduce this
-  behavior for all gated methods (\seacache's thresholds were tuned with it) and use the live schedule for the
-  re-integration. \TODO{confirm with the final port.}
-  \item Wan2.1 port: UniPC multistep solver with classifier-free guidance; per-branch filters; solver-state snapshot at
-  the start of every gap and replay of the gap with the corrected outputs. \TODO{validate; report the bitwise test.}
-\end{itemize}
+\paragraph{Why smoothing minimizes the latent error to first order.}
+Write $h_i=\sigma_{i+1}-\sigma_i$ and let $\boldsymbol\rho=(\boldsymbol\rho_{a+1},\dots,\boldsymbol\rho_{b-1})$ be the
+residuals used to replay the gap, $\lat_{i+1}=\lat_i+h_i\Out(\Emb(\lat_i)+\boldsymbol\rho_i,\cond_i)$, from the exact
+$\lat_{a+1}$. Let $\res=(\res_{a+1},\dots,\res_{b-1})$ be the residuals that full computation would produce and
+$\lat^\star_b$ the corresponding latent. Linearizing the replay around the fully computed trajectory,
+\begin{equation}
+  \lat_b(\boldsymbol\rho)-\lat^\star_b\approx\sum_{i=a+1}^{b-1}h_i\,\mathbf M_{b,i}\,\mathbf J_i\,(\boldsymbol\rho_i-\res_i)
+  =\mathbf L\,(\boldsymbol\rho-\res),
+  \label{eq:supp-linear}
+\end{equation}
+where $\mathbf J_i$ is the Jacobian of $\Out$ with respect to its first argument and
+$\mathbf M_{b,i}=\prod_{j=i+1}^{b-1}(\mathbf I+h_j\mathbf J_j\mathbf E_j)$ propagates a latent perturbation from step
+$i+1$ to $b$ ($\mathbf E_j$: Jacobian of $\Emb$, a linear map for \flux). For any fixed linear map $\mathbf L$ and any
+estimate $\boldsymbol\rho$ that depends only on the observations $\mathcal Y$,
+$\E[\|\mathbf L(\boldsymbol\rho-\res)\|^2\mid\mathcal Y]=\|\mathbf L(\boldsymbol\rho-\E[\res\mid\mathcal Y])\|^2+
+\E[\|\mathbf L(\res-\E[\res\mid\mathcal Y])\|^2\mid\mathcal Y]$, which is minimal for
+$\boldsymbol\rho=\E[\res\mid\mathcal Y]$. Under the filter's model, the conditional means given the observations up to
+$b$ are the smoothed residuals $\resf_i$, whereas the forecasts $\hat\res_i$ are the conditional means given the
+observations up to $a$. Hence, to first order and under the filter's model, re-integrating with $\resf_i$ minimizes the
+expected squared error of $\lat'_b$ among all estimates available at step $b$. The argument covers the DCT variant
+because the DCT is linear and the conditional mean is taken per coefficient. It does not cover model misspecification,
+which is why simpler gains can do as well in practice (main paper, \maincref{sec:ablations}).
 
+%% ====================================================================================================================
 \section{Evaluation protocol}
 \label{supp:protocol}
-\begin{itemize}
-  \item DrawBench order and seeds (seed = prompt index); reference = uncached 50-step output of the same code path.
-  \item Budget mapping of the official \sea gate on \flux: $\delta=0.2/0.3/0.37/0.5/0.6/0.8/1.0\to
-  27/20.8/18.1/15/13/11/9$ \nfe. \seacache's Table~1 labels its $\approx$50\% row $\delta=0.3$ but its TFLOPs imply
-  18.45 full steps, which matches our $\delta\approx0.37$; its $\delta=0.6$ row (12.99 steps) matches ours (13.00).
-  We therefore match budgets by measured \nfe.
-  \item SSIM variant (scikit-image, $7{\times}7$ uniform window) vs.\ the Gaussian SSIM of TeaCache's evaluation code;
-  LPIPS (AlexNet, inputs in $[-1,1]$); PSNR on 8-bit RGB.
-  \item Video: 944 unique VBench prompts (two duplicates in VBench's list of 946); frame counts (HunyuanVideo 65, Wan2.1
-  81, the latter matching \seacache's reported TFLOPs); metrics on decoded MP4 frames with TeaCache's metric code;
-  \TODO{seeds}.
-  \item Bootstrap: paired over prompts, 10{,}000 resamples, percentile intervals, identical resampling indices for all
-  pairs.
-\end{itemize}
 
-\section{Additional results}
+\input{tables/supp_published}
+
+\paragraph{Published results and the mapping from $\delta$ to \nfe.}
+\seacache reports compute as TFLOPs (2976 for its 50-step original, \ie, 59.5 per transformer evaluation). We convert
+its published rows to \nfe (\cref{tab:supp-published}); these are the rows marked $^\dagger$ in the main paper's
+\maincref{tab:flux-main}. Its larger-budget row is labelled $\delta=0.3$, but its 1098 TFLOPs imply 18.45 evaluations.
+With the released gate, $\delta=0.3$ computes 20.88 steps per image on average in our setup (20 or 21 per prompt), and
+$\delta=0.37$ computes 18.14; its $\delta=0.6$ row (12.99) agrees with our measurement (13.00, on every prompt). We
+cannot tell whether the TFLOPs or the threshold of the $\delta=0.3$ row are off. Running our cache at the \nfe implied by
+the TFLOPs ($\delta=0.37$) is the conservative choice in both cases: if their run used 18.4 evaluations, the comparison is
+matched; if it used 20.9, \seacache had more compute than our cache. Our re-run of \seacache reaches 26.89\,dB at
+$\delta=0.3$, close to the published 26.29\,dB, and 25.33\,dB at $\delta=0.37$; at $\delta=0.6$ it reproduces the
+published 21.33\,dB (21.26\,dB). The published numbers were obtained on different hardware (NVIDIA Blackwell Pro 6000,
+according to the paper) and with seeds the paper does not state, so the main paper compares with them without
+confidence intervals, and with our re-run with paired intervals (\cref{tab:supp-samesetup}). The published 25- and
+15-step rows appear swapped (the 25-step row is worse on every metric); we cite them as published.
+
+\paragraph{Matched schedules.}
+Within one threshold, all our caches use the same \sea gate, but the gate is closed loop: its decisions depend on the
+latent and hence on the filler. \cref{tab:supp-steps} counts the prompts on which two or three caches computed exactly
+the same set of steps. At the thresholds of the main comparisons ($\delta=0.3$, $0.37$, $0.6$), any two of \seacache,
+\kalsea and \ours share the schedule on 183 to 196 of the 200 prompts, and the per-prompt \nfe never differs by more than
+one. All ablation runs of \cref{tab:ablation-full} are within 0.06 \nfe of \ours at $\delta=0.3$ and at exactly 13.00
+\nfe at $\delta=0.6$.
+
+\input{tables/supp_steps}
+
+\paragraph{Metrics.}
+Images are compared with the uncached 50-step output of the same code path, prompt and seed (seed = DrawBench prompt
+index, 200 prompts in the file order). PSNR: scikit-image on 8-bit RGB with data range 255. SSIM: scikit-image
+structural similarity on 8-bit RGB (default $7{\times}7$ uniform window, channels averaged). LPIPS: AlexNet
+features~\cite{zhang2018lpips}, inputs scaled to $[-1,1]$. \seacache does not state its SSIM implementation or LPIPS
+backbone (TeaCache's evaluation code, on which it builds, uses a Gaussian $11{\times}11$ SSIM window), so published SSIM
+and LPIPS values may not be exactly comparable with ours; PSNR on 8-bit RGB is unambiguous up to the data range. Confidence intervals: paired percentile
+bootstrap over prompts, 10{,}000 resamples, with the same resampling indices for every pair with the same number of
+prompts.
+
+\paragraph{Reproducibility.}
+The DCT filter accumulates its band statistics with atomic additions on the GPU (scatter-add), so two runs of the same
+configuration are not bitwise identical; with deterministic algorithms enforced they are. On DrawBench, a second run
+of \ours differs by $+$0.02\,dB [$-$0.04, 0.08] at $\delta=0.3$ and $+$0.04\,dB [$-$0.003, 0.10] at $\delta=0.6$
+(\cref{tab:ablation-full}, caption), and two independent runs of \kalsea differ by \suppKalRerunA{} at $\delta=0.37$ and
+\suppKalRerunB{} at $\delta=0.6$, with identical computed steps on \suppKalRerunSameA/200 and \suppKalRerunSameB/200 prompts (the main paper's \maincref{tab:flux-main} uses one of these runs, the $2{\times}2$ ablation of
+\cref{tab:ablation-2x2} the other). On the development set, a same-session re-run of \kalsea differs by $-$0.05 and
+$+$0.03\,dB (\cref{tab:supp-devset}). We therefore do not interpret differences below 0.1\,dB. The per-element filter,
+reuse and the uncached reference regenerated bit-identical images on all 64 development prompts; for video, the
+filter updates run with deterministic algorithms (\cref{supp:video}).
+% provenance: research_v2/harness/bench2.py docstring ("VERIFIED FACTS"): DCT KalSea not run-to-run reproducible,
+% bitwise with torch.use_deterministic_algorithms(True); per-element KalSea, reuse, reference 64/64 bit-identical.
+
+%% ====================================================================================================================
+\section{Additional results on \flux}
 \label{supp:results}
-\begin{itemize}
-  \item Full budget sweep with confidence intervals for all fillers, including linear extrapolation
-  (table view of the main-paper trade-off figure plus a linear-extrapolation column).
-  % source: tables/tab_flux_sweep.tex (generated); add the linear-extrapolation runs (linext_<d>) as 'linear extrapolation'.
-  \item Open-loop forecast error inside gaps on the development set (six reference trajectories): relative velocity
-  error per skipped step for the residual, clean-image, noise and velocity targets. \TODO{figure.}
-  \item Correction size $\|\lat'_b-\lat_b\|/\|\lat_b\|$ versus gap length and position, all budgets. \TODO{figure.}
-  \item Development-set (COCO-64) results for all configurations, with the halves used for development and
-  confirmation. \TODO{development-set table.}
-  % source: research_v2/ablations/ABLATIONS_devset.md
-  \item Full ablation table, including the continuation variants.
-  % source: tables/tab_ablation_full.tex (generated by research_v2/ablations/make_tables.py)
-  \item Video: per-dimension VBench scores and per-budget tables. \TODO{after the runs.}
-  \item TFLOPs and latency for all methods. \TODO{after the controlled measurement.}
-\end{itemize}
 
-\section{Negative and neutral results}
-\label{supp:negative}
-\begin{itemize}
-  \item Forecast target: forecasting the clean-image, noise or velocity prediction reconstructed from the current
-  latent, instead of the block-stack residual, is not better on the development set (all differences within about
-  $\pm$0.13\,dB, intervals include zero).
-  \item Allocation: an innovation-driven controller that replaces the \sea gate. \TODO{Owner decision: the interim
-  development-set data show a large schedule (allocation) effect that a fixed schedule reproduces, and the predictive
-  variant fails; this is not evidence that error control is worse than the \sea gate. Decide whether to report it.}
-\end{itemize}
+\input{tables/supp_samesetup}
 
-\section{More qualitative results}
+\paragraph{Same-setup comparisons at three thresholds.}
+\cref{tab:supp-samesetup} lists all same-setup comparisons with \seacache, linear extrapolation and \kalsea, with paired
+intervals for PSNR, SSIM and LPIPS. At $\delta=0.3$ (20.8 \nfe), the threshold of \seacache's larger-budget row, \ours
+reaches 29.62\,dB, 2.73\,dB [2.34, 3.12] above our re-run of \seacache (26.89\,dB at 20.88 \nfe) and 0.83\,dB
+[0.63, 1.02] above \kalsea (28.79\,dB). At 18.1 \nfe, the median per-prompt gain of \pcgs over \kalsea is
+\suppPcgsMedianA\,dB, and \pcgs lowers PSNR on \suppPcgsNegA{} of the 200 prompts, by at most \suppPcgsWorstA\,dB; at 13
+\nfe the corresponding values are \suppPcgsMedianB\,dB, \suppPcgsNegB{} prompts and \suppPcgsWorstB\,dB.
+
+\paragraph{Ablations.}
+\cref{tab:ablation-full} extends the main paper's \maincref{tab:ablation} with all metrics, the continuation variants
+(group (c)), the forecasters without correction (group (d)) and the forecasting targets (group (f)).
+\cref{tab:ablation-2x2} crosses the two forecaster parametrizations with \pcgs at the budgets of
+\maincref{tab:flux-main}.
+
+\maybeinput{tables/tab_ablation_full}
+\maybeinput{tables/tab_ablation_2x2}
+
+\paragraph{Budget sweep.}
+\cref{tab:flux-sweep} is the table view of the main paper's \maincref{fig:tradeoff}: seven thresholds from 27 to 9 \nfe,
+with the paired gains of \ours over our re-run of \seacache and over \kalsea.
+
+\maybeinput{tables/tab_flux_sweep}
+
+\paragraph{Size of the correction.}
+\cref{tab:supp-correction} reports the relative latent correction $\|\lat'_b-\lat_b\|/\|\lat_b\|$ that \pcgs applies at
+the computed step closing each gap. It averages 0.70\% at 20.8 \nfe, 1.00\% at 18.1 \nfe and 2.00\% at 13 \nfe, and it
+grows with the length and lateness of the gap: on the most common 13-\nfe schedule, from 0.2\% after the single skipped
+steps early in sampling to 5--6\% after the last two long gaps.
+
+\input{tables/supp_correction}
+
+\paragraph{Open-loop forecast error inside gaps.}
+\cref{tab:supp-openloop} quantifies the drift that motivates \pcgs (main paper, \maincref{sec:intro}). Along six uncached
+development trajectories, a forecaster that observes only the steps of the 13-\nfe schedule produces velocities whose
+relative error grows from 4--5\% at the first skipped step of a seven-step gap to more than 20\% (21.6--26.8\%) at the
+seventh for the residual forecasts of \kalsea.
+
+\input{tables/supp_openloop}
+
+\paragraph{Qualitative results.}
 \label{supp:qualitative}
-\begin{itemize}
-  \item Qualitative results at 13 and 20.8 \nfe with the selection rule of the main paper and more quantiles.
-  % figures/fig_qualitative_supp_nfe13.pdf, figures/fig_qualitative_supp_nfe21.pdf
-  \item Video frames. \TODO{after the runs.}
+\cref{fig:qualitative-supp-nfe13,fig:qualitative-supp-nfe21} extend the main paper's \maincref{fig:teaser} to the lower
+quartile, the median and the upper quartile of the per-prompt PSNR gain of \ours over \seacache (our re-run of its
+released gate with reuse) at 13 and 20.8 \nfe, with the same fixed selection rule. Video frames: \tbd.
+
+\begin{figure*}[t]
+  \centering
+  \maybegraphics[width=\textwidth]{figures/fig_qualitative_supp_nfe13.pdf}
+  \input{figures/fig_qualitative_supp_nfe13_caption}
+\end{figure*}
+
+\begin{figure*}[t]
+  \centering
+  \maybegraphics[width=\textwidth]{figures/fig_qualitative_supp_nfe21.pdf}
+  \input{figures/fig_qualitative_supp_nfe21_caption}
+\end{figure*}
+
+%% ====================================================================================================================
+\section{Development-set results}
+\label{supp:devset}
+
+All design decisions were made on a development set of 64 COCO captions~\cite{lin2014coco} (seed = prompt index),
+disjoint from the 16 calibration captions and from DrawBench; DrawBench was only used to score finished
+configurations. During development we used the first half of the captions (A, prompts 0--31) and confirmed on the
+second half (B, 32--63). The development set used the thresholds $\delta=0.37$ (18.0 \nfe) and $0.6$ (13.0 \nfe).
+\cref{tab:supp-devset} gives the gains of \pcgs for both forecasters and for reuse on both halves;
+\cref{tab:supp-devabl} the development-set ablations. On this set, the per-element filter with \pcgs was the best
+configuration at 18 \nfe (27.94 vs.\ 27.58\,dB for the DCT filter with \pcgs); on DrawBench the two are tied
+(\cref{tab:ablation-2x2}). The RTS gains and the linear interpolation were tied on the development set, which is where
+we chose the RTS gains; on DrawBench the interpolation is better by 0.14\,dB at 20.8 \nfe (main paper,
+\maincref{sec:ablations}), and we did not change the method based on the test set.
+
+\input{tables/supp_devset}
+\input{tables/supp_devabl}
+
+%% ====================================================================================================================
+
+\section{What did not help}
+\label{supp:negative}
+
+\paragraph{Forecasting a sampler quantity instead of the residual.}
+A forecaster can track a quantity of the sampler, the clean-image estimate $\hat\lat_0$, the noise estimate
+$\hat{\boldsymbol\epsilon}$ or the velocity $\vel$, and reconstruct the velocity from the current latent on skipped
+steps; for $\hat\lat_0$ and $\hat{\boldsymbol\epsilon}$ this feeds the latent's own drift back into the output. Open
+loop, along uncached trajectories, the $\hat{\boldsymbol\epsilon}$ forecast is the most accurate
+(\cref{tab:supp-openloop}). In closed-loop sampling, however, no target is better than the residual. On the development
+set all differences are within 0.13\,dB with intervals that include zero (\cref{tab:supp-devabl}); on DrawBench with
+DCT filters and without correction, the residual minus the target is $-$0.07\,dB [$-$0.23, 0.08] and $+$0.09\,dB
+[$-$0.01, 0.20] for $\hat\lat_0$, $+$0.20\,dB [$-$0.08, 0.48] and $+$0.02\,dB [$-$0.13, 0.16] for
+$\hat{\boldsymbol\epsilon}$, and $-$0.07\,dB [$-$0.22, 0.08] and $-$0.02\,dB [$-$0.12, 0.09] for $\vel$ (at 20.8 and
+13 \nfe; absolute values in \cref{tab:ablation-full}, group (f)). A mixture of $\hat\lat_0$ and
+$\hat{\boldsymbol\epsilon}$ with Wiener weights was not better either.
+% provenance: research_v2/ablations/eval/eval_all.json (paired kalsea_<d> vs abl_tgt_*_<d>), ABLATIONS.md finding 8.
+
+\paragraph{Using the innovation to decide when to compute.}
+Instead of correcting the gap, the forecast error can set the length of the next gap: an error controller measured the
+relative output error of the forecast at each computed step (one extra output-layer evaluation) and scaled the next gap
+by $\mathrm{clip}_{[0.5,2]}\big((\epsilon_{\mathrm{tol}}/\mathrm{err})^{1/2}\big)$, replacing the \sea gate. On the
+development set it raised PSNR over the \sea-gated per-element \kalsea at a similar mean \nfe ($+$2.76\,dB [1.75, 3.80]
+at 13.36 vs.\ 13 \nfe), but the gain came from a different allocation of the computed steps rather than from adaptivity:
+a fixed schedule with the controller's typical allocation, (0, 1, 2, 3, 4, 6, 8, 11, 16, 23, 31, 42, 49), was as good
+as the controller ($-$0.26\,dB [$-$0.93, 0.44] for the controller relative to it, 30 prompts), and a predictive variant
+driven by the filter covariance alone was much worse ($-$5.07\,dB [$-$6.01, $-$4.17] at 13 \nfe relative to \kalsea).
+The per-image \nfe of the controller also varied (standard deviation 1.6--2.4), so its budget was matched only on
+average. The fixed schedule was derived on the same development prompts and was not evaluated on DrawBench. Which steps
+to compute is thus a separate question; all methods in this paper share \seacache's gate.
+% provenance: research_v2/ablations/eval/eval_devset.txt (C1_pure_pe_t0.43, C2_fixedavg_pe_13, C2_pure_pe_t0.454,
+% C2_pred_pe_t1.75), research_v2/techC/RESULT.md (controller rule), ABLATIONS.md A10.
+
+%% ====================================================================================================================
+\section{Video generation}
+\label{supp:video}
+
+\paragraph{Protocol.}
+We follow the video protocol of \seacache~\cite{chung2026seacache}: the 944 unique prompts of VBench's full prompt
+list~\cite{huang2024vbench} (946 lines with two duplicates), one video per prompt, seed 42 for every prompt and method,
+50 sampling steps, and fidelity to the uncached 50-step video of the same prompt.
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+  \item HunyuanVideo~\cite{kong2024hunyuanvideo} (official code): $480{\times}640$, 65 frames, Euler flow sampler with
+  shift 7 and reversed flow, embedded guidance 6, a single (guidance-distilled) pass per step, bf16; videos saved at
+  24\,fps. \seacache thresholds $\delta=0.19$ and $0.35$.
+  \item Wan2.1-T2V-1.3B~\cite{wan2025wan} (official code): $832{\times}480$, 65 frames (the frame count stated in
+  \seacache's text; its Wan2.1 TFLOPs and latencies are consistent with 81 frames), UniPC~\cite{zhao2023unipc} with
+  shift 5, classifier-free guidance~\cite{ho2022cfg} with scale 5 and the default negative prompt, bf16. \seacache
+  thresholds $\delta=0.2$ and $0.35$.
+  \item Gate: the official \sea gate of each model ($\beta=3$, filter over frames, height and width), first and last
+  step forced, thresholds passed as parameters. With these settings our \seacache path reproduces the outputs of
+  \seacache's released scripts bit for bit on our test prompts (both models).
+  \item \nfe: full transformer evaluations, counted by block hooks; for Wan2.1, the conditional and unconditional passes
+  are gated separately, and \nfe is their mean (full-step equivalents).
+  \item Metrics: PSNR, SSIM and LPIPS on the decoded MP4 frames with the definitions of TeaCache's video metric
+  code~\cite{liu2025teacache}, and the 16 VBench dimensions.
 \end{itemize}
+
+\paragraph{HunyuanVideo gate as released.}
+The released \seacache script for HunyuanVideo binds the scheduler that exists when the model is loaded (noise levels
+from 1 to 0 in steps of $1/1000$) to the gate, while sampling creates a new scheduler with the shifted 50-step
+schedule. Its \sea filter therefore uses $\sigma=1-i/1000$ at step $i$ instead of the sampling schedule. Because
+\seacache's thresholds were set with this behavior, we keep it for all gated methods (\seacache, \kalsea, \ours); the
+re-integration of \pcgs uses the actual sampling schedule.
+
+\paragraph{Ports of the forecaster and of \pcgs.}
+Both models use the calibration-free per-element filter (\cref{supp:variants}), one filter per guidance branch (one for
+HunyuanVideo, two for Wan2.1), updated under deterministic algorithms so that runs are reproducible. HunyuanVideo
+samples with Euler steps, so \pcgs applies as for \flux, with the patch embedding and the final layer as $\Emb$ and
+$\Out$. For Wan2.1, whose UniPC solver is multistep, the solver state is saved after each computed step $a$; when step
+$b$ closes the gap, both branches are smoothed, the state is restored and the solver steps $a{+}1,\dots,b{-}1$ are
+replayed with the corrected guided outputs $\mathbf u_i'+w(\mathbf c_i'-\mathbf u_i')$, where $\mathbf c_i'$ and
+$\mathbf u_i'$ are obtained from the patch embedding of the replayed latent, the smoothed residual of the branch and the
+output head, and $w$ is the guidance scale. Sampling then continues from the replayed latent and solver state, with the
+step-$b$ outputs recomputed from the corrected latent and the fresh residuals. In our tests on both models, the identity
+smoother reproduces the uncorrected forecaster bitwise, and for Wan2.1 a corrected replay equals a fresh UniPC run with
+the corrected outputs bitwise.
+% provenance: video_logs/wan_cache_tests/real65_check.txt, unipc_replay_rerun.txt; video_logs/hv_cache_test_real.json
+% (kalsea_pcgs_identity_0.35 == kalsea_0.35), hv_cache_test2/compare.jsonl; video_code/*/cache_methods.py docstrings.
+
+\paragraph{Results.}
+Video results are pending (runs in progress): the full 944-prompt comparison (main paper, \maincref{tab:video-main})
+\tbd; the 16 VBench dimensions per method and budget \tbd; \pcgs on/off at matched \nfe on a 20-prompt VBench subset
+with paired intervals \tbd.
+
+%% ====================================================================================================================
+\section{TFLOPs and latency}
+\label{supp:cost}
+The TFLOPs and latency columns of the main paper's tables are blank because these quantities have not yet been measured
+for all methods under the same conditions (one machine, one process per GPU, warm-up, identical batch size).
+Controlled measurement: \tbd.

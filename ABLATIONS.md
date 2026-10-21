@@ -81,7 +81,7 @@ development-set tie and simplicity, and report both. The gate refresh can be dro
 
 Run names below are directories under `research_v2/ablations/runs/` (our runs, or per-file mirrors of existing runs so
 that eval2's cache stays in our tree). Mirrors: `seacache_<d>` = `<flux_data>/runs/drawbench/reuse_<d>`,
-`linextrap_<d>` = `.../respect_<d>_w0` (first-order linear extrapolation of the last two computed residuals, the
+`linextrap_<d>` = `.../linext_<d>` (first-order linear extrapolation of the last two computed residuals, the
 w = 0 setting of that code path; used only as a generic baseline), `kalsea_<d>` = `.../speckcast_<d>`, `kalsea_pe_<d>` = `.../speckcast_nodct_<d>`,
 `kalsea_tau0.1_<d>` = `.../speckcast_paper_<d>`, `ours_<d>` = `research_v2/runs/drawbench/kalsea_dct_pcgs_<d>`,
 `ours_pe_<d>` = `.../kalsea2_<d>`, `abl_pcgs_*` / `abl_tau01_pcgs_*` / `abl_reuse_pcgs_*` = `research_v2/runs/drawbench_abl/*`
