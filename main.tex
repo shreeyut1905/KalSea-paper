@@ -31,7 +31,9 @@
 \def\confYear{2027}
 
 %%%%%%%%% TITLE
-\title{\TODO{Title}}
+% Candidates and the naming question: TITLES.md. The recommended title starts with "KalSea:"; that prefix is left out
+% until the naming is decided, because \kalsea ("KalSea") currently labels the predictor-only variant.
+\title{Closing the Loop on Diffusion Transformer Caching with Kalman Gap Smoothing}
 
 %%%%%%%%% AUTHORS
 % Review mode prints "Anonymous CVPR submission". Keep real names out of the source as well; they are added
@@ -39,14 +41,27 @@
 \author{Anonymous}
 
 \begin{document}
-\maketitle
+% Fig. 1 (teaser) below the title block, full width: the usual CVPR construction (\maketitle inside \twocolumn[...]).
+\twocolumn[{%
+  \renewcommand\twocolumn[1][]{#1}%
+  \maketitle
+  \vspace{-1.8em}%
+  \begin{center}
+    \captionsetup{type=figure}
+    \maybegraphics[width=\textwidth]{figures/fig_qualitative_teaser.pdf}
+    \vspace{-1.4em}%
+    \input{figures/fig_qualitative_teaser_caption}% \caption{...}\label{fig:teaser}
+  \end{center}
+  \vspace{0.6em}%
+}]
 \input{sections/abstract}
 \input{sections/intro}
 \input{sections/related}
 \input{sections/method}
 \input{sections/experiments}
-\input{sections/conclusion}
-\label{endofbody}% records the page where the body ends (page-limit check in tools/pdfcheck.py)
+\input{sections/conclusion}\unskip
+\label{endofbody}\par% records the page where the body ends (page-limit check in tools/pdfcheck.py); the \par keeps
+% the spaces of the bibliography block below from adding an empty last line to the conclusion.
 {
     \small
     \bibliographystyle{ieeenat_fullname}

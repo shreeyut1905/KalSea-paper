@@ -16,6 +16,11 @@ MAIN = {"seacache": "reuse_{d}",            # SEA gate + residual reuse (SeaCach
         "ours": "kalsea_dct_pcgs_{d}"}      # KalSea (DCT bands) + predictor-corrector gap smoothing
 DELTAS = ["0.2", "0.3", "0.37", "0.5", "0.6", "0.8", "1.0"]
 
+# extra baseline at the two main budgets only (main table): first-order linear extrapolation of the block-stack
+# residual from the last two computed steps, behind the same SEA gate (generic baseline; run name is internal)
+EXTRA = {"linext": "linext_{d}"}
+EXTRA_DELTAS = ["0.3", "0.6"]
+
 # 2x2 ablation {DCT bands, per-element} x {gap smoothing off, on}
 ABL = {("dct", "off"): "kalsea_main_{d}",       # same harness and code path as the smoothing-on run
        ("dct", "on"): "kalsea_dct_pcgs_{d}",

@@ -81,6 +81,11 @@ def main():
         st["paired"][d] = {"ours-seacache": paired(P["ours"], P["seacache"]),
                            "ours-kalsea": paired(P["ours"], P["kalsea"]),
                            "kalsea-seacache": paired(P["kalsea"], P["seacache"])}
+    st["extra"], st["paired_extra"] = {}, {}
+    for d in D.EXTRA_DELTAS:
+        P = {m: per[D.EXTRA[m].format(d=d)] for m in D.EXTRA}
+        st["extra"][d] = {m: run_summary(P[m]) for m in D.EXTRA}
+        st["paired_extra"][d] = {f"ours-{m}": paired(per[D.MAIN["ours"].format(d=d)], P[m]) for m in D.EXTRA}
     for d in D.ABL_DELTAS:
         P = {f"{fc}_{sm}": per[D.ABL[(fc, sm)].format(d=d)] for (fc, sm) in D.ABL}
         st["ablation_2x2"][d] = {"summary": {k: run_summary(v) for k, v in P.items()},
@@ -101,6 +106,11 @@ def main():
             p = st["paired"][d][pk]
             print(f"      {pk:>15}: dPSNR {p['psnr']['mean']:+.3f} [{p['psnr']['ci95'][0]:+.3f},{p['psnr']['ci95'][1]:+.3f}] "
                   f"win {p['psnr']['frac_better']:.2f}  dLPIPS {p['lpips']['mean']:+.4f}  same-steps {p['n_same_steps']}")
+    for d in D.EXTRA_DELTAS:
+        for m, s in st["extra"][d].items():
+            p = st["paired_extra"][d][f"ours-{m}"]
+            print(f"{d:>5} {m:>9} {s['nfe']:6.2f} {s['psnr']['mean']:6.2f} SSIM {s['ssim']['mean']:.4f} LPIPS {s['lpips']['mean']:.4f}"
+                  f"  ours-{m}: dPSNR {p['psnr']['mean']:+.3f} [{p['psnr']['ci95'][0]:+.3f},{p['psnr']['ci95'][1]:+.3f}]")
     for d in D.ABL_DELTAS:
         a = st["ablation_2x2"][d]
         for k, s in a["summary"].items():

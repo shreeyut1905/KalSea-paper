@@ -35,7 +35,7 @@ def write(name, body, usage):
     print("wrote", path)
 
 
-def tradeoff():
+def tradeoff(long=False):
     P, S = ST["paired"], ST["summary"]
     lo_d = min(ST["deltas"], key=lambda d: S[d]["ours"]["nfe"])
     hi_d = max(ST["deltas"], key=lambda d: S[d]["ours"]["nfe"])
@@ -44,6 +44,22 @@ def tradeoff():
     sig_sea = [d for d in ST["deltas"] if P[d]["ours-seacache"]["psnr"]["ci95"][0] <= 0]
     lp = P[lo_d]["ours-seacache"]["lpips"]
     deltas = ", ".join(ST["deltas"])
+    if not long:   # compact main-paper caption (8-page limit); same numbers
+        body = (
+            r"\caption{\textbf{Fidelity vs.\ compute on \flux} (DrawBench, 200 held-out prompts)."
+            r" \textbf{(a)}~PSNR and \textbf{(b)}~LPIPS w.r.t.\ the 50-step reference vs.\ the mean number of transformer"
+            rf" evaluations per image; the \sea-gate threshold $\delta \in \{{{deltas}\}}$, shared by all methods, sets the"
+            r" budget, and gray bands mark the budgets of \cref{tab:flux-main}. Lines: means over prompts; shaded: 95\%"
+            r" bootstrap CIs. \textbf{(c)}~Paired PSNR gain of \ours (95\% CIs): over \seacache, it grows from "
+            + ci(P[lo_d]["ours-seacache"]["psnr"]) + rf" at {nfe_label(S[lo_d]['ours']['nfe'])} \nfe"
+            + (r" (not significant)" if lo_d in sig_sea else "") + " to "
+            + ci(P[hi_d]["ours-seacache"]["psnr"]) + rf" at {nfe_label(S[hi_d]['ours']['nfe'])} \nfe; over \kalsea"
+            r" (\pcgs alone), it is positive at every budget.}" "\n"
+            r"\label{fig:tradeoff}")
+        write("fig_tradeoff", body, r"\begin{figure*}[t]\centering\includegraphics[width=\textwidth]{figures/fig_tradeoff.pdf}"
+              r"\input{figures/fig_tradeoff_caption}\end{figure*}   (one-column variant: figures/fig_tradeoff_1col.pdf,"
+              r" width=\columnwidth, same caption)")
+        return
     body = (
         r"\caption{\textbf{Quality--compute trade-off on \flux} (DrawBench, 200 held-out prompts)."
         r" \textbf{(a)}~PSNR and \textbf{(b)}~LPIPS with respect to the 50-step reference vs.\ the mean number of transformer"
@@ -61,6 +77,30 @@ def tradeoff():
     write("fig_tradeoff", body, r"\begin{figure*}[t]\centering\includegraphics[width=\textwidth]{figures/fig_tradeoff.pdf}"
           r"\input{figures/fig_tradeoff_caption}\end{figure*}   (one-column variant: figures/fig_tradeoff_1col.pdf,"
           r" width=\columnwidth, same caption)")
+
+
+def teaser(tag, name, label):
+    """Compact Fig.-1 caption (one row: median-gain prompt left, upper-quartile prompt right)."""
+    meta = json.load(open(os.path.join(HERE, "qual_tiles", tag, "meta.json")))
+    r = meta["rule"]
+    gq = r["gain_quantiles"]
+    assert [float(q) for q in r["quantiles"]] == [50.0, 75.0] and r["k"] == 1, r
+    nfes = sorted({int(p["nfe"]) for p in meta["prompts"]})
+    assert len(nfes) == 1, nfes
+    ww, wh = r["window"]
+    ratio = 50.0 / meta["nfe"]
+    body = (
+        rf"\caption{{\textbf{{Closing the loop at {nfes[0]} \nfe}} (\flux, $\delta = {meta['delta']}$, ${ratio:.1f}\times$"
+        r" fewer transformer evaluations than the 50-step reference). \seacache reuses the last computed residual on"
+        r" skipped steps, \kalsea forecasts it, and \ours (\kalsea with \pcgs) also corrects each skipped gap once the"
+        r" next step is computed. Fixed selection rule: among the "
+        rf"{r['n_identical_steps']} of {r['n_total']} held-out DrawBench prompts on which the three caches computed the"
+        r" same steps, those whose PSNR gain of \ours over \seacache is closest to the median"
+        rf" ({sg(gq['50'])}\,dB; left) and the upper quartile ({sg(gq['75'])}\,dB; right). Crops (${ww}\times{wh}$"
+        r" of $1024^2$ pixels) are placed where the cached images differ most, without using the reference. Numbers: PSNR"
+        r" (dB) to the reference, best in bold.}" "\n" + rf"\label{{{label}}}")
+    write(name, body, r"main.tex: inside \twocolumn[...] after \maketitle, \captionsetup{type=figure} +"
+          rf" \includegraphics[width=\textwidth]{{figures/{name}.pdf}} + \input{{figures/{name}_caption}}")
 
 
 def qualitative(tag, name, label, main=True, positions=None):
@@ -101,6 +141,6 @@ def qualitative(tag, name, label, main=True, positions=None):
 if __name__ == "__main__":
     tradeoff()
     qualitative("nfe13", "fig_qualitative", "fig:qualitative", main=True)
-    qualitative("nfe13_teaser", "fig_qualitative_teaser", "fig:teaser", main=True, positions=["left", "right"])
+    teaser("nfe13_teaser", "fig_qualitative_teaser", "fig:teaser")
     qualitative("nfe13_supp", "fig_qualitative_supp_nfe13", "fig:qualitative-supp-nfe13", main=False)
     qualitative("nfe21_supp", "fig_qualitative_supp_nfe21", "fig:qualitative-supp-nfe21", main=False)

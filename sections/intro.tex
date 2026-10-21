@@ -3,56 +3,54 @@
 
 Diffusion and flow-matching transformers~\cite{peebles2023dit,esser2024scaling} generate high-resolution images
 and videos~\cite{blackforestlabs2024flux,kong2024hunyuanvideo,wan2025wan}, but sampling is slow: each of tens of steps
-runs a stack of dozens of transformer blocks over thousands of tokens. Training-free caching exploits the similarity
-of consecutive steps~\cite{ma2024deepcache,selvaraju2024fora,liu2025teacache}: on some steps the block stack is
-skipped and its output is approximated from the steps that were computed. A cache therefore makes two decisions:
-\emph{when} to compute, and \emph{what} to write on the steps it skips.
+runs dozens of transformer blocks over thousands of tokens. Training-free caching exploits the similarity of
+consecutive steps~\cite{ma2024deepcache,selvaraju2024fora,liu2025teacache}: on some steps the block stack is skipped
+and its output is approximated from the computed steps. A cache thus makes two decisions: \emph{when} to compute, and
+\emph{what} to write on the steps it skips.
 
 Most work has focused on the first decision. Adaptive gates accumulate a cheap proxy of the change of the network
-output and recompute once it exceeds a threshold~\cite{liu2025teacache,ma2025magcache,bu2026dicache}.
+output and recompute once it exceeds a threshold~\cite{liu2025teacache,ma2025magcache,bu2026dicache};
 \seacache~\cite{chung2026seacache} measures this change after a spectral-evolution-aware (\sea) filter that suppresses
-the noise component of the features, and reports state-of-the-art quality--latency trade-offs among caching methods.
-For the second decision, most caches reuse the last computed
+the noise component of the features. For the second decision, most caches reuse the last computed
 output~\cite{ma2024deepcache,selvaraju2024fora,liu2025teacache,chung2026seacache}, while forecasting methods extrapolate
 it from several computed steps with Taylor expansions~\cite{liu2025taylorseer}, Hermite or Chebyshev
 polynomials~\cite{feng2026hicache,han2026spectrum}, multistep formulas~\cite{zheng2026foca}, or Kalman
 filters~\cite{rajabi2026speckcast}.
 
 Reuse and forecasting share a structural limitation: they are \emph{open loop}. The filler predicts the skipped steps
-from the past alone, and the sampler integrates its errors into the latent. Within a gap of skipped steps the error
-grows with the distance to the last computed step. On six reference trajectories of our development set, the relative
-error of the velocity obtained from a Kalman forecast of the residual grows from 4--5\% at the first skipped step to
-over 20\% at the seventh (supplement). When the next step is computed, the true block-stack output reveals how wrong the
-forecast was, but existing caches use this observation only to predict the \emph{next} gap. The latent, already
-advanced along erroneous velocities, is never revisited, and the trajectory drifts. Forecasting reduces this drift but
-does not remove it: as gaps grow, its advantage over reuse vanishes (\cref{sec:main-results}).
+from the past alone, and the sampler integrates its errors into the latent. These errors grow with the distance to
+the last computed step: on six reference trajectories of our development set, the relative error of the velocity
+obtained from a Kalman forecast of the residual grows from 4--5\% at the first skipped step to over 20\% at the
+seventh (supplement). When the next step is computed, its block-stack output reveals how wrong the forecast was, but
+existing caches use this observation only to predict the \emph{next} gap; the latent, already advanced along erroneous
+velocities, is never revisited. Forecasting reduces this drift but does not remove it: as gaps grow, its advantage
+over reuse vanishes (\cref{sec:main-results}).
 % Source of the 4-5% / >20% numbers: research_v2/techB/diag_summary.txt (delta-0.6 schedule, resid_pe column,
 % gaps 25->33 and 33->41, open loop along the 50-step trajectories of COCO-64 prompts 0-5).
 
 We close the loop without evaluating the network again. Our key observation is that a skipped gap is a
-\emph{smoothing} problem. A Kalman filter that forecasts the block-stack residual on skipped steps serves as the
-predictor. When the next computed step~$b$ arrives, the innovation, \ie, the difference between the observed and the
-forecast residual, together with the covariances that the filter accumulated over the gap, determines, under the
-filter's model, the minimum-mean-square-error residuals of all skipped steps given the new observation, through the
-Rauch--Tung--Striebel (RTS) smoother~\cite{rauch1965maximum}. Because only the cheap output layers depend on the
-residual, we re-integrate the gap through them, continue sampling from the corrected latent via a velocity offset at
-step~$b$, and refresh the gate's reference. We call this procedure \emph{predictor-corrector gap smoothing} (\pcgs,
+\emph{smoothing} problem. With a Kalman filter as the predictor of the block-stack residual, the innovation at the next
+computed step~$b$, \ie, the observed minus the forecast residual, and the covariances accumulated over the gap
+determine, through the Rauch--Tung--Striebel (RTS) smoother~\cite{rauch1965maximum}, the minimum-mean-square-error
+residuals of all skipped steps under the filter's model. Because only the cheap output layers depend on the residual,
+we re-integrate the gap through them and continue sampling from the corrected latent. We call this procedure \emph{predictor-corrector gap smoothing} (\pcgs,
 \cref{fig:method}). Like the corrector of UniPC~\cite{zhao2023unipc}, it reuses a network evaluation that the sampler
 performs anyway; unlike it, it corrects an entire gap of steps whose network outputs were never computed.
 
-Our method, \ours, combines the \sea gate of \seacache (unchanged), a damped-trend Kalman forecaster of the block-stack
-residual, and \pcgs. It is training-free and changes neither the network, nor the sampler, nor the number of
-transformer evaluations. Our contributions are:
+Combined with the unchanged \sea gate of \seacache and a damped-trend Kalman forecaster of the block-stack residual,
+\pcgs yields a training-free cache that changes neither the network, nor the sampler, nor the number of transformer
+evaluations. Our contributions are:
 \begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
   \item We identify the open-loop nature of caching fillers: errors made on skipped steps are integrated into the
   latent and never corrected, and forecasting loses its advantage over reuse as gaps grow.
-  \item We propose \pcgs, which casts each skipped gap as a smoothing problem. The RTS smoother of the forecaster's own
-  state-space model gives the residuals of the gap once the next step is computed, and the gap is re-integrated with
-  the output layers only. We give the smoother gain in closed form for the damped-trend model under the irregular
+  \item We propose \pcgs, which casts each skipped gap as a smoothing problem: once the next step is computed, the RTS
+  smoother of the forecaster's own state-space model gives the residuals of the gap, which is re-integrated with the
+  output layers only. We give the smoother gain in closed form for the damped-trend model under the irregular
   observations of an adaptive gate. \pcgs adds neither transformer evaluations nor hyperparameters.
-  \item On \flux at matched \nfe and on held-out DrawBench prompts~\cite{saharia2022imagen}, \ours improves
-  PSNR with respect to the 50-step sampler by 2.73\,dB [2.34, 3.12] over \seacache at 20.8 of 50 evaluations and by
-  1.27\,dB [1.02, 1.52] at 13, of which \pcgs contributes 0.83 and 0.61\,dB. \pcgs improves on the predictor alone at
-  every budget from 9 to 27 evaluations, and its gain does not depend on how the forecaster is parametrized. \TODO{Video: HunyuanVideo and Wan2.1.}
+  \item On \flux at matched \nfe and on held-out DrawBench prompts~\cite{saharia2022imagen}, our cache improves PSNR
+  with respect to the 50-step sampler by 2.73\,dB [2.34, 3.12] over \seacache at 20.8 of 50 evaluations and by
+  1.27\,dB [1.02, 1.52] at 13, of which \pcgs contributes 0.83 and 0.61\,dB. \pcgs improves on the predictor at every
+  budget from 9 to 27 evaluations and also improves reuse and linear extrapolation; its gain comes from re-integrating
+  the gap rather than from the exact form of the smoother gains. \TODO{video results}
 \end{itemize}
 Code will be released.

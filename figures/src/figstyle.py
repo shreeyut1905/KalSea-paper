@@ -11,7 +11,8 @@ lightness band, chroma floor, CVD all-pairs dE >= 9.4 (protan/deutan) and 9.6 (t
 normal-vision all-pairs dE >= 21.6, contrast >= 3.4:1 on white.  Secondary encoding is
 always present (marker shape per method + legend/direct labels), so identity never relies on hue.
 
-Typography matches the CVPR template (Times): STIX (Times-compatible) text and math, 7-8 pt at final size.
+Typography matches the CVPR template exactly: text and math are typeset by LaTeX (text.usetex) with
+\\usepackage{times}, i.e. the paper's Times text and Computer Modern math (Type 1 fonts), 7-8 pt at final size.
 CVPR widths: \\columnwidth = 3.28125 in, \\textwidth = 6.875 in.
 """
 import matplotlib as mpl
@@ -40,8 +41,9 @@ BAND = "#f0efec"       # neutral highlight band
 
 def apply():
     mpl.rcParams.update({
-        "font.family": "STIXGeneral",
-        "mathtext.fontset": "stix",
+        "text.usetex": True,     # same fonts as the paper body (times + CM math); needs latex and dvipng on PATH
+        "text.latex.preamble": r"\usepackage{times}\usepackage{amsmath}",
+        "font.family": "serif",
         "font.size": 7.5,
         "axes.titlesize": 7.5,
         "axes.labelsize": 7.5,
@@ -73,7 +75,7 @@ def apply():
         "lines.solid_joinstyle": "round",
         "legend.frameon": False,
         "legend.handlelength": 1.8,
-        "pdf.fonttype": 42,   # embed TrueType (Type 42), no Type 3
+        "pdf.fonttype": 42,   # (only used without usetex) embed TrueType (Type 42), no Type 3
         "ps.fonttype": 42,
         "savefig.dpi": 300,
         "figure.dpi": 150,

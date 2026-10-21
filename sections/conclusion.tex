@@ -1,23 +1,19 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-Caches for diffusion transformers decide when to skip the block stack and what to write instead, but the fillers they
-use are open loop: the errors of skipped steps are integrated into the latent and never corrected. \pcgs closes this
-loop at no cost in network evaluations. It treats each skipped gap as a smoothing problem, estimates the residuals of
-the gap with the RTS smoother of the forecaster's own state-space model once the next step is computed, and
-re-integrates the gap through the output layers. Combined with the \sea gate and a Kalman residual forecaster, it
-improves fidelity to the 50-step sampler at every budget we tested on \flux, with gains over reuse that grow with the
-budget. \TODO{One sentence on video.} Promising directions are to choose the computed steps jointly with the
-corrector, rather than with a gate designed for reuse, and to apply the correction to caches that operate on features
-inside the block stack.
+Caching fillers for diffusion transformers are open loop: the errors of skipped steps are integrated into the latent
+and never corrected. \pcgs closes this loop at no cost in network evaluations: once the next step is computed, it
+estimates the residuals of the skipped gap with the RTS smoother of the forecaster's own state-space model and
+re-integrates the gap through the output layers. With the \sea gate and a Kalman residual forecaster, it improves
+fidelity to the 50-step sampler at every budget we tested on \flux. The benefit lies in the re-integration itself: a
+linear interpolation of the residual across the gap works as well as the RTS gains, and the correction also repairs
+reuse and linear extrapolation. \TODO{video results} Promising directions are to choose the computed steps jointly
+with the corrector and to correct caches that operate on features inside the block stack.
 
 \paragraph{Limitations.}
 Matched \nfe is not matched latency: \pcgs adds output-layer evaluations (about 0.3\% of one transformer evaluation per
-image) and 0.02\,GiB of memory over \kalsea, and the filter adds elementwise work on every step.
-\TODO{Latency once measured.} Our metrics measure fidelity to the 50-step sampler, which is the goal of a cache but
-not the same as sample quality. The filter's band statistics are accumulated with atomic GPU additions, so runs are not
-bitwise reproducible (0.03\,dB between two runs of the same configuration). All design decisions were made on a
-development set of COCO captions and evaluated on held-out DrawBench prompts, but our image results cover a single
-model. At a computed step, \pcgs attaches the residual evaluated at the uncorrected latent to the corrected one, an
-approximation that is accurate only for small corrections; at the smallest budget, with gaps of up to twelve steps, its
-gain is modest (0.31\,dB at 9 \nfe).
+image) and 0.02\,GiB of memory over \kalsea, and the filter adds elementwise work on every step. Our metrics measure
+fidelity to the 50-step sampler, the goal of a cache, not sample quality. Runs are not bitwise reproducible (up to
+0.04\,dB between two runs). Our image results cover a single model. At a computed step, \pcgs attaches the residual
+evaluated at the uncorrected latent to the corrected one, an approximation that is accurate only for small
+corrections; at the smallest budget, with gaps of up to twelve steps, its gain is modest (0.31\,dB at 9 \nfe).

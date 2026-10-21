@@ -28,9 +28,9 @@
 \node[title] at (\Gx+0.1,2.37) {SEA gate {\normalfont\scriptsize(SeaCache)}};
 \node[lbl, anchor=north west, align=left] at (\Gx+0.1,2.0) {%
   $\modin_i=\mathrm{AdaLN}_0(\hin_i,\cond_i)$\\[2pt]
-  $S_i=\seaop_{\sigma_i}(\modin_i)$\\[2pt]
-  $d_i=\|S_i-S_{i-1}\|_1/\|S_{i-1}\|_1$\\[2pt]
-  compute iff $A_i=A_{i-1}+d_i\ge\delta$};
+  $\bar{\modin}_i=\seaop_{\sigma_i}(\modin_i)$\\[2pt]
+  $d_i=\|\bar{\modin}_i-\bar{\modin}_{i-1}\|_1/\|\bar{\modin}_{i-1}\|_1$\\[2pt]
+  compute iff $D_i\mskip-2mu=\mskip-2mu D_{i-1}\mskip-2mu+\mskip-2mu d_i\mskip-2mu\ge\mskip-2mu\delta$};
 \draw[data] (\Gx+1.9,\yS) -- (\Gx+1.9,2.45);
 
 %% ------------------------------------------------------------------------------------------------ block stack
@@ -53,18 +53,18 @@
 \node[lbl, anchor=north west, align=left] at (\Fx+0.07,1.53) {%
   predict: $\prior{\kstate}_i=\kA_i\post{\kstate}_{i-1}$,\ \ $\kA_i=\begin{psmallmatrix}1&\ds_i\\0&\rho_i\end{psmallmatrix}$\\[0.5pt]
   update (computed): $z_i=\DCT(\res_i)$\\[0.5pt]
-  forecast (skipped): $\resf_i=\DCT^{-1}(\prior{m}_i)$};
+  forecast (skipped): $\hat{\res}_i=\DCT^{-1}(\prior{m}_i)$};
 
 %% ------------------------------------------------------------------------------------------------ residual selector
 \draw[wire, fill=white] (\Mx,0.38) -- (\Mx,2.40) -- (\Mx+0.34,2.18) -- (\Mx+0.34,0.60) -- cycle;
 \draw[data] (\Fx+\Fw+0.03,\yF) -- node[lbl, above, pos=0.30] {$\res_i$} (\Mx,\yF);
 \draw[data] (\Fx+\Fw+0.40,\yF) -- (\Fx+\Fw+0.40,0.885) -- (\Fx+\Fw+0.03,0.885);
-\draw[data] (\Fx+\Fw+0.03,0.535) -- node[lbl, below, pos=0.45] {$\resf_i$} (\Mx,0.535);
+\draw[data] (\Fx+\Fw+0.03,0.535) -- node[lbl, below, pos=0.45] {$\hat{\res}_i$} (\Mx,0.535);
 \draw[wire] (\Mx+0.34,1.39) -- (\Px,1.39);
 \draw[data] (\Px,1.39) -- (plus.south);
 %% gate decision
 \draw[ctrl] (\Gx+1.9,0.50) -- (\Gx+1.9,0.10) -- (\Mx+0.17,0.10) -- (\Mx+0.17,0.47);
-\node[lbl, anchor=south west] at (\Gx+1.97,0.10) {$A_i\ge\delta$?};
+\node[lbl, anchor=south west] at (\Gx+1.97,0.10) {$D_i\ge\delta$?};
 
 %% ------------------------------------------------------------------------------------------------ output + Euler
 \node[module, minimum width=0.76cm] (out) at (\Ox,\yS) {$\Out$};

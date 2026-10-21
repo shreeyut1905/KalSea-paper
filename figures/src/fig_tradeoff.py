@@ -125,7 +125,7 @@ def full_width():
     axes[1].set_ylim(0, 0.33)
     axes[2].set_ylim(-0.3, 4.6)
     titles = ["(a) PSNR w.r.t. the 50-step reference", "(b) LPIPS w.r.t. the 50-step reference",
-              "(c) Paired PSNR gain of Ours (95% CI)"]
+              "(c) Paired PSNR gain of Ours (95\% CI)"]
     for ax, t in zip(axes, titles):
         ax.set_title(t, loc="left", fontsize=7.5, pad=4, color=S.INK)
         ax.set_xlabel("NFE (of 50)", labelpad=1.5)
@@ -157,7 +157,7 @@ def one_col():
     ax_g.set_ylim(-0.3, 4.6)
     ax_g.set_ylabel(r"$\Delta$PSNR (dB)", labelpad=2)
     for ax, t in zip((ax_p, ax_l, ax_g), ("(a) PSNR w.r.t. reference", "(b) LPIPS w.r.t. reference",
-                                          "(c) Paired PSNR gain of Ours (95% CI)")):
+                                          "(c) Paired PSNR gain of Ours (95\% CI)")):
         ax.set_title(t, loc="left", fontsize=7.5, pad=4, color=S.INK)
         ax.set_xlabel("NFE (of 50)", labelpad=1.5)
     method_legend(fig, y=1.0)

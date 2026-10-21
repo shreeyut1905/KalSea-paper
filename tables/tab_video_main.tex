@@ -6,7 +6,7 @@
 % replaced before submission. Wan2.1 uses CFG with separately gated cond/uncond passes -- define NFE accordingly.
 \begin{table*}[t]
   \centering
-  \caption{\textbf{Text-to-video results} on HunyuanVideo~\cite{kong2024hunyuanvideo} and Wan2.1 (1.3B)~\cite{wan2025wan}, following the protocol of \seacache~\cite{chung2026seacache}: 944 VBench prompts, 50 sampling steps, PSNR / SSIM / LPIPS against the 50-step output for the same prompt and seed. Methods in a block run at the same budget (\nfe); \seacache, \kalsea and \ours share the \sea gate with $\delta = 0.19$ / $0.35$ (HunyuanVideo) and $\delta = 0.2$ / $0.35$ (Wan2.1). Fewer steps: the same sampler with 25 or 15 steps. \nodata: not yet measured; \tbd: not yet run.}
+  \caption{\textbf{Text-to-video results} on HunyuanVideo~\cite{kong2024hunyuanvideo} and Wan2.1 (1.3B)~\cite{wan2025wan} with the protocol of \seacache~\cite{chung2026seacache} (944 VBench prompts, 50 steps, fidelity to the 50-step output). \seacache, \kalsea and \ours share the \sea gate, $\delta = 0.19$ / $0.35$ (HunyuanVideo) and $0.2$ / $0.35$ (Wan2.1); fewer steps: the same sampler with 25 or 15 steps. \tbd: runs in progress; \nodata: not yet measured.}
   \label{tab:video-main}
   \footnotesize
   \setlength{\tabcolsep}{3.2pt}
