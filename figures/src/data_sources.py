@@ -40,3 +40,16 @@ CALIB_TRAJ = "/home/ubuntu/KalSea-dev/flux_data/calib_data/traj_000.pt"         
 DEV_HALVES = "/home/ubuntu/KalSea-dev/research_v2/techA/halves_core.txt"         # COCO-64 development set, halves A/B
 DEV_ABL = "/home/ubuntu/KalSea-dev/research_v2/ablations/eval/eval_devset.txt"  # COCO-64 development-set ablations
 OPENLOOP = "/home/ubuntu/KalSea-dev/research_v2/techB/diag_summary.txt"         # open-loop forecast error, 6 dev trajectories
+
+# ---------------------------------------------------------------- video (video_stats.py -> data/video_stats.json)
+# 944 VBench prompts, one video per prompt, seed 42, 65 frames, 50 steps. Full-reference metrics (TeaCache convention)
+# and paired bootstrap CIs vs. our same-setup SeaCache re-run, written by video_code/video_metrics.py + fr_report.py.
+# A missing file means "not evaluated yet" (the table prints \tbd).
+VIDEO_FR = {"wan": "/home/ubuntu/video_runs/wan/eval/full/fr_metrics.json",
+            # HunyuanVideo: gate with the sampler's live noise level (option A of paper_plan/hv_gate_fix.md)
+            "hunyuan": "/home/ubuntu/video_runs/hunyuan/eval/full/fr_metrics_live.json"}
+# budget -> (SEA-gate delta, Ours run, SeaCache re-run); "hi" ~ 24 NFE, "lo" ~ 17 (Wan) / 16.4 (HunyuanVideo) NFE
+VIDEO_RUNS = {"wan": {"hi": ("0.2", "ours_0.2", "seacache_0.2"),
+                      "lo": ("0.35", "ours_0.35", "seacache_0.35")},
+              "hunyuan": {"hi": ("0.2575", "ours_live_0.2575", "seacache_live_0.2575"),
+                          "lo": ("0.4637", "ours_live_0.4637", "seacache_live_0.4637")}}

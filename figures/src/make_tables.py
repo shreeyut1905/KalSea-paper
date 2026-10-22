@@ -159,24 +159,74 @@ def tab_flux_main():
     return "\n".join(L)
 
 
-# ---------------------------------------------------------------- Table: video (SeaCache Tables 3/4 structure), all TBD
+# ---------------------------------------------------------------- Table: video (SeaCache Tables 3/4 structure)
+# Published video results of SeaCache (Chung et al., CVPR 2026), Tables 3 (HunyuanVideo) and 4 (Wan2.1 1.3B), copied
+# verbatim ("\dagger" rows; A100 GPUs, their seeds and metric code). Source: KalSea-dev/SeaCache_paper_2602.18993.txt,
+# Tables 3 and 4 (their column order is PSNR, LPIPS, SSIM). Here: (setting, TFLOPs, PSNR, SSIM, LPIPS).
+# NFE-equivalent = 50 * TFLOPs / full-run TFLOPs (14038 HunyuanVideo, 8214 Wan2.1), printed with one decimal.
+# SeaCache has no fewer-steps rows for Wan2.1 ("--").
+SEACACHE_VIDEO_FULL = {"hunyuan": 14038, "wan": 8214}
+SEACACHE_VIDEO = {
+    "hunyuan": {"hi": {"vanilla": ("25 steps", 7019, "19.97", "0.731", "0.263"),
+                       "teacache": (r"$\delta{=}0.12$", 6994, "23.40", "0.805", "0.133"),
+                       "taylorseer": (r"$S{=}2$", 7299, "24.14", "0.820", "0.152"),
+                       "seacache": (r"$\delta{=}0.19$", 6747, "32.39", "0.932", "0.047")},
+                "lo": {"vanilla": ("15 steps", 4211, "17.49", "0.662", "0.371"),
+                       "teacache": (r"$\delta{=}0.2$", 4794, "20.42", "0.734", "0.172"),
+                       "taylorseer": (r"$S{=}3$", 5053, "20.42", "0.733", "0.242"),
+                       "seacache": (r"$\delta{=}0.35$", 4598, "26.46", "0.857", "0.133")}},
+    "wan": {"hi": {"teacache": (r"$\delta{=}0.09$", 4107, "20.84", "0.721", "0.171"),
+                   "taylorseer": (r"$S{=}2$", 4189, "16.15", "0.543", "0.336"),
+                   "seacache": (r"$\delta{=}0.2$", 3942, "26.60", "0.873", "0.075")},
+            "lo": {"teacache": (r"$\delta{=}0.15$", 2957, "18.88", "0.645", "0.245"),
+                   "taylorseer": (r"$S{=}3$", 2956, "14.18", "0.453", "0.455"),
+                   "seacache": (r"$\delta{=}0.35$", 2793, "21.78", "0.740", "0.170")}},
+}
+VIDEO_ROWS = [("vanilla", r"Fewer steps$^\dagger$"), ("teacache", r"TeaCache~\cite{%(teacache)s}$^\dagger$"),
+              ("taylorseer", r"TaylorSeer~\cite{%(taylorseer)s}$^\dagger$"),
+              ("seacache", r"\seacache~\cite{%(seacache)s}$^\dagger$"), ("ours", r"\ours")]
+VIDEO_MODELS = ("hunyuan", "wan")
+
+
 def tab_video_main():
-    rows_block = [("Fewer steps ({n})", None), (rf"TeaCache~\cite{{{CITE['teacache']}}}", None),
-                  (rf"TaylorSeer~\cite{{{CITE['taylorseer']}}}", None), (rf"\seacache~\cite{{{CITE['seacache']}}}", None),
-                  (r"\kalsea (no smoothing)", None), (r"\ours", None)]
-    cells = r"\tbd & \nodata & \nodata & \tbd & \tbd & \tbd"
-    L = [HEADER,
-         "% Video protocol of SeaCache (Tables 3/4): 944 VBench prompts, 50 steps, metrics vs. the 50-step output with the",
-         "% same seed. Budgets: HunyuanVideo delta 0.19 / 0.35, Wan2.1 delta 0.2 / 0.35 (SEA gate, shared by SeaCache, KalSea",
-         "% and Ours); TeaCache / TaylorSeer / fewer-steps rows tuned to the same NFE. NO RESULTS YET: every \\tbd must be",
-         "% replaced before submission. Wan2.1 uses CFG with separately gated cond/uncond passes -- define NFE accordingly.",
+    """Main video table: SeaCache's published Table-3/4 rows (\\dagger) + Ours, HunyuanVideo and Wan2.1 side by side.
+    As for FLUX, our same-setup SeaCache re-run is NOT in this table (text / supplement only). A model without results
+    in data/video_stats.json (video_stats.py) gets \\tbd in the Ours row."""
+    V = json.load(open(os.path.join(HERE, "data", "video_stats.json")))
+    tbd = [m for m in VIDEO_MODELS if not V.get(m)]
+
+    def block_cells(model, b):
+        vals = {k: (50.0 * tf / SEACACHE_VIDEO_FULL[model], float(p), float(s), float(l))
+                for k, (_, tf, p, s, l) in SEACACHE_VIDEO[model][b].items()}
+        if V.get(model):
+            o = V[model][b]["ours"]
+            vals["ours"] = (o["nfe"], o["psnr"], o["ssim"], o["lpips"])
+        cols = {m: bold_best({k: v[1 + j] for k, v in vals.items()}, m, lower_better=lo)
+                for j, (m, lo) in enumerate((("psnr", False), ("ssim", False), ("lpips", True)))}
+        out = {}
+        for key, _ in VIDEO_ROWS:
+            if key in vals:
+                out[key] = [f"{vals[key][0]:.1f}", r"\nodata", r"\nodata", cols["psnr"][key], cols["ssim"][key],
+                            cols["lpips"][key]]
+            elif key == "ours":
+                out[key] = [r"\tbd", r"\nodata", r"\nodata", r"\tbd", r"\tbd", r"\tbd"]
+            else:
+                out[key] = ["--"] * 6
+        return out
+
+    ours_delta ={m: "/".join(V[m][b]["delta"] for b in ("hi", "lo")) if V.get(m) else
+                  ("0.2575/0.4637" if m == "hunyuan" else "0.2/0.35") for m in VIDEO_MODELS}
+    L = [HEADER.replace("flux_drawbench_stats.json", "video_stats.json (video_stats.py)"),
+         "% Rows marked \\dagger: SeaCache's Tables 3/4, NFE = 50 x TFLOPs / full-run TFLOPs (14038 / 8214). Ours: SEA gate,",
+         f"% delta {ours_delta['hunyuan']} (HunyuanVideo, gate reads the live sampler sigma) and {ours_delta['wan']} (Wan2.1).",
+         "% TFLOPs / latency: \\nodata until measured on one machine. Bold: best per model and budget block.",
          r"\begin{table*}[t]",
          r"  \centering",
-         r"  \caption{\textbf{Text-to-video results} on HunyuanVideo~\cite{" + CITE["hunyuanvideo"] + r"} and Wan2.1"
-         r" (1.3B)~\cite{" + CITE["wan"] + r"} with the protocol of \seacache~\cite{" + CITE["seacache"] + r"} (944"
-         r" VBench prompts, 50 steps, fidelity to the 50-step output). \seacache, \kalsea and \ours share the \sea gate,"
-         r" $\delta = 0.19$ / $0.35$ (HunyuanVideo) and $0.2$ / $0.35$ (Wan2.1); fewer steps: the same sampler with 25 or"
-         r" 15 steps. \tbd: runs in progress; \nodata: not yet measured.}",
+         r"  \caption{\textbf{Text-to-video results} (944 VBench prompts, 65 frames, fidelity to the 50-step output)."
+         r" $^\dagger$Published by \seacache~\cite{" + CITE["seacache"] + r"} (its Tables~3 and 4; other GPUs and seeds; its"
+         r" Wan2.1 compute corresponds to 81 frames), \nfe{} $=50\,{\times}\,$TFLOPs$/$TFLOPs of the full run."
+         r" Thresholds and strides of all rows: supplement."
+         + (r" \tbd: runs in progress;" if tbd else "") + r" \nodata: not yet measured.}",
          r"  \label{tab:video-main}",
          r"  \footnotesize",
          r"  \setlength{\tabcolsep}{3.2pt}",
@@ -188,12 +238,15 @@ def tab_video_main():
          r" & \nfe & TFLOPs & Lat.\,(s) & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ \\",
          r"    \midrule",
          r"    Reference (50 steps) & 50 & \nodata & \nodata & -- & -- & -- & 50 & \nodata & \nodata & -- & -- & -- \\"]
-    for title, n in ((r"$\approx$\,50\% budget (HunyuanVideo $\delta{=}0.19$, Wan2.1 $\delta{=}0.2$)", 25),
-                     (r"$\approx$\,30\% budget ($\delta{=}0.35$)", 15)):
+    for b, title in (("hi", r"$\approx$\,50\% budget (24--26 \nfe)"), ("lo", r"$\approx$\,30\% budget (15--18 \nfe)")):
+        cells = {m: block_cells(m, b) for m in VIDEO_MODELS}
         L.append(r"    \midrule")
         L.append(rf"    \multicolumn{{13}}{{@{{}}l}}{{\emph{{{title}}}}} \\")
-        for name, _ in rows_block:
-            L.append(rf"    {name.replace('{n}', str(n))} & {cells} & {cells} \\")
+        for key, lab in VIDEO_ROWS:
+            if key == "ours":
+                L.append(r"    \addlinespace[1pt]")
+            L.append(f"    {lab % CITE} & " + " & ".join(cells["hunyuan"][key]) + " & "
+                     + " & ".join(cells["wan"][key]) + r" \\")
     L += [r"    \bottomrule", r"  \end{tabular}", r"\end{table*}", ""]
     return "\n".join(L)
 
