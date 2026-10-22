@@ -10,7 +10,9 @@ PY="${PY:-$HOME/spectrum_env/rv/bin/python}"
 PYPDF="${PYPDF:-$HOME/.local/share/paper-tools/venv/bin/python}"
 
 "$PY" flux_stats.py                                   # data/flux_drawbench_stats.json
+"$PY" video_stats.py                                  # data/video_stats.json, data/video_supp.json
 "$PY" fig_tradeoff.py                                 # ../fig_tradeoff.{pdf,png}
+"$PY" fig_video_sweep.py                              # ../fig_video_sweep.{pdf,png} (supplementary material)
 "$PY" fig_tradeoff.py --onecol                        # ../fig_tradeoff_1col.{pdf,png}
 "$PY" qual_select.py --delta 0.6 --quantiles 50 75 --k 2 --tag nfe13
 "$PY" qual_select.py --delta 0.6 --quantiles 50 75 --k 1 --tag nfe13_teaser

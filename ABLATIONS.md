@@ -1,6 +1,6 @@
 # Ablation plan, status and results (KalSea + predictor-corrector gap smoothing, CVPR 2027)
 
-Status: 2026-10-21, 12:55 UTC. All FLUX ablations A1-A8, A10-A12 are DONE; A9 (video) is TO RUN after the video ports.
+Status: 2026-10-22. All FLUX ablations A1-A8, A10-A12 are DONE; A9 (video) is DONE (see A9 below and the supplement).
 Paper tables generated from these runs (do not edit numbers by hand; regenerate with
 `research_v2/ablations/make_tables.py`): `tables/tab_ablation_main.tex` (main paper, `\label{tab:ablation}`) and
 `tables/tab_ablation_full.tex` (supplementary, `\label{tab:ablation-full}`). Both are `table*` (full width), booktabs,
@@ -175,19 +175,18 @@ New plugin options live in `research_v2/ablations/pcgs_abl.py` (copy of `techA/p
   `eval_two_budgets_vs_seacache.txt`). Feeds the quality-vs-NFE figure, not the ablation table.
 - **Cost.** 0.
 
-### A9. Video: correction on/off
-- **Question.** Does the correction carry over to video DiTs (HunyuanVideo: flow Euler, direct port; Wan2.1: UniPC
-  multistep + CFG, needs a UniPC replay of the gap)?
-- **Configs.** KalSea vs KalSea + PCGS (and SeaCache) at SeaCache's two deltas: HunyuanVideo 0.19 / 0.35, Wan2.1 1.3B
-  0.2 / 0.35; same gate, matched NFE.
-- **Model / prompts.** HunyuanVideo 480x640x65f and Wan2.1-T2V-1.3B 832x480x81f, 50 steps, seed 42, on a 20-prompt
-  VBench subset (`vbench_subset20.txt`, random with a published seed, as SeaCache's Fig. 8b ablation).
-- **Metric.** PSNR / SSIM / LPIPS vs the 50-step reference video (TeaCache `common_metrics` definitions), paired CIs over
-  the 20 prompts (wide; report them).
-- **Status.** TO RUN after the video ports (forecaster + PCGS hooks in `video_code/*/gen_vbench.py`); references are
-  being generated now.
-- **Cost.** About 4 configurations x 20 videos x 0.3-0.5 reference-equivalents x 45-60 s per model, i.e. about
-  0.5 GPU-h per model (about 5 min wall on 8 GPUs) plus model loading; a 6-delta curve would be about 5 GPU-h.
+### A9. Video ablations (20 prompts) -- DONE 2026-10-22
+- **Question.** Do the corrector findings carry over to video DiTs (HunyuanVideo: flow Euler; Wan2.1: UniPC multistep + CFG
+  with an exact UniPC replay of the gap)?
+- **Protocol.** The 20-prompt pilot subsets of the 944 VBench prompts; HunyuanVideo 480x640x65 (gate on the live sampler
+  noise level, delta 0.2575 / 0.48 = 24 / 16 NFE), Wan2.1-T2V-1.3B 832x480x65 (delta 0.2 / 0.35 = 24 / 17 NFE); 50 steps,
+  seed 42; PSNR / SSIM / LPIPS vs the 50-step reference with paired CIs over the 20 prompts.
+- **Configs.** Every variant is a difference to Ours at the same gate and NFE: linear-interpolation gains, no latent
+  re-integration (state only), reuse + PCGS, linear extrapolation with and without PCGS, a budget sweep (SeaCache vs Ours,
+  about 10-30 NFE), and the HunyuanVideo released vs corrected gate (full 944-prompt runs). No correction-on/off ablation
+  for video (owner decision; shown on FLUX).
+- **Results.** Supplement (video ablation table, budget-sweep figure, gate table); data in
+  `figures/src/data/video_supp.json`.
 
 ### A10. Allocation instead of correction (negative result, development set only)
 - **Question.** Could the innovation be used to decide *when* to compute (error-controlled gate) instead of correcting
@@ -348,10 +347,7 @@ GPU through the techA bench2 harness (`tests/gpu_tests.json`, 2 COCO development
 
 ## Still to run / open items
 
-1. **A9 video ablation** (correction on/off, HunyuanVideo and Wan2.1, 20-prompt VBench subset, SeaCache's deltas
-   0.19 / 0.35 and 0.2 / 0.35). Blocked on the video ports (KalSea forecaster + correction hooks in
-   `video_code/*/gen_vbench.py`; Wan needs a UniPC replay of the gap instead of Euler). About 1 GPU-h for both models once
-   the ports exist; the references are being generated now.
+1. **A9 video ablation:** done (see A9).
 2. **Latency / TFLOPs** of every row are deliberately not in the ablation tables (owner rule: those columns stay blank in
    the main tables for now). Measured development-set overhead of the correction: +1.4-1.7% latency, about 3.4 GFLOP per
    skipped step (`research_v2/techA/RESULT.md`); a dedicated same-session timing run should re-measure exact vs batched

@@ -140,7 +140,49 @@ def qualitative(tag, name, label, main=True, positions=None):
           rf"\input{{figures/{name}_caption}}\end{{figure*}}")
 
 
+def video_sweep():
+    """Supplementary figure fig_video_sweep (fig_video_sweep.py): numbers from data/video_supp.json."""
+    VS = json.load(open(os.path.join(HERE, "data", "video_supp.json")))
+    A = VS["ablations"]["models"]
+    sw = {m: sorted(A[m]["sweep"], key=lambda s: s["nfe_ours"]) for m in A}
+    n = {m: A[m]["n_prompts"] for m in A}
+    assert len(set(n.values())) == 1
+    deltas = {m: ", ".join(f"{s['delta']:g}" for s in sorted(sw[m], key=lambda s: s["delta"])) for m in sw}
+    g = lambda s: s["ours_minus_seacache"]["psnr"]
+    # HunyuanVideo: every gain significant (checked); Wan2.1: sign / significance per budget, from the data
+    assert all(g(s)["ci95"][0] > 0 for s in sw["hunyuan"]), "the caption assumes significant gains at every HV budget"
+    hv_lo, hv_hi = sw["hunyuan"][0], sw["hunyuan"][-1]
+    w = sorted(sw["wan"], key=lambda s: -s["nfe_ours"])
+    pos = [s for s in w if g(s)["ci95"][0] > 0]
+    ns = [s for s in w if g(s)["ci95"][0] <= 0 <= g(s)["ci95"][1]]
+    neg = [s for s in w if g(s)["ci95"][1] < 0]
+    assert pos and neg and len(pos) + len(ns) + len(neg) == len(w)
+    lab = lambda x: f"{x:.0f}" if abs(x - round(x)) <= 0.06 else f"{x:.1f}"   # 20-prompt means such as 24.05 -> 24
+    lst = lambda xs: " and ".join(lab(s["nfe_ours"]) for s in xs)
+    same = {m: min(s["n_identical_schedules"] for s in sw[m]) for m in sw}
+    body = (
+        r"\caption{\textbf{Budget sweep on video} (" + str(n["hunyuan"]) + r" VBench prompts per model, those of"
+        r" \cref{tab:supp-video-abl}; HunyuanVideo with the corrected gate). \textbf{(a, c)}~PSNR w.r.t.\ the 50-step"
+        r" reference vs.\ \nfe for our same-setup re-run of \seacache and for \ours, which share the \sea gate and its"
+        rf" threshold (HunyuanVideo $\delta\in\{{{deltas['hunyuan']}\}}$, Wan2.1 $\delta\in\{{{deltas['wan']}\}}$);"
+        r" lines: means, shaded: 95\% bootstrap CIs. \textbf{(b, d)}~Paired PSNR gain of \ours over \seacache (mean,"
+        r" 95\% CI); gray bands: the budgets of the main paper's \maincref{tab:video-main}. On HunyuanVideo, \ours is"
+        rf" better at every budget ({ci(g(hv_lo))} at {lab(hv_lo['nfe_ours'])} \nfe, {ci(g(hv_hi))} at"
+        rf" {lab(hv_hi['nfe_ours'])}). On Wan2.1 the gain shrinks with the budget: it is significant at {lst(pos)}"
+        rf" \nfe, not significant at {lst(ns)} \nfe, and negative at "
+        + " and ".join(f"{lab(s['nfe_ours'])} \\nfe ({ci(g(s))})" for s in neg)
+        + r". Both methods computed the same steps on at least "
+        + rf"{same['hunyuan']} (HunyuanVideo) and {same['wan']} (Wan2.1) of the {n['hunyuan']} prompts at every"
+        r" threshold.}" "\n" r"\label{fig:video-sweep}")
+    write("fig_video_sweep", body, r"\begin{figure}[t]\centering\includegraphics[width=\columnwidth]"
+          r"{figures/fig_video_sweep.pdf}\input{figures/fig_video_sweep_caption}\end{figure}   (supplement)")
+
+
 if __name__ == "__main__":
+    import sys
+    video_sweep()
+    if sys.argv[1:] == ["--video"]:      # supplementary video figure only
+        sys.exit(0)
     tradeoff()
     qualitative("nfe13", "fig_qualitative", "fig:qualitative", main=True)
     teaser("nfe13_teaser", "fig_qualitative_teaser", "fig:teaser")

@@ -1,19 +1,22 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-Caching fillers for diffusion transformers are open loop: the errors of skipped steps are integrated into the latent
-and never corrected. \pcgs closes this loop at no cost in network evaluations: once the next step is computed, it
-estimates the residuals of the skipped gap with the RTS smoother of the forecaster's own state-space model and
-re-integrates the gap through the output layers. With the \sea gate and a Kalman residual forecaster, it improves
-fidelity to the 50-step sampler at every budget we tested on \flux. The benefit lies in the re-integration itself: a
-linear interpolation of the residual across the gap works as well as the RTS gains, and the correction also repairs
-reuse and linear extrapolation. Video: \tbd. Promising directions are to choose the computed steps jointly
+Caching fillers for diffusion transformers are open loop. \pcgs closes this loop at no cost in network evaluations: once
+the next step is computed, it estimates the residuals of the skipped gap with the RTS smoother of the forecaster's own
+state-space model and re-integrates the gap through the output layers. With the \sea gate and a Kalman residual
+forecaster, it improves fidelity to the 50-step sampler at every budget we tested on \flux, and the gains carry over to
+HunyuanVideo and Wan2.1. The
+benefit lies in the re-integration itself: a linear interpolation across the gap works as well as the RTS gains, and
+the correction also repairs reuse and linear extrapolation. Promising directions are to choose the computed steps jointly
 with the corrector and to correct caches that operate on features inside the block stack.
 
 \paragraph{Limitations.}
 Matched \nfe is not matched latency: \pcgs adds output-layer evaluations (about 0.3\% of one transformer evaluation per
 image) and 0.02\,GiB of memory over \kalsea, and the filter adds elementwise work on every step. Our metrics measure
-fidelity to the 50-step sampler, the goal of a cache, not sample quality. Runs are not bitwise reproducible (up to
-0.04\,dB between two runs). Our image results cover a single model. At a computed step, \pcgs attaches the residual
+fidelity to the 50-step sampler, the goal of a cache, not sample quality. Our image results cover a single model.
+% Wan2.1: full set +0.33 dB [0.16, 0.49] at 17 NFE (fr_metrics.json); 20-prompt sweep -1.69 dB [-2.37, -1.07] at 10 NFE
+% (supplement, fig_video_sweep; paper_plan/video_ablations_20.json).
+On Wan2.1, the same-setup PSNR gain is only 0.33\,dB at 17 \nfe and negative at 10 \nfe on 20 prompts (supplement). At a computed
+step, \pcgs attaches the residual
 evaluated at the uncorrected latent to the corrected one, an approximation that is accurate only for small
 corrections; at the smallest budget, with gaps of up to twelve steps, its gain is modest (0.31\,dB at 9 \nfe).

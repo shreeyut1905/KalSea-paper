@@ -3,14 +3,18 @@
 %% Number sources: tables/supp_*.tex and tables/supp_numbers.tex (figures/src/make_supp_tables.py: eval2 per-image
 %% metrics of the DrawBench runs, run stats, FLUX calibration json, development-set eval texts, open-loop diagnostic);
 %% tables/tab_ablation_full.tex (research_v2/ablations/make_tables.py, eval_all.json); tables/tab_ablation_2x2.tex and
-%% tables/tab_flux_sweep.tex (figures/src/make_tables.py). Numbers quoted in the text come from the same files; the
-%% sources of the others are given in comments next to them. \tbd: results of runs in progress (video, TFLOPs/latency).
+%% tables/tab_flux_sweep.tex (figures/src/make_tables.py); video: tables/supp_video_*.tex, the video macros of
+%% tables/supp_numbers.tex and figures/fig_video_sweep* (figures/src/video_stats.py -> data/video_supp.json,
+%% make_supp_tables.py, fig_video_sweep.py, make_captions.py). Numbers quoted in the text come from the same files (macros
+%% \supp...); the sources of the others are given in comments next to them. \tbd: TFLOPs/latency (not yet measured) and
+%% the video frames of the qualitative section.
 
 \noindent This supplement gives implementation details (\cref{supp:impl}), the derivation of the gap smoother
 (\cref{supp:smoother}), the evaluation protocol, including the comparison with published results
 (\cref{supp:protocol}), additional results on \flux, including more qualitative examples (\cref{supp:results}),
 results on the development set (\cref{supp:devset}), approaches that did not help (\cref{supp:negative}), the video
-protocol (\cref{supp:video}) and cost measurements (\cref{supp:cost}). Sections, tables,
+experiments: protocol, gate correction, budgets, same-setup comparisons, ablations and budget sweep
+(\cref{supp:video}), and cost measurements (\cref{supp:cost}). Sections, tables,
 figures and equations of this document are numbered A, B, \dots\ and S1, S2, \dots; plain numbers refer to the main
 paper.
 
@@ -257,10 +261,10 @@ confidence intervals, and with our re-run with paired intervals (\cref{tab:supp-
 \paragraph{Matched schedules.}
 Within one threshold, all our caches use the same \sea gate, but the gate is closed loop: its decisions depend on the
 latent and hence on the filler. \cref{tab:supp-steps} counts the prompts on which two or three caches computed exactly
-the same set of steps. At the thresholds of the main comparisons ($\delta=0.3$, $0.37$, $0.6$), any two of \seacache,
-\kalsea and \ours share the schedule on 183 to 196 of the 200 prompts, and the per-prompt \nfe never differs by more than
-one. All ablation runs of \cref{tab:ablation-full} are within 0.06 \nfe of \ours at $\delta=0.3$ and at exactly 13.00
-\nfe at $\delta=0.6$.
+the same set of steps. At the thresholds of the main comparisons, \seacache, \kalsea and \ours computed the same steps on
+\suppSameThreeA, \suppSameThreeC{} and \suppSameThreeB{} of the 200 prompts ($\delta=0.37$, $0.3$ and $0.6$), any two of
+them on 183 to 196, and the per-prompt \nfe never differs by more than \suppSameThreeMaxDnfe. All ablation runs of
+\cref{tab:ablation-full} are within 0.06 \nfe of \ours at $\delta=0.3$ and at exactly 13.00 \nfe at $\delta=0.6$.
 
 \input{tables/supp_steps}
 
@@ -277,13 +281,14 @@ prompts.
 \paragraph{Reproducibility.}
 The DCT filter accumulates its band statistics with atomic additions on the GPU (scatter-add), so two runs of the same
 configuration are not bitwise identical; with deterministic algorithms enforced they are. On DrawBench, a second run
-of \ours differs by $+$0.02\,dB [$-$0.04, 0.08] at $\delta=0.3$ and $+$0.04\,dB [$-$0.003, 0.10] at $\delta=0.6$
+of \ours differs by \suppOursRerunA{} at $\delta=0.3$ and \suppOursRerunB{} at $\delta=0.6$
 (\cref{tab:ablation-full}, caption), and two independent runs of \kalsea differ by \suppKalRerunA{} at $\delta=0.37$ and
 \suppKalRerunB{} at $\delta=0.6$, with identical computed steps on \suppKalRerunSameA/200 and \suppKalRerunSameB/200 prompts (the main paper's \maincref{tab:flux-main} uses one of these runs, the $2{\times}2$ ablation of
 \cref{tab:ablation-2x2} the other). On the development set, a same-session re-run of \kalsea differs by $-$0.05 and
 $+$0.03\,dB (\cref{tab:supp-devset}). We therefore do not interpret differences below 0.1\,dB. The per-element filter,
 reuse and the uncached reference regenerated bit-identical images on all 64 development prompts; for video, the
-filter updates run with deterministic algorithms (\cref{supp:video}).
+filter updates run with deterministic algorithms, and re-generated videos are bit-identical
+(\cref{supp:video-repro}).
 % provenance: research_v2/harness/bench2.py docstring ("VERIFIED FACTS"): DCT KalSea not run-to-run reproducible,
 % bitwise with torch.use_deterministic_algorithms(True); per-element KalSea, reuse, reference 64/64 bit-identical.
 
@@ -303,18 +308,33 @@ reaches 29.62\,dB, 2.73\,dB [2.34, 3.12] above our re-run of \seacache (26.89\,d
 
 \paragraph{Ablations.}
 \cref{tab:ablation-full} extends the main paper's \maincref{tab:ablation} with all metrics, the continuation variants
-(group (c)), the forecasters without correction (group (d)) and the forecasting targets (group (f)).
-\cref{tab:ablation-2x2} crosses the two forecaster parametrizations with \pcgs at the budgets of
-\maincref{tab:flux-main}.
+(group (c)), the forecasters without correction (group (d)) and the forecasting targets (group (f)). Re-embedding the
+corrected latents matters at the larger budget: the batched re-integration on the stored inputs $\hin_i$ loses
+\suppBatchedLossA{} at 20.8 \nfe and \suppBatchedLossB{} at 13 \nfe. \cref{tab:ablation-2x2} crosses the two
+forecaster parametrizations with \pcgs at the budgets of \maincref{tab:flux-main}.
 
 \maybeinput{tables/tab_ablation_full}
 \maybeinput{tables/tab_ablation_2x2}
 
+\paragraph{\pcgs on other predictors.}
+\cref{tab:supp-fillers} isolates the gain of \pcgs for each predictor at matched \nfe. It improves reuse by
+\suppGainReuseA{} and \suppGainReuseB{}, and linear extrapolation by \suppGainLinextA{} and \suppGainLinextB{}, at 20.8
+and 13 \nfe, more than the Kalman forecasters. With \pcgs, linear extrapolation ties \ours, while reuse
+stays below it (\cref{tab:ablation-full}, group (e)), so a forecasting predictor remains useful.
+
+\input{tables/supp_fillers}
+
 \paragraph{Budget sweep.}
 \cref{tab:flux-sweep} is the table view of the main paper's \maincref{fig:tradeoff}: seven thresholds from 27 to 9 \nfe,
-with the paired gains of \ours over our re-run of \seacache and over \kalsea.
+with the paired gains of \ours over our re-run of \seacache and over \kalsea. \cref{tab:supp-sweep-open} adds the
+forecasts without correction. As the open-loop argument predicts, the gain of the Kalman forecast over reuse falls from
+\suppKalVsReuseMax{} at \suppKalVsReuseMaxNfe{} \nfe to \suppKalVsReuseNext{} at \suppLinBelowReuseNfeB{} \nfe and
+\suppKalVsReuseMin{} at \suppKalVsReuseMinNfe{} \nfe, and linear extrapolation falls below reuse, by
+\suppLinBelowReuseB{} and \suppLinBelowReuseA\,dB at \suppLinBelowReuseNfeB{} and \suppLinBelowReuseNfeA{} \nfe, as
+forecast errors accumulate over long gaps.
 
 \maybeinput{tables/tab_flux_sweep}
+\input{tables/supp_sweep_open}
 
 \paragraph{Size of the correction.}
 \cref{tab:supp-correction} reports the relative latent correction $\|\lat'_b-\lat_b\|/\|\lat_b\|$ that \pcgs applies at
@@ -336,7 +356,7 @@ seventh for the residual forecasts of \kalsea.
 \label{supp:qualitative}
 \cref{fig:qualitative-supp-nfe13,fig:qualitative-supp-nfe21} extend the main paper's \maincref{fig:teaser} to the lower
 quartile, the median and the upper quartile of the per-prompt PSNR gain of \ours over \seacache (our re-run of its
-released gate with reuse) at 13 and 20.8 \nfe, with the same fixed selection rule. Video frames: \tbd.
+released gate with reuse) at 13 and 20.8 \nfe, with the same fixed selection rule.
 
 \begin{figure*}[t]
   \centering
@@ -361,9 +381,11 @@ second half (B, 32--63). The development set used the thresholds $\delta=0.37$ (
 \cref{tab:supp-devset} gives the gains of \pcgs for both forecasters and for reuse on both halves;
 \cref{tab:supp-devabl} the development-set ablations. On this set, the per-element filter with \pcgs was the best
 configuration at 18 \nfe (27.94 vs.\ 27.58\,dB for the DCT filter with \pcgs); on DrawBench the two are tied
-(\cref{tab:ablation-2x2}). The RTS gains and the linear interpolation were tied on the development set, which is where
-we chose the RTS gains; on DrawBench the interpolation is better by 0.14\,dB at 20.8 \nfe (main paper,
-\maincref{sec:ablations}), and we did not change the method based on the test set.
+(\cref{tab:ablation-2x2}). The RTS gains and the linear interpolation were tied on the development set for the
+per-element filter (interpolation minus RTS: \suppDevLinA{} at 18 \nfe and \suppDevLinB{} at 13 \nfe,
+\cref{tab:supp-devabl}), which is where we chose the RTS gains; on DrawBench the interpolation is better by 0.14\,dB at
+20.8 \nfe and tied at 13 \nfe (main paper, \maincref{sec:ablations}), and we did not change the method based on the
+test set.
 
 \input{tables/supp_devset}
 \input{tables/supp_devabl}
@@ -405,34 +427,48 @@ to compute is thus a separate question; all methods in this paper share \seacach
 %% ====================================================================================================================
 \section{Video generation}
 \label{supp:video}
+% Numbers: tables/supp_video_*.tex and the \suppVid... macros of tables/supp_numbers.tex, generated by figures/src
+% (video_stats.py: full-set evaluations eval/full/fr_metrics*.json of both models, per-video stats of the run folders,
+% paper_plan/video_ablations_20.json; make_supp_tables.py; fig_video_sweep.py and make_captions.py for the figure).
+
+\subsection{Protocol and implementation}
+\label{supp:video-protocol}
+
+\begin{figure}[t]
+  \centering
+  \maybegraphics[width=\columnwidth]{figures/fig_video_sweep.pdf}
+  \input{figures/fig_video_sweep_caption}
+\end{figure}
 
 \paragraph{Protocol.}
 We follow the video protocol of \seacache~\cite{chung2026seacache}: the 944 unique prompts of VBench's full prompt
 list~\cite{huang2024vbench} (946 lines with two duplicates), one video per prompt, seed 42 for every prompt and method,
-50 sampling steps, and fidelity to the uncached 50-step video of the same prompt.
+50 sampling steps, and fidelity to the uncached 50-step video of the same prompt and seed.
 \begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
   \item HunyuanVideo~\cite{kong2024hunyuanvideo} (official code): $480{\times}640$, 65 frames, Euler flow sampler with
   shift 7 and reversed flow, embedded guidance 6, a single (guidance-distilled) pass per step, bf16; videos saved at
-  24\,fps. \seacache thresholds $\delta=0.19$ and $0.35$.
-  \item Wan2.1-T2V-1.3B~\cite{wan2025wan} (official code): $832{\times}480$, 65 frames (the frame count stated in
-  \seacache's text; its Wan2.1 TFLOPs and latencies are consistent with 81 frames), UniPC~\cite{zhao2023unipc} with
-  shift 5, classifier-free guidance~\cite{ho2022cfg} with scale 5 and the default negative prompt, bf16. \seacache
-  thresholds $\delta=0.2$ and $0.35$.
+  24\,fps.
+  \item Wan2.1-T2V-1.3B~\cite{wan2025wan} (official code): $832{\times}480$, 65 frames, UniPC~\cite{zhao2023unipc} with
+  shift 5, classifier-free guidance~\cite{ho2022cfg} with scale 5 and the default negative prompt, bf16; 16\,fps.
+  \seacache's text states 65 frames for both models, but its Wan2.1 compute corresponds to 81 frames: its 8214 TFLOPs
+  for 50 steps (164.3 per step) match the linear-layer FLOPs of this model at $832{\times}480$ and 81 frames (164.2 per
+  step, both guidance passes), whereas 65 frames give 133.0. Its published Wan2.1 results may thus come from 81-frame
+  videos; we use the 65 frames of its text.
+  % provenance: paper_plan/seacache_protocol_from_paper.md, Sec. 4.3 (FLOP convention that reproduces SeaCache's FLUX
+  % TFLOPs: 2 x MACs of the linear layers; checks in paper_plan/seacache_protocol_checks.py).
   \item Gate: the official \sea gate of each model ($\beta=3$, filter over frames, height and width), first and last
-  step forced, thresholds passed as parameters. With these settings our \seacache path reproduces the outputs of
-  \seacache's released scripts bit for bit on our test prompts (both models).
-  \item \nfe: full transformer evaluations, counted by block hooks; for Wan2.1, the conditional and unconditional passes
-  are gated separately, and \nfe is their mean (full-step equivalents).
-  \item Metrics: PSNR, SSIM and LPIPS on the decoded MP4 frames with the definitions of TeaCache's video metric
-  code~\cite{liu2025teacache}, and the 16 VBench dimensions.
+  step always computed, thresholds passed as parameters. With the gate as released, our \seacache path reproduces the
+  outputs of \seacache's released scripts bit for bit on our test prompts (both models). On HunyuanVideo, every gated
+  method reads the sampler's noise level (\cref{supp:video-gate}).
+  \item \nfe: full transformer evaluations per video, counted by forward hooks on every block and checked against the
+  gate's record (no mismatch in any video). On Wan2.1, the conditional and unconditional passes keep separate gate
+  accumulators, but their gate distances were identical in every video, so both passes computed the same steps; a
+  computed step runs both passes and counts once.
+  \item Metrics: PSNR, SSIM and LPIPS on the decoded MP4 frames, as in TeaCache's video metric
+  code~\cite{liu2025teacache}: PSNR on 8-bit RGB per frame (capped at 100\,dB), SSIM with an $11{\times}11$ Gaussian
+  window ($\sigma=1.5$) averaged over the RGB channels, and LPIPS with AlexNet features on inputs in $[-1,1]$; frames
+  are averaged per video, then videos. Paired 95\% bootstrap intervals over videos (10{,}000 resamples, seed 0).
 \end{itemize}
-
-\paragraph{HunyuanVideo gate as released.}
-The released \seacache script for HunyuanVideo binds the scheduler that exists when the model is loaded (noise levels
-from 1 to 0 in steps of $1/1000$) to the gate, while sampling creates a new scheduler with the shifted 50-step
-schedule. Its \sea filter therefore uses $\sigma=1-i/1000$ at step $i$ instead of the sampling schedule. Because
-\seacache's thresholds were set with this behavior, we keep it for all gated methods (\seacache, \kalsea, \ours); the
-re-integration of \pcgs uses the actual sampling schedule.
 
 \paragraph{Ports of the forecaster and of \pcgs.}
 Both models use the calibration-free per-element filter (\cref{supp:variants}), one filter per guidance branch (one for
@@ -449,10 +485,112 @@ the corrected outputs bitwise.
 % provenance: video_logs/wan_cache_tests/real65_check.txt, unipc_replay_rerun.txt; video_logs/hv_cache_test_real.json
 % (kalsea_pcgs_identity_0.35 == kalsea_0.35), hv_cache_test2/compare.jsonl; video_code/*/cache_methods.py docstrings.
 
-\paragraph{Results.}
-Video results are pending (runs in progress): the full 944-prompt comparison (main paper, \maincref{tab:video-main})
-\tbd; the 16 VBench dimensions per method and budget \tbd; \pcgs on/off at matched \nfe on a 20-prompt VBench subset
-with paired intervals \tbd.
+\subsection{HunyuanVideo gate}
+\label{supp:video-gate}
+The released \seacache script for HunyuanVideo binds the scheduler that exists when the model is loaded (noise levels
+from 1 to 0 in steps of $1/1000$) to the gate, while sampling creates a new scheduler with the shifted 50-step
+schedule. Its \sea filter therefore uses $\sigma=1-i/1000$ at step $i$, a noise level near one at every step, instead
+of the sampling schedule. This matters most at step~1, whose gate distance is \suppVidDOneRel{} over the
+\suppVidStepN{} prompts with the stale noise level and \suppVidDOneLive{} with the sampler's. With the released gate,
+step~1 is thus skipped on most prompts once $\delta\gtrsim0.21$: on \suppVidSkipAtPub{} prompts at \seacache's
+published $\delta=0.19$, on \suppVidSkipAtTwoOne{} at $\delta=0.21$ and on all of them above \suppVidDOneRelMax.
+Skipping it is
+costly: at $\delta=\suppVidStepDelta$ (\suppVidRelHiNfe{} \nfe), the \suppVidStepSkip{} prompts that skip step~1 score
+\suppVidStepCostSea\,dB (\seacache) and \suppVidStepCostOurs\,dB (\ours) below the others, and the corrected gate raises
+their PSNR by \suppVidStepFixSea{} and \suppVidStepFixOurs\,dB at the same budget (others: \suppVidStepFixSeaComp{} and
+\suppVidStepFixOursComp\,dB). We therefore let the gate of every gated method (\seacache, \ours and all ablations) read
+the noise levels of the sampling schedule; at step~0 of each of the \suppVidLiveCheckN{} videos of the main comparison,
+we checked that the gate's noise levels equal the sampler's. The re-integration of \pcgs always uses the sampling
+schedule. \cref{tab:supp-video-gate} compares the two gates on all prompts at matched \nfe: the correction raises the
+PSNR of both methods by several dB, and \ours improves on \seacache with either gate, more with the corrected one.
+
+\input{tables/supp_video_gate}
+
+\subsection{Budgets and thresholds}
+\label{supp:video-budgets}
+\cref{tab:supp-video-settings} lists the threshold or stride of every row of the main paper's \maincref{tab:video-main}.
+We match \nfe, not thresholds: \seacache reports TFLOPs, which we convert to \nfe, and the threshold that reaches a given
+\nfe depends on the setup.
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+  \item Wan2.1: \seacache's thresholds $\delta=0.2$ and $0.35$ compute 24.0 and 17.0 steps per video in our setup, the
+  \nfe implied by its TFLOPs.
+  \item HunyuanVideo, released gate (\cref{tab:supp-video-gate} only): \seacache's $\delta=0.19$ computes
+  \suppVidPubDeltaNfe{} steps on our \suppVidPubDeltaN{} pilot prompts, more than the \suppVidPubHiNfe{} implied by its
+  TFLOPs, so we use $\delta=\suppVidRelHiDelta$ (\suppVidRelHiNfe{} \nfe) and its $\delta=\suppVidRelLoDelta$
+  (\suppVidRelLoNfe{} \nfe; published: \suppVidPubLoNfe).
+  \item HunyuanVideo, corrected gate: the gate distances change, so we set new thresholds by replaying the gate on the
+  distances recorded in a corrected-gate run of \seacache on the 20 pilot prompts: $\delta=0.2575$, the middle of the
+  range that gives 24.0 \nfe, and $\delta=\suppVidFirstLoDelta$ for 16.4. On all prompts, $\delta=0.2575$ gives 24.0
+  \nfe, but $\delta=\suppVidFirstLoDelta$ gives \suppVidFirstLoNfe, more than \seacache's 16.4. We therefore ran both
+  methods again at $\delta=0.48$, which computes exactly 16 steps for every prompt, and report these runs. At
+  $\delta=\suppVidFirstLoDelta$ (\cref{tab:supp-video-samesetup}, bottom), with more compute than published, our re-run
+  of \seacache reaches \suppVidFirstLoSea\,dB, still below the published \suppVidPubLo\,dB, and \ours improves on it by
+  \suppVidFirstLoGain.
+\end{itemize}
+
+\input{tables/supp_video_settings}
+
+\subsection{Same-setup comparisons}
+\label{supp:video-samesetup}
+\cref{tab:supp-video-samesetup} compares \ours with our re-run of \seacache on all prompts, with the same code, seeds,
+GPUs and gate. On HunyuanVideo, \ours improves PSNR by \suppVidGainHA{} and \suppVidGainHB{} at 24 and 16 \nfe, on
+\suppVidWinHA\% and \suppVidWinHB\% of the videos, with better SSIM and LPIPS. On Wan2.1, it improves PSNR by
+\suppVidGainWA{} at 24 \nfe (\suppVidWinWA\% of the videos) but only by \suppVidGainWB{} at 17 \nfe, where it has the
+higher PSNR on \suppVidWinWB\% of the videos; SSIM and LPIPS improve on \suppVidWinSsimWB\% and \suppVidWinLpipsWB\% of
+them. The two methods computed the same steps on \suppVidSameHA{} (24 \nfe) and \suppVidSameHB{} (16 \nfe) of the 944
+HunyuanVideo prompts and on \suppVidSameWA{} (24 \nfe) and \suppVidSameWB{} (17 \nfe) of the Wan2.1 prompts, and the
+per-video \nfe never differs by more than one.
+
+\input{tables/supp_video_samesetup}
+
+\subsection{Ablations and budget sweep}
+\label{supp:video-abl}
+
+\paragraph{Ablations.}
+On 20 prompts per model, drawn at random (stratified by VBench dimension) for our pilot runs before the full runs, we
+repeat the ablations of the main paper's \maincref{tab:ablation} that concern the corrector and the predictor
+(\cref{tab:supp-video-abl}). All variants share the gate, threshold and \nfe of \ours. These prompts are not held out:
+the pilot runs used them, and on HunyuanVideo they also set the corrected-gate thresholds. On HunyuanVideo the results
+agree with \flux; on Wan2.1 they are weaker:
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+  \item The shape of the gains hardly matters: linear interpolation from $\res_a$ to $\res_b$ instead of the RTS gains
+  changes PSNR by \suppVidAblLinHA{} and \suppVidAblLinHB{} on HunyuanVideo and by \suppVidAblLinWA{} and
+  \suppVidAblLinWB{} on Wan2.1.
+  \item The gain comes from re-integrating the gap: feeding the smoothed residuals only into the filter state changes
+  PSNR by \suppVidAblStateHA{} and \suppVidAblStateHB{} on HunyuanVideo; on Wan2.1 the difference is small
+  (\suppVidAblStateWA{} and \suppVidAblStateWB).
+  \item \pcgs is not tied to the Kalman forecaster: it improves reuse on both models at both budgets (HunyuanVideo:
+  \suppVidAblGainReuseHA{} and \suppVidAblGainReuseHB; Wan2.1: \suppVidAblGainReuseWA{} and \suppVidAblGainReuseWB),
+  and linear extrapolation on HunyuanVideo (\suppVidAblGainLinextHA{} and \suppVidAblGainLinextHB) but not
+  significantly on Wan2.1 (\suppVidAblGainLinextWA{} and \suppVidAblGainLinextWB).
+  \item On Wan2.1 at 17 \nfe, the predictor is the weak part: on these prompts, \ours differs from \seacache by
+  \suppVidAblOursSeaWB{} (on all 944 prompts: $+$\suppVidGainWB), whereas reuse with \pcgs exceeds \ours by
+  \suppVidAblReusePcgsWB.
+\end{itemize}
+
+\input{tables/supp_video_abl}
+
+\paragraph{Budget sweep.}
+\cref{fig:video-sweep} extends the comparison with \seacache to five budgets per model on the same 20 prompts. The three
+thresholds per model added to those of \maincref{tab:video-main} target 10, 20 and 30 \nfe and were fixed before these
+runs: on a grid of step 0.005, among the thresholds whose replayed mean \nfe is within one of the target, we chose the one
+at which the replayed schedules of the two methods agree on the most prompts for every threshold within $\pm1\%$. On
+HunyuanVideo, \ours is better at every budget, by \suppVidSweepLowGainH{} at \suppVidSweepLowNfeH{} \nfe and
+\suppVidSweepHighGainH{} at \suppVidSweepHighNfeH. On Wan2.1, its gain shrinks with the budget, and at
+\suppVidSweepLowNfeW{} \nfe \ours is \suppVidSweepLowGainW{} relative to \seacache. Together with the ablation at 17
+\nfe, where reuse with \pcgs is better than \ours, this suggests that on Wan2.1 at small budgets the Kalman forecast
+of the two guidance branches, not the correction, limits \ours.
+% provenance of the threshold rule: paper_plan/video_ablations_20.json, provenance.sweep_delta_selection (rule fixed
+% before the sweep runs; select_sweep_deltas.py).
+
+\subsection{Reproducibility}
+\label{supp:video-repro}
+The video runs are deterministic. For \suppVidDetRuns{} configurations of both models, the full runs regenerated the 20
+prompts of an earlier pilot run and reproduced its videos bit for bit (\suppVidDetVideos{} videos: MP4 files, decoded
+frames and computed steps), in part after code changes in between. After the ablation options were added to the code,
+the configurations of the main comparison (\seacache and \ours at both budgets of both models, one prompt each,
+\suppVidDetAfter{} videos) again reproduced the videos of the full runs bit for bit. Differences between video methods
+are therefore not run-to-run noise; their intervals reflect the variability over prompts only.
 
 %% ====================================================================================================================
 \section{TFLOPs and latency}

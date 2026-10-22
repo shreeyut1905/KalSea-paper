@@ -123,7 +123,7 @@ def tab_flux_main():
          r"\begin{table}[t]",
          r"  \centering",
          r"  \caption{\textbf{Text-to-image results on \flux} (DrawBench, 200 held-out prompts)."
-         r" $^\dagger$Published by \seacache~\cite{" + CITE["seacache"] + r"} (its Table~1; other hardware, seeds and possibly metric code);"
+         r" $^\dagger$Published by \seacache~\cite{" + CITE["seacache"] + r"} (its Table~1; other hardware; seeds and metric code not stated);"
          r" \nfe{} $=50\,{\times}\,$TFLOPs$/2976$, a FLOP equivalent for $\Delta$-DiT and ToCa."
          r" $^\ddagger$The two rows appear swapped there. \seacache's released gate computes 20.9 steps at $\delta{=}0.3$ in"
          r" our setup, not 18.4, so we match \nfe rather than $\delta$ ($\delta{=}0.3$: \cref{tab:ablation}, supplement)."
@@ -184,21 +184,29 @@ SEACACHE_VIDEO = {
 }
 VIDEO_ROWS = [("vanilla", r"Fewer steps$^\dagger$"), ("teacache", r"TeaCache~\cite{%(teacache)s}$^\dagger$"),
               ("taylorseer", r"TaylorSeer~\cite{%(taylorseer)s}$^\dagger$"),
-              ("seacache", r"\seacache~\cite{%(seacache)s}$^\dagger$"), ("ours", r"\ours")]
+              ("seacache", r"\seacache~\cite{%(seacache)s}"), ("ours", r"\ours")]
 VIDEO_MODELS = ("hunyuan", "wan")
+# Models whose SeaCache cells are our same-setup re-run (marked \S) instead of the published numbers (\dagger): on
+# HunyuanVideo the published 16.4-NFE result is not reproducible with the released code (owner decision 2026-10-22).
+SEACACHE_RERUN_MODELS = ("hunyuan",)
 
 
 def tab_video_main():
     """Main video table: SeaCache's published Table-3/4 rows (\\dagger) + Ours, HunyuanVideo and Wan2.1 side by side.
-    As for FLUX, our same-setup SeaCache re-run is NOT in this table (text / supplement only). A model without results
-    in data/video_stats.json (video_stats.py) gets \\tbd in the Ours row."""
+    SeaCache cells: published for Wan2.1, our same-setup re-run for the models in SEACACHE_RERUN_MODELS (\\S, published
+    numbers in the caption). A model without results
+    in data/video_stats.json (video_stats.py) for a budget gets \\tbd in that Ours row."""
     V = json.load(open(os.path.join(HERE, "data", "video_stats.json")))
-    tbd = [m for m in VIDEO_MODELS if not V.get(m)]
+    tbd = [(m, b) for m in VIDEO_MODELS for b in ("hi", "lo") if "ours" not in V[m][b]]
 
     def block_cells(model, b):
         vals = {k: (50.0 * tf / SEACACHE_VIDEO_FULL[model], float(p), float(s), float(l))
                 for k, (_, tf, p, s, l) in SEACACHE_VIDEO[model][b].items()}
-        if V.get(model):
+        rerun = model in SEACACHE_RERUN_MODELS and "seacache_rerun" in V[model][b]
+        if rerun:
+            r = V[model][b]["seacache_rerun"]
+            vals["seacache"] = (r["nfe"], r["psnr"], r["ssim"], r["lpips"])
+        if "ours" in V[model][b]:
             o = V[model][b]["ours"]
             vals["ours"] = (o["nfe"], o["psnr"], o["ssim"], o["lpips"])
         cols = {m: bold_best({k: v[1 + j] for k, v in vals.items()}, m, lower_better=lo)
@@ -206,7 +214,8 @@ def tab_video_main():
         out = {}
         for key, _ in VIDEO_ROWS:
             if key in vals:
-                out[key] = [f"{vals[key][0]:.1f}", r"\nodata", r"\nodata", cols["psnr"][key], cols["ssim"][key],
+                mark = (r"$^\S$" if rerun else r"$^\dagger$") if key == "seacache" else ""
+                out[key] = [f"{vals[key][0]:.1f}{mark}", r"\nodata", r"\nodata", cols["psnr"][key], cols["ssim"][key],
                             cols["lpips"][key]]
             elif key == "ours":
                 out[key] = [r"\tbd", r"\nodata", r"\nodata", r"\tbd", r"\tbd", r"\tbd"]
@@ -214,8 +223,16 @@ def tab_video_main():
                 out[key] = ["--"] * 6
         return out
 
-    ours_delta ={m: "/".join(V[m][b]["delta"] for b in ("hi", "lo")) if V.get(m) else
-                  ("0.2575/0.4637" if m == "hunyuan" else "0.2/0.35") for m in VIDEO_MODELS}
+    ours_delta = {m: "/".join(V[m][b]["delta"] for b in ("hi", "lo")) for m in VIDEO_MODELS}
+    pub = SEACACHE_VIDEO["hunyuan"]
+    rel = V.get("extra", {}).get("hunyuan_released_gate_lo")
+    sec_note = (r" $^\S$Our re-run of \seacache's released code with the corrected gate (same code, seeds and GPUs as"
+                r" \ours); published:"
+                rf" {pub['hi']['seacache'][2]}\,dB at {50 * pub['hi']['seacache'][1] / SEACACHE_VIDEO_FULL['hunyuan']:.1f} \nfe"
+                rf" and {pub['lo']['seacache'][2]}\,dB at {50 * pub['lo']['seacache'][1] / SEACACHE_VIDEO_FULL['hunyuan']:.1f} \nfe,"
+                r" the latter not reproducible with the released code"
+                + (rf" (its gate gives {rel['psnr']:.2f}\,dB at {rel['nfe']:.1f} \nfe)." if rel else ".")) if any(
+        m in SEACACHE_RERUN_MODELS for m in VIDEO_MODELS) else ""
     L = [HEADER.replace("flux_drawbench_stats.json", "video_stats.json (video_stats.py)"),
          "% Rows marked \\dagger: SeaCache's Tables 3/4, NFE = 50 x TFLOPs / full-run TFLOPs (14038 / 8214). Ours: SEA gate,",
          f"% delta {ours_delta['hunyuan']} (HunyuanVideo, gate reads the live sampler sigma) and {ours_delta['wan']} (Wan2.1).",
@@ -223,8 +240,9 @@ def tab_video_main():
          r"\begin{table*}[t]",
          r"  \centering",
          r"  \caption{\textbf{Text-to-video results} (944 VBench prompts, 65 frames, fidelity to the 50-step output)."
-         r" $^\dagger$Published by \seacache~\cite{" + CITE["seacache"] + r"} (its Tables~3 and 4; other GPUs and seeds; its"
+         r" $^\dagger$Published by \seacache~\cite{" + CITE["seacache"] + r"} (its Tables~3 and 4; other GPUs, seed not stated; its"
          r" Wan2.1 compute corresponds to 81 frames), \nfe{} $=50\,{\times}\,$TFLOPs$/$TFLOPs of the full run."
+         + sec_note +
          r" Thresholds and strides of all rows: supplement."
          + (r" \tbd: runs in progress;" if tbd else "") + r" \nodata: not yet measured.}",
          r"  \label{tab:video-main}",

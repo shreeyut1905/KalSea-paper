@@ -40,6 +40,17 @@ CALIB_TRAJ = "/home/ubuntu/KalSea-dev/flux_data/calib_data/traj_000.pt"         
 DEV_HALVES = "/home/ubuntu/KalSea-dev/research_v2/techA/halves_core.txt"         # COCO-64 development set, halves A/B
 DEV_ABL = "/home/ubuntu/KalSea-dev/research_v2/ablations/eval/eval_devset.txt"  # COCO-64 development-set ablations
 OPENLOOP = "/home/ubuntu/KalSea-dev/research_v2/techB/diag_summary.txt"         # open-loop forecast error, 6 dev trajectories
+# per-image metrics (eval2) of the DrawBench ablation runs at delta 0.3 / 0.6: PCGS gain on each filler (run names below)
+ABL_EVAL = "/home/ubuntu/KalSea-dev/research_v2/ablations/eval/eval_all.json"
+FILLER_PAIRS = [  # (filler, run without PCGS, run with PCGS); {d} = delta
+    ("reuse", "seacache_{d}", "abl_reuse_pcgs_{d}"),            # reuse (SeaCache) + PCGS with the linear smoother
+    ("linext", "linextrap_{d}", "abl_linextrap_pcgs_{d}"),      # linear extrapolation + PCGS (pred. + linear innovation)
+    ("kalsea", "kalsea_{d}", "ours_{d}"),                       # Kalman forecast (DCT) -> Ours
+    ("calibfree", "abl_cf_pe_{d}", "abl_cf_pe_pcgs_{d}")]      # calibration-free per-element filter
+FILLER_DELTAS = ["0.3", "0.6"]
+# per-image metrics of the first-order linear-extrapolation baseline (linext_<d>) and of reuse (reuse_<d>) at all seven
+# thresholds of the budget sweep, copied from one logged evaluation call (generic run names; see the file's "what")
+LINEXT_SWEEP = "/home/ubuntu/KalSea-dev/paper_data/flux_linext_sweep.json"
 
 # ---------------------------------------------------------------- video (video_stats.py -> data/video_stats.json)
 # 944 VBench prompts, one video per prompt, seed 42, 65 frames, 50 steps. Full-reference metrics (TeaCache convention)
@@ -48,8 +59,29 @@ OPENLOOP = "/home/ubuntu/KalSea-dev/research_v2/techB/diag_summary.txt"         
 VIDEO_FR = {"wan": "/home/ubuntu/video_runs/wan/eval/full/fr_metrics.json",
             # HunyuanVideo: gate with the sampler's live noise level (option A of paper_plan/hv_gate_fix.md)
             "hunyuan": "/home/ubuntu/video_runs/hunyuan/eval/full/fr_metrics_live.json"}
+# HunyuanVideo with SeaCache's RELEASED gate (stale scheduler, delta 0.35, 16.0 NFE): quoted in the Tab. 2 footnote
+VIDEO_EXTRA = {"hunyuan_released_gate_lo": ("/home/ubuntu/video_runs/hunyuan/eval/full/fr_metrics.json", "seacache_0.35")}
 # budget -> (SEA-gate delta, Ours run, SeaCache re-run); "hi" ~ 24 NFE, "lo" ~ 17 (Wan) / 16.4 (HunyuanVideo) NFE
 VIDEO_RUNS = {"wan": {"hi": ("0.2", "ours_0.2", "seacache_0.2"),
                       "lo": ("0.35", "ours_0.35", "seacache_0.35")},
+              # HunyuanVideo low budget: delta 0.48 (16.0 NFE for every prompt, <= SeaCache's 16.4); the first run at 0.4637
+              # used 16.7 NFE (> 16.4) and is not used. Optional 4th entry: evaluation file of that budget (else VIDEO_FR).
               "hunyuan": {"hi": ("0.2575", "ours_live_0.2575", "seacache_live_0.2575"),
-                          "lo": ("0.4637", "ours_live_0.4637", "seacache_live_0.4637")}}
+                          "lo": ("0.48", "ours_live_0.48", "seacache_live_0.48",
+                                 "/home/ubuntu/video_runs/hunyuan/eval/full/fr_metrics_live048.json")}}
+
+# ---------------------------------------------------------------- video, supplementary material (video_stats.py -> data/video_supp.json)
+# run folders (read only): per-video stats in <root>/<config>_meta/stats/*.jsonl (computed steps, gate distances, NFE)
+VIDEO_ROOT = {"hunyuan": "/home/ubuntu/video_runs/hunyuan", "wan": "/home/ubuntu/video_runs/wan"}
+# HunyuanVideo with SeaCache's RELEASED gate (stale scheduler), full 944-prompt runs: budget -> (delta, Ours run, SeaCache
+# run); released delta 0.207 / 0.35 match the corrected 0.2575 / 0.48 in NFE (23.8 / 16.0)
+VIDEO_RELEASED = {"hi": ("0.207", "ours_0.207", "seacache_0.207"), "lo": ("0.35", "ours_0.35", "seacache_0.35")}
+VIDEO_RELEASED_FR = "/home/ubuntu/video_runs/hunyuan/eval/full/fr_metrics.json"
+# HunyuanVideo, corrected gate, first low-budget threshold (calibrated on the 20 pilot prompts; 16.7 NFE on the full set,
+# above SeaCache's 16.4, hence replaced by delta 0.48); evaluated in VIDEO_FR["hunyuan"]
+VIDEO_HV_FIRST_LO = ("0.4637", "ours_live_0.4637", "seacache_live_0.4637")
+# HunyuanVideo with the released gate at SeaCache's published delta 0.19 on the 20 pilot prompts (NFE above 24.0)
+VIDEO_HV_PILOT = ("/home/ubuntu/video_runs/hunyuan/eval/pilot20.json", "seacache_0.19")
+# 20-prompt video ablations (A2-A6), released-vs-corrected gate summary (A7) and the default-path bitwise checks; written
+# by video_code/abl20/abl20_report.py from video_runs/{hunyuan,wan}/eval/abl20.json
+VIDEO_ABL = "/home/ubuntu/KalSea-dev/paper_plan/video_ablations_20.json"

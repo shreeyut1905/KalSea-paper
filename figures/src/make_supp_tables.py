@@ -443,7 +443,445 @@ def numbers(per):
         L.append(rf"\newcommand{{\suppPcgsMedian{tag}}}{{{np.median(g):.2f}}}")
         L.append(rf"\newcommand{{\suppPcgsNeg{tag}}}{{{int((g < 0).sum())}}}")
         L.append(rf"\newcommand{{\suppPcgsWorst{tag}}}{{{-g.min():.2f}}}")   # largest loss (positive number)
+    L += numbers_flux_extra(per)
+    L += numbers_video()
     write("supp_numbers", "\n".join(L) + "\n")
+
+
+# ------------------------------------------------------------------------------------------- helpers (paired bootstrap)
+def boot(x, n_boot=10000, seed=0):
+    """percentile 95% CI of the mean, same resampling as the evaluation harness (eval2.boot)."""
+    idx = np.random.default_rng(seed).integers(0, len(x), size=(n_boot, len(x)))
+    lo, hi = np.percentile(x[idx].mean(1), [2.5, 97.5])
+    return float(lo), float(hi)
+
+
+def paired(a, b, key="psnr", better=1):
+    """a minus b over the common prompts (sorted file names, as eval2): mean, CI, fraction of prompts where a is better."""
+    fs = sorted(set(a) & set(b))
+    x = np.array([a[f][key] - b[f][key] for f in fs], dtype=np.float64)
+    lo, hi = boot(x)
+    return {"n": len(fs), "mean": float(x.mean()), "ci95": [lo, hi], "frac_better": float((better * x > 0).mean())}
+
+
+def dbci(p, nd=2, signed=True):
+    """'+1.69\\,dB [1.51, 1.88]' (CI bounds signed only when negative); signed=False drops the '+' of a positive mean
+    (for 'improves by ...' / 'loses ...')."""
+    b = lambda v: sg(v, nd) if v < 0 or float(f"{v:.{nd}f}") == 0.0 else f"{v:.{nd}f}"
+    m = sg(p["mean"], nd) if signed or p["mean"] < 0 else sg(p["mean"], nd).lstrip("+")
+    return f"{m}\\,dB [{b(p['ci95'][0])}, {b(p['ci95'][1])}]"
+
+
+def nfe_txt(x):
+    return f"{x:.0f}" if abs(x - round(x)) < 0.05 else f"{x:.1f}"
+
+
+# ------------------------------------------------------------------------------------------- FLUX: PCGS on each filler
+FILLER_LABEL = {"reuse": r"Reuse (\seacache)", "linext": r"Linear extrapolation",
+                "kalsea": r"Kalman, DCT bands (\kalsea\,$\to$\,\ours)",
+                "calibfree": r"Kalman, calibration-free per element"}
+FILLER_SMOOTHER = {"reuse": r"lin.\ interp.", "linext": r"fcst.\,+\,lin.\ innov.", "kalsea": "RTS", "calibfree": "RTS"}
+
+
+def tab_fillers():
+    E = json.load(open(D.ABL_EVAL))["per_image"]
+    S = ST["summary"]
+    head = {d: rf"{nfe_txt(S[d]['ours']['nfe'])} \nfe ($\delta{{=}}{d}$)" for d in D.FILLER_DELTAS}
+    L = [r"\begin{table*}[t]", r"  \centering",
+         r"  \caption{\textbf{\pcgs on different predictors} (\flux, DrawBench-200; same \sea gate and threshold, matched"
+         r" \nfe). PSNR without and with \pcgs, paired gain (mean and 95\% bootstrap CI over prompts) and the fraction of"
+         r" prompts on which \pcgs raises PSNR. Smoother: the Kalman forecasters use their RTS gains; reuse and linear"
+         r" extrapolation have no state-space model and use the forecast plus a linearly weighted innovation, which for"
+         r" reuse is the linear interpolation from $\res_a$ to $\res_b$ (\cref{supp:smoother}). All other parts of"
+         r" \pcgs (re-integration, continuation, gate refresh) are the same.}",
+         r"  \label{tab:supp-fillers}", r"  \footnotesize", r"  \setlength{\tabcolsep}{3.2pt}",
+         r"  \begin{tabular}{@{}ll cccc @{\hspace{10pt}} cccc@{}}", r"    \toprule",
+         r"    & & \multicolumn{4}{c}{" + head[D.FILLER_DELTAS[0]] + r"} & \multicolumn{4}{c}{" + head[D.FILLER_DELTAS[1]]
+         + r"} \\",
+         r"    \cmidrule(lr){3-6} \cmidrule(l){7-10}",
+         r"    Predictor & Smoother & without & with & gain (dB) & win & without & with & gain (dB) & win \\",
+         r"    \midrule"]
+    for key, off, on in D.FILLER_PAIRS:
+        cells = []
+        for d in D.FILLER_DELTAS:
+            a, b = E[on.format(d=d)], E[off.format(d=d)]
+            assert len(a) == len(b) == 200, (key, d)
+            na, nb = np.mean([a[f]["nfe"] for f in a]), np.mean([b[f]["nfe"] for f in b])
+            assert abs(na - nb) < 0.07, (key, d, na, nb)                  # matched compute
+            p = paired(a, b)
+            cells += [f"{np.mean([b[f]['psnr'] for f in b]):.2f}", f"{np.mean([a[f]['psnr'] for f in a]):.2f}", ci(p),
+                      f"{100 * p['frac_better']:.0f}\\%"]
+        L.append(rf"    {FILLER_LABEL[key]} & {FILLER_SMOOTHER[key]} & " + " & ".join(cells) + r" \\")
+    L += [r"    \bottomrule", r"  \end{tabular}", r"\end{table*}", ""]
+    write("supp_fillers", "\n".join(L))
+
+
+# ------------------------------------------------------------------------------------------- FLUX: open-loop fillers vs. reuse
+def tab_sweep_open(per):
+    """Budget sweep without correction: linear extrapolation and the Kalman forecast (KalSea) minus reuse (SeaCache)."""
+    X = json.load(open(D.LINEXT_SWEEP))["per_image"]
+    S, P = ST["summary"], ST["paired"]
+    ds = sorted(ST["deltas"], key=lambda d: -S[d]["ours"]["nfe"])
+    L = [r"\begin{table}[t]", r"  \centering",
+         r"  \caption{\textbf{Forecasting without correction across budgets} (\flux, DrawBench-200, the thresholds of the"
+         r" main paper's \maincref{fig:tradeoff}). PSNR of linear extrapolation of the residual and paired PSNR"
+         r" difference to reuse (\seacache, same gate and threshold) of linear extrapolation and of the Kalman forecast"
+         r" (\kalsea), mean and 95\% CI over prompts. The advantage of forecasting over reuse shrinks as the gaps grow;"
+         r" \pcgs improves on the Kalman forecast at every budget (\cref{tab:flux-sweep}).}",
+         r"  \label{tab:supp-sweep-open}", r"  \footnotesize", r"  \setlength{\tabcolsep}{2.6pt}",
+         r"  \begin{tabular}{@{}ccc cc@{}}", r"    \toprule",
+         r"    & & Lin.\ extr. & \multicolumn{2}{c}{$\Delta$PSNR vs.\ reuse (dB)} \\",
+         r"    \cmidrule(l){4-5}",
+         r"    $\delta$ & \nfe & PSNR & lin.\ extrapolation & Kalman (\kalsea) \\", r"    \midrule"]
+    for d in ds:
+        lin, reu = X[f"linext_{d}"], X[f"reuse_{d}"]
+        ev = per[D.MAIN["seacache"].format(d=d)]           # eval2 per-image metrics of the same reuse run
+        assert set(reu) == set(ev) and max(abs(reu[f][k] - ev[f][k]) for f in ev for k in ("psnr", "ssim", "lpips")) < 1e-9
+        nl = np.mean([lin[f]["nfe"] for f in lin])
+        assert abs(nl - S[d]["seacache"]["nfe"]) < 0.07, (d, nl)
+        p = paired(lin, reu)
+        k = P[d]["kalsea-seacache"]["psnr"]
+        L.append(rf"    {d} & {S[d]['ours']['nfe']:.2f} & {np.mean([lin[f]['psnr'] for f in lin]):.2f} & {ci(p)} & {ci(k)} \\")
+    L += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}", ""]
+    write("supp_sweep_open", "\n".join(L))
+
+
+def numbers_flux_extra(per):
+    """macros for the FLUX statements moved from the main paper to the supplement."""
+    E = json.load(open(D.ABL_EVAL))["per_image"]
+    X = json.load(open(D.LINEXT_SWEEP))["per_image"]
+    S, P = ST["summary"], ST["paired"]
+    L = []
+    # identical computed steps of SeaCache / KalSea / Ours behind the shared gate
+    tags = {"0.37": "A", "0.6": "B", "0.3": "C"}
+    mx = 0
+    for d, tag in tags.items():
+        A, B, C = (per[D.MAIN[m].format(d=d)] for m in ("seacache", "kalsea", "ours"))
+        fs = sorted(set(A) & set(B) & set(C))
+        assert len(fs) == 200
+        three = sum(A[f]["compute_steps"] == B[f]["compute_steps"] == C[f]["compute_steps"] for f in fs)
+        mx = max(mx, max(max(X_[f]["nfe"] for X_ in (A, B, C)) - min(X_[f]["nfe"] for X_ in (A, B, C)) for f in fs))
+        L.append(rf"\newcommand{{\suppSameThree{tag}}}{{{three}}}")
+    L.append(rf"\newcommand{{\suppSameThreeMaxDnfe}}{{{mx:g}}}")
+    # run-to-run noise of Ours, batched re-integration, PCGS on reuse / linear extrapolation (delta 0.3 -> A, 0.6 -> B)
+    for d, tag in (("0.3", "A"), ("0.6", "B")):
+        o = E[f"ours_{d}"]
+        L.append(rf"\newcommand{{\suppOursRerun{tag}}}{{{dbci(paired(E[f'abl_ours_rerun_{d}'], o))}}}")
+        L.append(rf"\newcommand{{\suppBatchedLoss{tag}}}{{{dbci(paired(o, E[f'abl_pcgs_batched_{d}']), signed=False)}}}")
+        for key, off, on in D.FILLER_PAIRS:
+            if key in ("reuse", "linext"):
+                name = {"reuse": "Reuse", "linext": "Linext"}[key]
+                p = paired(E[on.format(d=d)], E[off.format(d=d)])
+                L.append(rf"\newcommand{{\suppGain{name}{tag}}}{{{dbci(p, signed=False)}}}")
+    # development set: linear interpolation minus RTS gains (per-element filter; COCO-64)
+    dev = _parse_eval_txt(D.DEV_ABL)
+    for d, tag in (("0.37", "A"), ("0.6", "B")):
+        r = dev[f"A_lin_pe_{d}"]
+        L.append(rf"\newcommand{{\suppDevLin{tag}}}{{{dbci(dict(mean=r['d'], ci95=[r['lo'], r['hi']]))}}}")
+    # budget sweep without correction: Kalman forecast minus reuse at the smallest budget; linear extrapolation minus reuse
+    lo2 = sorted(ST["deltas"], key=lambda d: S[d]["ours"]["nfe"])[:2]           # 9 and 11 NFE
+    L.append(rf"\newcommand{{\suppKalVsReuseMin}}{{{dbci(P[lo2[0]]['kalsea-seacache']['psnr'])}}}")
+    L.append(rf"\newcommand{{\suppKalVsReuseMinNfe}}{{{nfe_txt(S[lo2[0]]['ours']['nfe'])}}}")
+    L.append(rf"\newcommand{{\suppKalVsReuseNext}}{{{dbci(P[lo2[1]]['kalsea-seacache']['psnr'])}}}")
+    hi1 = max(ST["deltas"], key=lambda d: S[d]["ours"]["nfe"])                  # 27 NFE
+    L.append(rf"\newcommand{{\suppKalVsReuseMax}}{{{dbci(P[hi1]['kalsea-seacache']['psnr'])}}}")
+    L.append(rf"\newcommand{{\suppKalVsReuseMaxNfe}}{{{nfe_txt(S[hi1]['ours']['nfe'])}}}")
+    for d, tag in zip(lo2, ("A", "B")):
+        p = paired(X[f"linext_{d}"], X[f"reuse_{d}"])
+        assert p["mean"] < 0
+        L.append(rf"\newcommand{{\suppLinBelowReuse{tag}}}{{{-p['mean']:.2f}}}")
+        L.append(rf"\newcommand{{\suppLinBelowReuseNfe{tag}}}{{{nfe_txt(S[d]['ours']['nfe'])}}}")
+    return L
+
+
+# ------------------------------------------------------------------------------------------- video (supplement, Sec. G)
+def _video():
+    return (json.load(open(os.path.join(HERE, "data", "video_stats.json"))),
+            json.load(open(os.path.join(HERE, "data", "video_supp.json"))))
+
+
+MODEL_NAME = {"hunyuan": "HunyuanVideo", "wan": "Wan2.1"}
+
+
+def tab_video_settings():
+    """Thresholds and strides of every row of the main paper's Tab. 2."""
+    from make_tables import SEACACHE_VIDEO, SEACACHE_VIDEO_FULL
+    V, _ = _video()
+    nfe_pub = lambda m, b, k: 50.0 * SEACACHE_VIDEO[m][b][k][1] / SEACACHE_VIDEO_FULL[m]
+    cols = [(m, b) for m in ("hunyuan", "wan") for b in ("hi", "lo")]
+
+    def cell(m, b, key):
+        if key == "ours" or key == "rerun":
+            if key == "rerun" and m != "hunyuan":
+                return "--"
+            rec = V[m][b]["ours" if key == "ours" else "seacache_rerun"]
+            return rf"$\delta{{=}}{V[m][b]['delta']}$ ({rec['nfe']:.2f})"
+        if key not in SEACACHE_VIDEO[m][b]:
+            return "--"
+        return rf"{SEACACHE_VIDEO[m][b][key][0]} ({nfe_pub(m, b, key):.1f})"
+    rows = [("vanilla", r"Fewer steps$^\dagger$", "sampling steps"),
+            ("teacache", r"TeaCache~\cite{" + CITE["teacache"] + r"}$^\dagger$", r"threshold $\delta$ (rel.\ L1)"),
+            ("taylorseer", r"TaylorSeer~\cite{" + CITE["taylorseer"] + r"}$^\dagger$", r"stride $S$"),
+            ("seacache", r"\seacache, published$^\dagger$", r"\sea threshold $\delta$"),
+            ("rerun", r"\seacache, our re-run$^\S$", r"\sea threshold $\delta$"),
+            ("ours", r"\ours", r"\sea threshold $\delta$")]
+    L = [r"\begin{table*}[t]", r"  \centering",
+         r"  \caption{\textbf{Settings of every row of the main paper's \maincref{tab:video-main}}: threshold or stride and,"
+         r" in parentheses, \nfe. $^\dagger$Settings and results published by \seacache~\cite{" + CITE["seacache"] + r"}"
+         r" (its Tables~3 and 4); \nfe{} $=50\,{\times}\,$TFLOPs$/$TFLOPs of its 50-step run. TaylorSeer computes the"
+         r" first three steps and then every $S$-th step (expansion order 2, as stated by \seacache). TeaCache and the"
+         r" \sea gate compute a step once the accumulated relative change of the first block's modulated input (rescaled"
+         r" for TeaCache, \sea-filtered for \seacache and \ours) exceeds $\delta$; the first and last steps are always"
+         r" computed. $^\S$Our re-run of \seacache's released code with the corrected HunyuanVideo gate"
+         r" (\cref{supp:video-gate}), which needs its own thresholds for the same \nfe; for Wan2.1 the main paper"
+         r" reports the published \seacache row. Our rows: mean \nfe over the 944 prompts.}",
+         r"  \label{tab:supp-video-settings}", r"  \footnotesize", r"  \setlength{\tabcolsep}{4pt}",
+         r"  \begin{tabular}{@{}ll cc @{\hspace{12pt}} cc@{}}", r"    \toprule",
+         r"    & & \multicolumn{2}{c}{HunyuanVideo} & \multicolumn{2}{c}{Wan2.1 1.3B} \\",
+         r"    \cmidrule(lr){3-4} \cmidrule(l){5-6}",
+         r"    Method & Parameter & $\approx$\,50\% & $\approx$\,30\% & $\approx$\,50\% & $\approx$\,30\% \\", r"    \midrule"]
+    for key, lab, par in rows:
+        L.append(rf"    {lab} & {par} & " + " & ".join(cell(m, b, key) for m, b in cols) + r" \\")
+    L += [r"    \bottomrule", r"  \end{tabular}", r"\end{table*}", ""]
+    write("supp_video_settings", "\n".join(L))
+
+
+def tab_video_samesetup():
+    _, VS = _video()
+    S = VS["same_setup"]
+    L = [r"\begin{table*}[t]", r"  \centering",
+         r"  \caption{\textbf{Same-setup video comparisons} (944 VBench prompts, 65 frames; same code, seeds, GPUs and"
+         r" \sea gate for both methods; HunyuanVideo gate with the sampler's noise level). $\Delta$: \ours minus \seacache,"
+         r" mean and 95\% paired bootstrap CI over videos; win: fraction of videos with higher PSNR for \ours; same"
+         r" steps: videos on which both computed exactly the same steps (the gate is closed loop, so the filler can"
+         r" change its decisions; the per-video \nfe differs by at most one). Bottom: the first low-budget threshold of"
+         r" HunyuanVideo, which used more than \seacache's published 16.4 \nfe and is therefore not in"
+         r" \maincref{tab:video-main} (\cref{supp:video-budgets}).}",
+         r"  \label{tab:supp-video-samesetup}", r"  \footnotesize", r"  \setlength{\tabcolsep}{3.2pt}",
+         r"  \begin{tabular}{@{}lcccc ccc cc@{}}", r"    \toprule",
+         r"    Method & \nfe & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ & $\Delta$PSNR (dB) & $\Delta$SSIM"
+         r" & $\Delta$LPIPS & win & same steps \\", r"    \midrule"]
+    blocks = [(m, b, S[m][b]) for m in ("hunyuan", "wan") for b in ("hi", "lo")]
+    blocks.append(("hunyuan", "first_lo", VS["hv_first_lo"]))      # first HunyuanVideo low-budget threshold: last block
+    for i, (m, b, r) in enumerate(blocks):
+        o, s, p = r["ours"], r["seacache"], r["ours_minus_seacache"]
+        note = r", not in \maincref{tab:video-main}" if b == "first_lo" else ""
+        L.append(rf"    \multicolumn{{10}}{{@{{}}l}}{{\emph{{{MODEL_NAME[m]}, $\delta{{=}}{r['delta']}$"
+                 rf" ({o['nfe']:.1f} \nfe{note})}}}} \\")
+        sch = r.get("schedules")
+        same = f"{sch['n_identical_steps']}/{sch['n']}" if sch else "--"
+        L.append(rf"    \seacache (re-run) & {s['nfe']:.2f} & {s['psnr']:.2f} & {s['ssim']:.3f} & {s['lpips']:.3f}"
+                 rf" & {ci(p['psnr'])} & {ci(p['ssim'], 3)} & {ci(p['lpips'], 3)} & {100 * p['psnr']['frac_better']:.1f}\%"
+                 rf" & {same} \\")
+        L.append(rf"    \ours & {o['nfe']:.2f} & {o['psnr']:.2f} & {o['ssim']:.3f} & {o['lpips']:.3f}"
+                 r" & \multicolumn{5}{c}{(reference of $\Delta$)} \\")
+        if i < len(blocks) - 1:
+            L.append(r"    \addlinespace[2pt]")
+    L += [r"    \bottomrule", r"  \end{tabular}", r"\end{table*}", ""]
+    write("supp_video_samesetup", "\n".join(L))
+
+
+def tab_video_gate():
+    V, VS = _video()
+    G = VS["gate"]
+    cols = [("hi", "released"), ("hi", "corrected"), ("lo", "released"), ("lo", "corrected")]
+
+    def rec(b, kind):
+        if kind == "released":
+            return G["released"][b]
+        r = VS["same_setup"]["hunyuan"][b]
+        return r
+
+    def step1(b, kind):
+        sch = rec(b, kind)["schedules"]
+        assert sch["n_step1_ours"] == sch["n_step1_seacache"]
+        return f"{sch['n_step1_seacache']}/{sch['n']}"
+    L = [r"\begin{table*}[t]", r"  \centering",
+         r"  \caption{\textbf{HunyuanVideo gate: as released vs.\ corrected} (944 VBench prompts). Released: \seacache's"
+         r" gate with the load-time scheduler (noise level $1-i/1000$ at step $i$); corrected: the same gate with the"
+         r" noise levels of the sampling schedule. Thresholds are set per gate for the same \nfe. Both methods use the"
+         r" same gate in each column. $\Delta$: paired difference, mean and 95\% bootstrap CI over videos (win: fraction"
+         r" of videos where the first term is higher).}",
+         r"  \label{tab:supp-video-gate}", r"  \footnotesize", r"  \setlength{\tabcolsep}{4pt}",
+         r"  \begin{tabular}{@{}l cc @{\hspace{12pt}} cc@{}}", r"    \toprule",
+         r"    & \multicolumn{2}{c}{$\approx$\,24 \nfe} & \multicolumn{2}{c}{16 \nfe} \\",
+         r"    \cmidrule(lr){2-3} \cmidrule(l){4-5}",
+         r"    Gate & released & corrected & released & corrected \\", r"    \midrule"]
+    L.append(r"    Threshold $\delta$ & " + " & ".join(rec(b, k)["delta"] for b, k in cols) + r" \\")
+    L.append(r"    \nfe (\seacache / \ours) & " + " & ".join(
+        f"{rec(b, k)['seacache']['nfe']:.2f} / {rec(b, k)['ours']['nfe']:.2f}" for b, k in cols) + r" \\")
+    L.append(r"    Videos computing step 1 & " + " & ".join(step1(b, k) for b, k in cols) + r" \\")
+    L.append(r"    \midrule")
+    for m, lab in (("seacache", r"\seacache"), ("ours", r"\ours")):
+        L.append(rf"    {lab}: PSNR / SSIM / LPIPS & " + " & ".join(
+            f"{rec(b, k)[m]['psnr']:.2f} / {rec(b, k)[m]['ssim']:.3f} / {rec(b, k)[m]['lpips']:.3f}" for b, k in cols) + r" \\")
+    L.append(r"    $\Delta$PSNR \ours$-$\seacache & " + " & ".join(
+        ci(rec(b, k)["ours_minus_seacache"]["psnr"]) for b, k in cols) + r" \\")
+    L.append(r"    \quad win & " + " & ".join(
+        f"{100 * rec(b, k)['ours_minus_seacache']['psnr']['frac_better']:.0f}\\%" for b, k in cols) + r" \\")
+    L.append(r"    \midrule")
+    for m, lab in (("seacache", r"\seacache"), ("ours", r"\ours")):
+        cells = []
+        for b in ("hi", "lo"):
+            p = G["corrected_minus_released"][b][m]
+            cells.append(rf"\multicolumn{{2}}{{c}}{{{ci(p['psnr'])}, win {100 * p['psnr']['frac_better']:.0f}\%}}")
+        L.append(rf"    $\Delta$PSNR corrected$-$released, {lab} & " + " & ".join(cells) + r" \\")
+    L += [r"    \bottomrule", r"  \end{tabular}", r"\end{table*}", ""]
+    write("supp_video_gate", "\n".join(L))
+
+
+VABL_ROWS = [("ours", r"\ours (Kalman + \pcgs, RTS gains)"),
+             ("seacache", r"Reuse, no correction (\seacache)"),
+             ("pcgs_lin", r"\pcgs with linear-interp.\ gains"),
+             ("pcgs_stateonly", r"Smoothed residuals to filter state only"),
+             ("reuse_pcgs", r"Reuse + \pcgs"),
+             ("linextrap", r"Linear extrapolation, no correction"),
+             ("linextrap_pcgs", r"Linear extrapolation + \pcgs")]
+
+
+def nfe2(x):
+    return f"{x:.0f}" if abs(x - round(x)) < 1e-9 else f"{x:.2f}"
+
+
+def tab_video_abl():
+    _, VS = _video()
+    A = VS["ablations"]["models"]
+    same = {m: min(c["n_identical_schedules"] for B in A[m]["budgets"].values() for k, c in B["configs"].items()
+                   if k != "ours") for m in A}
+    n = {m: A[m]["n_prompts"] for m in A}
+    same_txt = " and ".join(
+        (rf"all {n[m]} videos" if same[m] == n[m] else rf"at least {same[m]} of {n[m]} videos") + rf" ({MODEL_NAME[m]})"
+        for m in ("hunyuan", "wan"))
+    L = [r"\begin{table*}[t]", r"  \centering",
+         r"  \caption{\textbf{Video ablations} (" + str(n["hunyuan"]) + r" VBench prompts per model, the prompts of our pilot"
+         r" runs; same \sea gate and threshold for every row, HunyuanVideo with the corrected gate). $\Delta$PSNR:"
+         r" paired difference to \ours at the same budget, mean and 95\% bootstrap CI over the videos; win: fraction of"
+         r" videos on which the variant has higher PSNR than \ours. Last two rows of each block: gain of \pcgs on reuse"
+         r" and on linear extrapolation (paired, win: fraction of videos improved). Every variant has the mean \nfe of"
+         r" \ours and computed the same steps as \ours on " + same_txt + r".}",
+         r"  \label{tab:supp-video-abl}", r"  \footnotesize", r"  \setlength{\tabcolsep}{2.4pt}",
+         r"  \begin{tabular}{@{}l cccc c @{\hspace{8pt}} cccc c@{}}", r"    \toprule"]
+    first = True
+    for m in ("hunyuan", "wan"):
+        B = A[m]["budgets"]
+        ds = sorted(B, key=lambda d: -B[d]["configs"]["ours"]["nfe"])
+        hdr = [rf"$\delta{{=}}{d}$ ({nfe2(B[d]['configs']['ours']['nfe'])} \nfe)" for d in ds]
+        if not first:
+            L.append(r"    \midrule")
+        L.append(rf"    \textbf{{{MODEL_NAME[m]}}} & \multicolumn{{5}}{{c}}{{{hdr[0]}}} & \multicolumn{{5}}{{c}}{{{hdr[1]}}} \\")
+        L.append(r"    \cmidrule(lr){2-6} \cmidrule(l){7-11}")
+        L.append(r"    Variant & PSNR$\uparrow$ & $\Delta$PSNR (dB) & win & SSIM$\uparrow$ & LPIPS$\downarrow$"
+                 r" & PSNR$\uparrow$ & $\Delta$PSNR (dB) & win & SSIM$\uparrow$ & LPIPS$\downarrow$ \\")
+        L.append(r"    \midrule")
+        first = False
+        for key, lab in VABL_ROWS:
+            cells = []
+            for d in ds:
+                c = B[d]["configs"][key]
+                assert abs(c["nfe"] - B[d]["configs"]["ours"]["nfe"]) < 1e-9 and c.get("n_nfe_mismatch", 0) == 0
+                if key == "ours":
+                    cells += [f"{c['psnr']:.2f}", r"0 (ref.)", "--"]
+                else:
+                    p = c["vs_ours"]["psnr"]
+                    cells += [f"{c['psnr']:.2f}", ci(p), f"{100 * p['frac_better']:.0f}\\%"]
+                cells += [f"{c['ssim']:.3f}", f"{c['lpips']:.3f}"]
+            L.append(rf"    {lab} & " + " & ".join(cells) + r" \\")
+        L.append(r"    \addlinespace[1pt]")
+        for g, lab in (("reuse", r"\quad gain of \pcgs on reuse"), ("linext", r"\quad gain of \pcgs on linear extrapolation")):
+            cells = []
+            for d in ds:
+                p = B[d]["pcgs_gain"][g]["psnr"]
+                cells += ["", ci(p), f"{100 * p['frac_better']:.0f}\\%", "", ""]
+            L.append(rf"    {lab} & " + " & ".join(cells) + r" \\")
+    L += [r"    \bottomrule", r"  \end{tabular}", r"\end{table*}", ""]
+    write("supp_video_abl", "\n".join(L))
+
+
+def numbers_video():
+    V, VS = _video()
+    L = ["% video (supplement, Sec. G): data/video_supp.json (video_stats.py)"]
+    st = VS["gate"]["step1"]
+    L += [rf"\newcommand{{\suppVidStepSkip}}{{{st['seacache']['n_skip']}}}",
+          rf"\newcommand{{\suppVidStepN}}{{{st['n']}}}",
+          rf"\newcommand{{\suppVidStepDelta}}{{{st['delta']}}}",
+          rf"\newcommand{{\suppVidStepCostSea}}{{{st['seacache']['psnr_compute'] - st['seacache']['psnr_skip']:.1f}}}",
+          rf"\newcommand{{\suppVidStepCostOurs}}{{{st['ours']['psnr_compute'] - st['ours']['psnr_skip']:.1f}}}",
+          rf"\newcommand{{\suppVidStepFixSea}}{{{st['seacache']['corrected_minus_released_skip']:.1f}}}",
+          rf"\newcommand{{\suppVidStepFixOurs}}{{{st['ours']['corrected_minus_released_skip']:.1f}}}",
+          rf"\newcommand{{\suppVidStepFixSeaComp}}{{{sg(st['seacache']['corrected_minus_released_compute'], 1)}}}",
+          rf"\newcommand{{\suppVidStepFixOursComp}}{{{sg(st['ours']['corrected_minus_released_compute'], 1)}}}",
+          rf"\newcommand{{\suppVidDOneRel}}{{{st['d1_released'][0]:.3f}--{st['d1_released'][1]:.3f}}}",
+          rf"\newcommand{{\suppVidDOneRelMax}}{{{math.ceil(st['d1_released'][1] * 1000) / 1000:.3f}}}",
+          rf"\newcommand{{\suppVidDOneLive}}{{{st['d1_live'][0]:.3f}--{st['d1_live'][1]:.3f}}}",
+          rf"\newcommand{{\suppVidSkipAtPub}}{{{st['n_skip_at_pub_hi']}}}",
+          rf"\newcommand{{\suppVidSkipAtTwoOne}}{{{st['n_skip_at_021']}}}"]
+    P = VS["gate"]["released_pub_delta_pilot"]
+    L += [rf"\newcommand{{\suppVidPubDeltaNfe}}{{{P['nfe']:.1f}}}", rf"\newcommand{{\suppVidPubDeltaN}}{{{P['n']}}}"]
+    lc = VS["gate"]["live_check"]
+    assert lc["n_equal"] == lc["n_videos"] == 4 * 944, lc
+    L += [rf"\newcommand{{\suppVidLiveCheckN}}{{{lc['n_videos']}}}"]
+    rel = VS["gate"]["released"]
+    L += [rf"\newcommand{{\suppVidRelHiDelta}}{{{rel['hi']['delta']}}}",
+          rf"\newcommand{{\suppVidRelHiNfe}}{{{rel['hi']['seacache']['nfe']:.1f}}}",
+          rf"\newcommand{{\suppVidRelLoDelta}}{{{rel['lo']['delta']}}}",
+          rf"\newcommand{{\suppVidRelLoNfe}}{{{rel['lo']['seacache']['nfe']:.1f}}}"]
+    F = VS["hv_first_lo"]
+    L += [rf"\newcommand{{\suppVidFirstLoDelta}}{{{F['delta']}}}",
+          rf"\newcommand{{\suppVidFirstLoNfe}}{{{max(F['ours']['nfe'], F['seacache']['nfe']):.1f}}}",
+          rf"\newcommand{{\suppVidFirstLoSea}}{{{F['seacache']['psnr']:.2f}}}",
+          rf"\newcommand{{\suppVidFirstLoOurs}}{{{F['ours']['psnr']:.2f}}}",
+          rf"\newcommand{{\suppVidFirstLoGain}}{{{dbci(F['ours_minus_seacache']['psnr'], signed=False)}}}"]
+    # published HunyuanVideo SeaCache results (its Table 3), as in the main paper's Tab. 2 caption
+    from make_tables import SEACACHE_VIDEO, SEACACHE_VIDEO_FULL
+    for b, tag in (("hi", "Hi"), ("lo", "Lo")):
+        _, tf, p, _, _ = SEACACHE_VIDEO["hunyuan"][b]["seacache"]
+        L.append(rf"\newcommand{{\suppVidPub{tag}}}{{{p}}}")
+        L.append(rf"\newcommand{{\suppVidPub{tag}Nfe}}{{{50.0 * tf / SEACACHE_VIDEO_FULL['hunyuan']:.1f}}}")
+    # same-setup full sets: gains, win rates, identical computed steps
+    for m, tag in (("hunyuan", "H"), ("wan", "W")):
+        for b, t2 in (("hi", "A"), ("lo", "B")):
+            r = VS["same_setup"][m][b]
+            s, p = r["schedules"], r["ours_minus_seacache"]
+            L.append(rf"\newcommand{{\suppVidSame{tag}{t2}}}{{{s['n_identical_steps']}}}")
+            L.append(rf"\newcommand{{\suppVidGain{tag}{t2}}}{{{dbci(p['psnr'], signed=False)}}}")
+            L.append(rf"\newcommand{{\suppVidWin{tag}{t2}}}{{{100 * p['psnr']['frac_better']:.0f}}}")
+            L.append(rf"\newcommand{{\suppVidWinSsim{tag}{t2}}}{{{100 * p['ssim']['frac_better']:.0f}}}")
+            L.append(rf"\newcommand{{\suppVidWinLpips{tag}{t2}}}{{{100 * p['lpips']['frac_better']:.0f}}}")
+    # reproducibility
+    D_ = VS["determinism"]
+    rr = D_["rerun_vs_pilot"]
+    assert all(r["n_bitwise"] == r["n"] for r in rr)
+    after = D_["after_ablation_code"]
+    assert all(r["bitwise"] for r in after)
+    L += [rf"\newcommand{{\suppVidDetRuns}}{{{len(rr)}}}",
+          rf"\newcommand{{\suppVidDetVideos}}{{{sum(r['n'] for r in rr)}}}",
+          rf"\newcommand{{\suppVidDetAfter}}{{{len(after)}}}"]
+    # 20-prompt ablations and sweep
+    A = VS["ablations"]["models"]
+    for m, tag in (("hunyuan", "H"), ("wan", "W")):
+        sched = [c["n_identical_schedules"] for B in A[m]["budgets"].values() for k, c in B["configs"].items() if k != "ours"]
+        L.append(rf"\newcommand{{\suppVidAblSameMin{tag}}}{{{min(sched)}}}")
+        L.append(rf"\newcommand{{\suppVidAblN{tag}}}{{{A[m]['n_prompts']}}}")
+        B = A[m]["budgets"]
+        for d, t2 in zip(sorted(B, key=lambda d: -B[d]["configs"]["ours"]["nfe"]), ("A", "B")):
+            C = B[d]["configs"]
+            L.append(rf"\newcommand{{\suppVidAblState{tag}{t2}}}{{{dbci(C['pcgs_stateonly']['vs_ours']['psnr'])}}}")
+            L.append(rf"\newcommand{{\suppVidAblLin{tag}{t2}}}{{{dbci(C['pcgs_lin']['vs_ours']['psnr'])}}}")
+            L.append(rf"\newcommand{{\suppVidAblReusePcgs{tag}{t2}}}{{{dbci(C['reuse_pcgs']['vs_ours']['psnr'], signed=False)}}}")
+            L.append(rf"\newcommand{{\suppVidAblSea{tag}{t2}}}{{{dbci(C['seacache']['vs_ours']['psnr'])}}}")
+            L.append(rf"\newcommand{{\suppVidAblOursSea{tag}{t2}}}{{{dbci(C['ours']['vs_seacache']['psnr'])}}}")
+            for g, nm in (("reuse", "Reuse"), ("linext", "Linext")):
+                L.append(rf"\newcommand{{\suppVidAblGain{nm}{tag}{t2}}}{{{dbci(B[d]['pcgs_gain'][g]['psnr'], signed=False)}}}")
+            L.append(rf"\newcommand{{\suppVidAblNfe{tag}{t2}}}{{{nfe2(C['ours']['nfe'])}}}")
+        sw = A[m]["sweep"]
+        L.append(rf"\newcommand{{\suppVidSweepMin{tag}}}{{{min(s['n_identical_schedules'] for s in sw)}}}")
+        lo = sw[0]
+        L.append(rf"\newcommand{{\suppVidSweepLowNfe{tag}}}{{{nfe_txt(lo['nfe_ours'])}}}")
+        L.append(rf"\newcommand{{\suppVidSweepLowGain{tag}}}{{{dbci(lo['ours_minus_seacache']['psnr'])}}}")
+        hi = sw[-1]
+        L.append(rf"\newcommand{{\suppVidSweepHighNfe{tag}}}{{{nfe_txt(hi['nfe_ours'])}}}")
+        L.append(rf"\newcommand{{\suppVidSweepHighGain{tag}}}{{{dbci(hi['ours_minus_seacache']['psnr'])}}}")
+    return L
 
 
 def main():
@@ -457,6 +895,12 @@ def main():
     tab_devset()
     tab_calib()
     tab_gains()
+    tab_fillers()
+    tab_sweep_open(per)
+    tab_video_settings()
+    tab_video_samesetup()
+    tab_video_gate()
+    tab_video_abl()
     numbers(per)
 
 

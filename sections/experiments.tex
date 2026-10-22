@@ -53,9 +53,8 @@ use the official \sea gate, whose threshold $\delta$ sets the budget. At $\delta
 21.33\,dB); at $\delta=0.3$ it computes 20.9 steps in our setup but 18.4 according to the TFLOPs, so we run our cache
 at $\delta=0.37$ (18.1 \nfe) and $0.6$. For controlled comparisons (same code, seeds and hardware), four fillers run
 behind the same gate: reuse (\seacache), linear extrapolation of the residual from the last two computed steps (the
-first-order forecast of TaylorSeer~\cite{liu2025taylorseer}), the Kalman forecast (\kalsea), and \ours. At
-$\delta=0.37$, 0.3 and 0.6, the three caches computed the same steps for 191, 188 and 182 of the 200 prompts, and the
-per-prompt \nfe never differs by more than one.
+first-order forecast of TaylorSeer~\cite{liu2025taylorseer}), the Kalman forecast (\kalsea), and \ours. Behind the same gate, the
+caches compute the same steps on most prompts (supplement).
 
 \paragraph{Metrics.}
 PSNR on 8-bit RGB, SSIM~\cite{wang2004ssim} (scikit-image, $7{\times}7$ window) and LPIPS (AlexNet
@@ -87,29 +86,39 @@ adds 0.81\,dB [0.63, 1.00] and 0.61\,dB [0.48, 0.76] to \kalsea. The median per-
 
 \paragraph{Budget sweep.}
 \cref{fig:tradeoff} varies $\delta$ from 0.2 to 1.0 in the same setup. \ours attains the highest PSNR and the
-lowest LPIPS at every budget. Its PSNR gain over our re-run of \seacache grows with the budget, from 0.74\,dB [0.46, 1.04] at 11 \nfe to 3.89\,dB
-[3.49, 4.28] at 27 \nfe; at 9 \nfe it is not significant (0.21\,dB [$-$0.005, 0.42]), whereas LPIPS still improves by
-0.043 [0.033, 0.053]. The predictor alone behaves as the open-loop argument predicts: its gain over reuse shrinks from
-2.37\,dB at 27 \nfe to 0.11\,dB [$-$0.14, 0.34] at 11 and $-$0.10\,dB [$-$0.31, 0.10] at 9 \nfe, and linear
-extrapolation falls below reuse at 11 and 9 \nfe ($-$0.58 and $-$0.77\,dB), as forecast errors accumulate over long
-gaps. \pcgs improves on \kalsea at every budget, by 0.31\,dB [0.24, 0.39] at 9 \nfe and up to
-1.52\,dB [1.30, 1.75] at 27 \nfe.
+lowest LPIPS at every budget; its PSNR gain over our re-run of \seacache grows from 0.74\,dB [0.46, 1.04] at 11 \nfe
+to 3.89\,dB [3.49, 4.28] at 27 \nfe, and at 9 \nfe only LPIPS improves significantly (0.043 [0.033, 0.053]). As the
+open-loop argument predicts, the predictor alone loses its advantage over reuse as gaps grow (2.37\,dB at 27 \nfe,
+0.11\,dB [$-$0.14, 0.34] at 11), and linear extrapolation falls below reuse at 11 and 9 \nfe, whereas \pcgs improves on
+the predictor at every budget, by 0.31\,dB [0.24, 0.39] at 9 \nfe up to 1.52\,dB [1.30, 1.75] at 27 \nfe.
 
 % Size of the latent correction: moved to the supplement (sections/supp.tex) for space.
 
 \paragraph{Qualitative results.}
 \cref{fig:teaser} shows two prompts selected by a fixed rule. With the same computed steps, reuse alters
-high-frequency structure (in the street scene, part of a facade turns into foliage); both forecasts restore it, and
-\pcgs brings the image closest to the reference. The improvement is not uniform: for the cubes, the predictor alone is
-closer to the reference than \ours. The supplement shows more examples at 13 and 20.8 \nfe.
+high-frequency structure (part of a facade turns into foliage); both forecasts restore it and \pcgs comes closest to the
+reference, though for the cubes the predictor alone is closer. The supplement shows more examples.
 
 \subsection{Video generation}
 \label{sec:video}
 
-We apply our cache with the per-element filter to HunyuanVideo and Wan2.1-1.3B at the thresholds of \seacache
-(\cref{tab:video-main}). HunyuanVideo samples with Euler steps and a single guidance-distilled branch, so \pcgs
-applies as in \cref{sec:pcgs}; Wan2.1 uses UniPC with classifier-free guidance and needs the solver replay described
-there. Results and discussion: \tbd.
+% Numbers: figures/src/data/video_stats.json (fr_metrics_live*.json, wan fr_metrics.json; paired bootstrap 10k, seed 0);
+% gate analysis: paper_plan/hv_gate_fix.md and the released-gate full runs (hunyuan eval/full/fr_metrics.json).
+% Step 1 with the released gate (supplement; data/video_supp.json, "step1"): skipped on 780 of 944 prompts at delta 0.21
+% and on all above 0.222; at delta 0.207 the 559 prompts that skip it score 12.4 (SeaCache) / 14.0 dB (Ours) lower.
+We apply our cache with the per-element filter to HunyuanVideo and Wan2.1-1.3B at \seacache's two budgets
+(\cref{tab:video-main}); on Wan2.1 (UniPC, classifier-free guidance) \pcgs replays the solver (\cref{sec:pcgs}).
+\seacache's released HunyuanVideo script binds its gate to a scheduler that the pipeline replaces at
+inference, so the \sea filter sees a noise level near one at every step and skips step~1 once $\delta\gtrsim0.21$; prompts
+that skip it score 12--14\,dB lower (supplement). We let every gated method read the sampler's noise level and set $\delta$ for 24.0 and
+16.0 \nfe.
+Our re-run of \seacache then reproduces its published result at 24 \nfe (32.43 vs.\ 32.39\,dB) but not at 16.4
+(24.53\,dB at 16.0 vs.\ 26.46\,dB; its released gate gives 20.52\,dB), so \cref{tab:video-main} reports the re-run for
+HunyuanVideo. There, \ours improves on \seacache by 3.17\,dB [2.99, 3.35] at 24 \nfe and by 1.92\,dB [1.70, 2.14]
+at 16 \nfe (better on 90\% and 72\% of the prompts), with better SSIM and LPIPS. On Wan2.1 it exceeds \seacache's
+published results by 5.07 and 2.07\,dB at 24 and 17 \nfe. In our setup the paired gains are 2.27\,dB [2.13, 2.42] and
+0.33\,dB [0.16, 0.49], the latter with clearly better SSIM ($+$0.023) and LPIPS ($-$0.029); part of the distance to the
+published Wan2.1 numbers thus comes from the setup (our clips have 65 frames).
 
 \subsection{Ablations}
 \label{sec:ablations}
@@ -120,26 +129,20 @@ there. Results and discussion: \tbd.
 \maybeinput{tables/tab_ablation_compact}
 
 \paragraph{Anatomy of the corrector.}
-\cref{tab:ablation} reports paired PSNR differences to \ours at $\delta=0.3$ (20.8 \nfe) and $0.6$. We do not interpret differences below 0.1\,dB: the
-filter's band statistics are accumulated with atomic GPU additions, and a second run of \ours differs by
-$+$0.02\,dB [$-$0.04, 0.08] and $+$0.04\,dB [$-$0.003, 0.10] at the two budgets. The gain comes from re-integrating the latent: feeding
-the smoothed residuals only into the filter state is no better than no correction ($-$0.86 vs.\ $-$0.83\,dB at 20.8
-\nfe). The shape of the gains matters little: a linear interpolation from $\res_a$ to $\res_b$, which ignores the
-forecast, and the forecast plus a linearly weighted innovation match the RTS gains at 13 \nfe and exceed them by
-0.14\,dB [0.04, 0.25] at 20.8 \nfe. We had chosen the RTS gains on the development set, where both were tied for the per-element filter
-(interpolation minus RTS: $-$0.13\,dB [$-$0.31, 0.03] at 18 \nfe, $+$0.07\,dB [$-$0.05, 0.20] at 13 \nfe), and do not
-switch based on the test set. Re-embedding the corrected latents matters at
-the larger budget: the batched re-integration on the stored inputs $\hin_i$ loses 0.22\,dB [0.09, 0.34] at 20.8 \nfe
-(0.06\,dB [$-$0.01, 0.13] at 13 \nfe). The gate refresh has no measurable effect.
+\cref{tab:ablation} reports paired PSNR differences to \ours at $\delta=0.3$ (20.8 \nfe) and $0.6$; differences below
+0.1\,dB are within run-to-run noise (a second run of \ours differs by at most 0.04\,dB, as the filter's band statistics
+use atomic GPU additions). The gain comes from re-integrating the latent: feeding the smoothed residuals only into the
+filter state is no better than no correction ($-$0.86 vs.\ $-$0.83\,dB at 20.8 \nfe). The shape of the gains matters
+little: a linear interpolation from $\res_a$ to $\res_b$ and the forecast plus a linearly weighted innovation match the
+RTS gains at 13 \nfe and exceed them by 0.14\,dB [0.04, 0.25] at 20.8 \nfe; we keep the RTS gains chosen on the
+development set (supplement). The batched re-integration on the stored inputs $\hin_i$ loses 0.22\,dB [0.09, 0.34] at
+20.8 \nfe, and the gate refresh has no measurable effect.
 % Development-set numbers: research_v2/ablations/ABLATIONS_devset.md (COCO-64, n = 62-64, per-element forecaster).
 
 \paragraph{Other forecasters and fillers.}
-With \pcgs, the parametrization of the forecaster hardly matters: the per-element filter, the trend damping
-$\tau=0.1$ of SpecKCast and a calibration-free per-element filter all stay within 0.1\,dB of \ours, and \pcgs adds
-0.83\,dB [0.65, 1.01] and 0.58\,dB [0.44, 0.73] to the per-element filter, about as much as to the DCT filter. The frequency
-decomposition of SpecKCast is thus unnecessary for the residual, and we use the per-element filter for video. Nor is
-\pcgs tied to a Kalman forecaster: with the forecast plus a linearly weighted innovation as smoother, it improves
-reuse by 1.69\,dB [1.51, 1.88] and 0.74\,dB [0.62, 0.86] and linear extrapolation by 1.15\,dB [0.92, 1.38] and
-0.80\,dB [0.62, 0.98]. Linear extrapolation with \pcgs then ties \ours, while reuse with \pcgs stays 1.03 and
-0.53\,dB below, so a forecasting predictor remains useful. Forecasting a sampler quantity (clean image, noise or
-velocity) instead of the residual is not better (supplement).
+With \pcgs, the forecaster's parametrization hardly matters: the per-element filter, the damping $\tau=0.1$ of
+SpecKCast and a calibration-free filter all stay within 0.1\,dB of \ours, so the frequency decomposition is unnecessary
+for the residual and we use the per-element filter for video. Nor is \pcgs tied to a Kalman forecaster: it improves
+reuse by 1.69 and 0.74\,dB and linear extrapolation by 1.15 and 0.80\,dB (supplement); linear extrapolation with \pcgs
+then ties \ours, while reuse with \pcgs stays 1.03 and 0.53\,dB below. Forecasting a sampler quantity (clean image,
+noise or velocity) instead of the residual is not better (supplement).

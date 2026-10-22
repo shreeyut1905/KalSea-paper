@@ -6,7 +6,7 @@
 % printed without hyperlinks (the target is in the other PDF): \maincref{sec:pcgs} -> "Sec. 3.3", \mainref{eq:smooth}
 % -> "5". The main paper must therefore be compiled before the supplement.
 % Rules: double-blind (no names, links to our code or machine paths); every number from a logged run;
-% \tbd only for results of runs in progress (video, TFLOPs/latency).
+% \tbd only for quantities not yet measured (TFLOPs/latency) and the video frames of the qualitative section.
 
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
@@ -67,6 +67,9 @@
 \maketitlesupplementary   % kit command: title + "Supplementary Material" (no author block)
 \input{sections/supp}
 \FloatBarrier\twocolumn  % \twocolumn: fresh page state after the float pages (avoids a stretched first reference column)
+% \clearpage keeps the column height of the last text page (reduced by its full-width floats) when it flushes full-width
+% floats onto a float page; the first reference column would then be short. Reset it to the full text height.
+\makeatletter\global\@colht\textheight\global\@colroom\textheight\global\vsize\textheight\makeatother
 {
     \small
     \bibliographystyle{ieeenat_fullname}
