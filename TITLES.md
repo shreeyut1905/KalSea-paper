@@ -1,5 +1,9 @@
 # Title candidates (method name: KalSea)
 
+**Chosen by the owner (2026-10-23): "KalSea: Kalman-Corrected Spectral-Evolution-Aware Caching"** -- the name
+reads as Kalman + SEA (SeaCache = Spectral-Evolution-Aware Cache, whose gate KalSea uses). The candidates below are
+the earlier list.
+
 Written 2026-10-21 with the first full draft. CVPR titles are usually 8-14 words; all three keep "KalSea" as the
 method name and say what is new (correcting skipped steps by Kalman smoothing) rather than only "faster".
 
