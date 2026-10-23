@@ -135,6 +135,51 @@ def qualitative(tag, name, label, main=True, positions=None):
           rf"\input{{figures/{name}_caption}}\end{{figure*}}")
 
 
+VNAME = {"hunyuan": "HunyuanVideo", "wan": "Wan2.1-1.3B"}
+VGATE = {"hunyuan": ", gate on the sampler's noise level", "wan": ""}
+
+
+def qual_models(flux_tag="nfe13_teaser"):
+    """main paper: one upper-quartile example per model (fig_qual_models.py)"""
+    fm = json.load(open(os.path.join(HERE, "qual_tiles", flux_tag, "meta.json")))
+    V = {m: json.load(open(os.path.join(HERE, "qual_tiles", f"video_{m}", "meta.json"))) for m in ("hunyuan", "wan")}
+    fq = next(p for p in fm["prompts"] if float(p["quantile"]) == 75.0)
+    vq = {m: next(p for p in V[m]["prompts"] if float(p["quantile"]) == 75.0) for m in V}
+    frame = {vq[m]["main_frame"] for m in V}
+    assert len(frame) == 1
+    n_fr = 65
+    body = (
+        r"\caption{\textbf{One example per model at its lower budget}: \flux ($\delta="
+        + f"{fm['delta']}$, {int(fq['nfe'])} " + r"\nfe), "
+        + ", ".join(rf"{VNAME[m]} ($\delta={V[m]['delta']}$, {int(vq[m]['nfe'])} \nfe{VGATE[m]})" for m in V)
+        + rf"; video: frame {frame.pop()} of {n_fr}. Fixed rule: among the prompts on which \seacache and \ours computed"
+        r" identical steps, the one whose PSNR gain of \ours over \seacache is closest to the upper quartile."
+        r" Numbers: per-image and per-video PSNR (dB) w.r.t.\ the 50-step reference. More in the supplement.}"
+        + "\n" + r"\label{fig:qual-models}")
+    write("fig_qual_models", body, r"\begin{figure}[t]\centering\includegraphics[width=\columnwidth]"
+          r"{figures/fig_qual_models.pdf}\input{figures/fig_qual_models_caption}\end{figure}")
+
+
+def video_examples(model):
+    """supplementary material: two videos per model, five frames each (fig_video_examples.py)"""
+    m = json.load(open(os.path.join(HERE, "qual_tiles", f"video_{model}", "meta.json")))
+    gq = m["gain_quantiles"]
+    nfe = {int(p["nfe"]) for p in m["prompts"]}
+    assert len(nfe) == 1
+    fr = m["frames"]
+    body = (
+        rf"\caption{{\textbf{{Video examples, {VNAME[model]}}} at {nfe.pop()} \nfe ($\delta={m['delta']}${VGATE[model]};"
+        rf" VBench, 65 frames), frames {', '.join(map(str, fr[:-1]))} and {fr[-1]}. Fixed selection rule: among the"
+        rf" {m['n_identical_steps']} of {m['n_total']} prompts on which \seacache and \ours computed the identical steps,"
+        r" the videos whose per-video PSNR gain of \ours over \seacache is closest to the median"
+        rf" ({sg(gq['50'])}\,dB; top) and to the upper quartile ({sg(gq['75'])}\,dB; bottom; also in"
+        rf" \maincref{{fig:qual-models}}). Row labels: per-video PSNR (mean"
+        r" over the 65 frames) with respect to the 50-step reference, best in bold.}" + "\n"
+        + rf"\label{{fig:video-examples-{model}}}")
+    write(f"fig_video_examples_{model}", body, rf"\begin{{figure*}}[t]\centering\includegraphics[width=\textwidth]"
+          rf"{{figures/fig_video_examples_{model}.pdf}}\input{{figures/fig_video_examples_{model}_caption}}\end{{figure*}}")
+
+
 def video_sweep():
     """Supplementary figure fig_video_sweep (fig_video_sweep.py): numbers from data/video_supp.json."""
     VS = json.load(open(os.path.join(HERE, "data", "video_supp.json")))
@@ -183,3 +228,6 @@ if __name__ == "__main__":
     teaser("nfe13_teaser", "fig_qualitative_teaser", "fig:teaser")
     qualitative("nfe13_supp", "fig_qualitative_supp_nfe13", "fig:qualitative-supp-nfe13", main=False)
     qualitative("nfe21_supp", "fig_qualitative_supp_nfe21", "fig:qualitative-supp-nfe21", main=False)
+    qual_models()
+    video_examples("hunyuan")
+    video_examples("wan")

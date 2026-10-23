@@ -234,7 +234,7 @@ def tab_video_main():
                 + (rf" (its gate gives {rel['psnr']:.2f}\,dB at {rel['nfe']:.1f} \nfe)." if rel else ".")) if any(
         m in SEACACHE_RERUN_MODELS for m in VIDEO_MODELS) else ""
     L = [HEADER.replace("flux_drawbench_stats.json", "video_stats.json (video_stats.py)"),
-         "% Rows marked \\dagger: SeaCache's Tables 3/4, NFE = 50 x TFLOPs / full-run TFLOPs (14038 / 8214). Ours: SEA gate,",
+         "% Rows marked \\dagger: SeaCache's Tables 3/4, NFE = 50 x TFLOPs / full-run TFLOPs (14038 / 8214). KalSea: SEA gate,",
          f"% delta {ours_delta['hunyuan']} (HunyuanVideo, gate reads the live sampler sigma) and {ours_delta['wan']} (Wan2.1).",
          "% TFLOPs / latency: \\nodata until measured on one machine. Bold: best per model and budget block.",
          r"\begin{table*}[t]",

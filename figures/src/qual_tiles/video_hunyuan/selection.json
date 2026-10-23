@@ -1,0 +1,99 @@
+{
+ "model": "hunyuan",
+ "delta": "0.48",
+ "n_identical_steps": 936,
+ "n_total": 944,
+ "nfe": 16.0,
+ "gain_quantiles": {
+  "25": -0.17051390636809494,
+  "50": 1.5127189957804905,
+  "75": 4.14845256995335
+ },
+ "frames": [
+  0,
+  16,
+  32,
+  48,
+  64
+ ],
+ "prompts": [
+  {
+   "quantile": 75.0,
+   "target": 4.14845256995335,
+   "gain": 4.147907791131644,
+   "file": "A person is making snowman-0.mp4",
+   "idx": 255,
+   "prompt": "A person is making snowman",
+   "nfe": 16,
+   "compute_steps": [
+    0,
+    1,
+    2,
+    3,
+    5,
+    7,
+    9,
+    12,
+    16,
+    20,
+    25,
+    31,
+    38,
+    44,
+    48,
+    49
+   ],
+   "psnr": {
+    "seacache": 26.35196319085982,
+    "ours": 30.499870981991464
+   },
+   "ssim": {
+    "seacache": 0.874978753115108,
+    "ours": 0.9257295075367579
+   },
+   "lpips": {
+    "seacache": 0.10058226379064414,
+    "ours": 0.03423467310002217
+   }
+  },
+  {
+   "quantile": 50.0,
+   "target": 1.5127189957804905,
+   "gain": 1.5127623495569296,
+   "file": "A boat sailing leisurely along the Seine River with the Eiffel Tower in background by Hokusai, in the style of Ukiyo-0.mp4",
+   "idx": 549,
+   "prompt": "A boat sailing leisurely along the Seine River with the Eiffel Tower in background by Hokusai, in the style of Ukiyo",
+   "nfe": 16,
+   "compute_steps": [
+    0,
+    1,
+    2,
+    3,
+    5,
+    7,
+    9,
+    12,
+    16,
+    20,
+    25,
+    31,
+    38,
+    44,
+    48,
+    49
+   ],
+   "psnr": {
+    "seacache": 24.859864946500387,
+    "ours": 26.372627296057317
+   },
+   "ssim": {
+    "seacache": 0.8401667548873977,
+    "ours": 0.8855446222590432
+   },
+   "lpips": {
+    "seacache": 0.07322385786817624,
+    "ours": 0.04593443050980568
+   }
+  }
+ ]
+}

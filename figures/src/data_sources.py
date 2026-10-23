@@ -92,3 +92,13 @@ VIDEO_ABL = "/home/ubuntu/KalSea-dev/paper_plan/video_ablations_20.json"
 COLLAGE_RAW = "/home/ubuntu/KalSea-dev/v02_work/collage/raw"
 # chosen candidate (line index of prompts_collage.txt) per tile: top row C V P R, bottom row 20 / KalSea billboard / 27
 COLLAGE_PICK = {"C": 3, "V": 5, "P": 11, "R": 13, "20": 16, "KalSea": 22, "27": 24}
+
+# ---------------------------------------------------------------- qualitative video examples (video_qual_select.py)
+# Selection uses the low-budget runs of VIDEO_RUNS (per-video PSNR from their evaluation file, computed steps from the
+# run stats). The videos of those runs were deleted to free disk; only the selected prompts were regenerated (same
+# drivers, seeds and settings) into VIDEO_QUAL_DIR/<model>/{reference,seacache,ours}/<file>.mp4, and their frame
+# checksums are compared with the ones recorded for the deleted videos (VIDEO_REF_STATS for the references; the
+# run stats of VIDEO_ROOT/<config>_meta for the cached runs).
+VIDEO_QUAL_DIR = "/home/ubuntu/KalSea-dev/v02_work/video_examples"
+VIDEO_REF_STATS = {"hunyuan": "/home/ubuntu/video_runs/hunyuan/ref_meta/stats/*.jsonl",   # frames_sha1 (pre-encode)
+                   "wan": "/home/ubuntu/KalSea-dev/video_logs/wan_ref/stats.jsonl"}       # frames_md5 (decoded)

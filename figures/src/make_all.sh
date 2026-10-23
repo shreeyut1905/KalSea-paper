@@ -22,8 +22,13 @@ PYPDF="${PYPDF:-$HOME/.local/share/paper-tools/venv/bin/python}"
 "$PY" fig_qualitative.py --tag nfe13_teaser --name fig_qualitative_teaser
 "$PY" fig_qualitative.py --tag nfe13_supp --name fig_qualitative_supp_nfe13
 "$PY" fig_qualitative.py --tag nfe21_supp --name fig_qualitative_supp_nfe21
+"$PY" video_qual_select.py select                      # qual_tiles/video_<model>/selection.json (+ indices to regenerate)
+"$PY" video_qual_select.py export                      # needs the regenerated MP4s (data_sources.VIDEO_QUAL_DIR)
+"$PY" fig_qual_models.py --no-crops                    # ../fig_qual_models.pdf (main paper, one example per model)
+"$PY" fig_video_examples.py --model hunyuan            # ../fig_video_examples_hunyuan.pdf (supplementary material)
+"$PY" fig_video_examples.py --model wan                # ../fig_video_examples_wan.pdf (supplementary material)
 "$PYPDF" render_previews.py ../fig_qualitative.pdf ../fig_qualitative_teaser.pdf ../fig_qualitative_supp_nfe13.pdf \
-    ../fig_qualitative_supp_nfe21.pdf
+    ../fig_qualitative_supp_nfe21.pdf ../fig_qual_models.pdf ../fig_video_examples_hunyuan.pdf ../fig_video_examples_wan.pdf
 "$PY" make_tables.py                                  # ../../tables/tab_*.tex
 "$PY" make_captions.py                                # ../fig_*_caption.tex
 "$PY" make_supp_tables.py                             # ../../tables/supp_*.tex (supplementary material; needs torch)

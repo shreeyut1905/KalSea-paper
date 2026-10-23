@@ -13,7 +13,10 @@ accumulates the relative change of the timestep-modulated input of the first blo
 threshold, MagCache~\cite{ma2025magcache} models the magnitude ratio of successive residuals, and
 DiCache~\cite{bu2026dicache} probes a shallow layer. \seacache~\cite{chung2026seacache} keeps TeaCache's
 accumulate-and-reset rule but measures the change after a spectral-evolution-aware filter derived from the optimal
-linear denoiser, so that the gate responds to content rather than noise. We adopt the \sea gate unchanged and change
+linear denoiser, so that the gate responds to content rather than noise. Fast ODE solvers~\cite{song2021ddim,lu2022dpmsolver,lu2025dpmsolverpp,zhao2023unipc,karras2022edm},
+distillation~\cite{salimans2022progressive,song2023consistency,luo2023lcm,sauer2024add} and
+quantization~\cite{li2023qdiffusion} are orthogonal to caching, which keeps the weights and the sampler unchanged.
+We adopt the \sea gate unchanged and change
 what is written on the steps it skips.
 
 \paragraph{Forecasting and correcting cached features.}
@@ -42,14 +45,6 @@ process (constant-velocity) model of target tracking~\cite{barshalom2001estimati
 trend~\cite{gardner1985forecasting} and adapts its process noise from the innovations~\cite{mehra1972approaches}.
 Probabilistic ODE solvers infer the solution of an ODE from evaluations of its vector field by Gauss--Markov filtering
 and smoothing~\cite{schober2019probabilistic,tronarp2019probabilistic}; we instead use smoothing to infer the network
-evaluations that a cache skipped. In diffusion sampling, score-based SDE samplers alternate a numerical predictor with
-Langevin corrector steps~\cite{song2021score}, Heun's method corrects an Euler step with a second
-evaluation~\cite{karras2022edm}, and UniPC~\cite{zhao2023unipc} raises the accuracy of multistep solvers such as
-DPM-Solver++~\cite{lu2025dpmsolverpp} with a corrector that reuses the next model evaluation. \pcgs shares UniPC's
-principle of a corrector without extra evaluations, but corrects a whole gap of skipped steps.
-
-\paragraph{Other acceleration.}
-Fast ODE solvers~\cite{song2021ddim,lu2022dpmsolver,lu2025dpmsolverpp,zhao2023unipc,karras2022edm} reduce the number
-of steps, distillation~\cite{salimans2022progressive,song2023consistency,luo2023lcm,sauer2024add} trains few-step
-students, and quantization~\cite{li2023qdiffusion} lowers the cost of each step. These directions are orthogonal to
-caching, which keeps the weights and the sampler unchanged.
+evaluations that a cache skipped. In diffusion sampling, predictor-corrector schemes add Langevin steps~\cite{song2021score} or a second evaluation
+(Heun~\cite{karras2022edm}); UniPC~\cite{zhao2023unipc} corrects multistep solvers~\cite{lu2025dpmsolverpp} by reusing
+the next evaluation, as \pcgs does, but \pcgs corrects a whole gap of skipped steps.

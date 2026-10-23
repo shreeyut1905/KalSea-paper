@@ -1,0 +1,205 @@
+{
+ "model": "hunyuan",
+ "delta": "0.48",
+ "n_identical_steps": 936,
+ "n_total": 944,
+ "nfe": 16.0,
+ "gain_quantiles": {
+  "25": -0.17051390636809494,
+  "50": 1.5127189957804905,
+  "75": 4.14845256995335
+ },
+ "frames": [
+  0,
+  16,
+  32,
+  48,
+  64
+ ],
+ "prompts": [
+  {
+   "quantile": 75.0,
+   "target": 4.14845256995335,
+   "gain": 4.147907791131644,
+   "idx": 255,
+   "prompt": "A person is making snowman",
+   "nfe": 16,
+   "compute_steps": [
+    0,
+    1,
+    2,
+    3,
+    5,
+    7,
+    9,
+    12,
+    16,
+    20,
+    25,
+    31,
+    38,
+    44,
+    48,
+    49
+   ],
+   "psnr": {
+    "seacache": 26.35196319085982,
+    "ours": 30.499870981991464
+   },
+   "ssim": {
+    "seacache": 0.874978753115108,
+    "ours": 0.9257295075367579
+   },
+   "lpips": {
+    "seacache": 0.10058226379064414,
+    "ours": 0.03423467310002217
+   },
+   "tiles": {
+    "reference": {
+     "0": "255_reference_f00.jpg",
+     "16": "255_reference_f16.jpg",
+     "32": "255_reference_f32.jpg",
+     "48": "255_reference_f48.jpg",
+     "64": "255_reference_f64.jpg",
+     "crop": "255_reference_f32_crop.jpg"
+    },
+    "seacache": {
+     "0": "255_seacache_f00.jpg",
+     "16": "255_seacache_f16.jpg",
+     "32": "255_seacache_f32.jpg",
+     "48": "255_seacache_f48.jpg",
+     "64": "255_seacache_f64.jpg",
+     "crop": "255_seacache_f32_crop.jpg"
+    },
+    "ours": {
+     "0": "255_ours_f00.jpg",
+     "16": "255_ours_f16.jpg",
+     "32": "255_ours_f32.jpg",
+     "48": "255_ours_f48.jpg",
+     "64": "255_ours_f64.jpg",
+     "crop": "255_ours_f32_crop.jpg"
+    }
+   },
+   "window": [
+    368,
+    112,
+    160,
+    80
+   ],
+   "window_disagreement": 20.421929931640626,
+   "main_frame": 32,
+   "psnr_frames": {
+    "seacache": [
+     25.889881324208165,
+     22.759973304213467,
+     27.18582486502074,
+     26.60018071452086,
+     27.060615062256108
+    ],
+    "ours": [
+     29.879349432829834,
+     28.87030980125958,
+     31.008848575493126,
+     30.711958803693875,
+     30.249709831163834
+    ]
+   },
+   "size": [
+    640,
+    480
+   ]
+  },
+  {
+   "quantile": 50.0,
+   "target": 1.5127189957804905,
+   "gain": 1.5127623495569296,
+   "idx": 549,
+   "prompt": "A boat sailing leisurely along the Seine River with the Eiffel Tower in background by Hokusai, in the style of Ukiyo",
+   "nfe": 16,
+   "compute_steps": [
+    0,
+    1,
+    2,
+    3,
+    5,
+    7,
+    9,
+    12,
+    16,
+    20,
+    25,
+    31,
+    38,
+    44,
+    48,
+    49
+   ],
+   "psnr": {
+    "seacache": 24.859864946500387,
+    "ours": 26.372627296057317
+   },
+   "ssim": {
+    "seacache": 0.8401667548873977,
+    "ours": 0.8855446222590432
+   },
+   "lpips": {
+    "seacache": 0.07322385786817624,
+    "ours": 0.04593443050980568
+   },
+   "tiles": {
+    "reference": {
+     "0": "549_reference_f00.jpg",
+     "16": "549_reference_f16.jpg",
+     "32": "549_reference_f32.jpg",
+     "48": "549_reference_f48.jpg",
+     "64": "549_reference_f64.jpg",
+     "crop": "549_reference_f32_crop.jpg"
+    },
+    "seacache": {
+     "0": "549_seacache_f00.jpg",
+     "16": "549_seacache_f16.jpg",
+     "32": "549_seacache_f32.jpg",
+     "48": "549_seacache_f48.jpg",
+     "64": "549_seacache_f64.jpg",
+     "crop": "549_seacache_f32_crop.jpg"
+    },
+    "ours": {
+     "0": "549_ours_f00.jpg",
+     "16": "549_ours_f16.jpg",
+     "32": "549_ours_f32.jpg",
+     "48": "549_ours_f48.jpg",
+     "64": "549_ours_f64.jpg",
+     "crop": "549_ours_f32_crop.jpg"
+    }
+   },
+   "window": [
+    200,
+    304,
+    160,
+    80
+   ],
+   "window_disagreement": 11.783748779296875,
+   "main_frame": 32,
+   "psnr_frames": {
+    "seacache": [
+     20.621746809781428,
+     23.824451191143655,
+     25.977207973339247,
+     25.94140202623759,
+     25.5184396493221
+    ],
+    "ours": [
+     21.12059391911412,
+     24.62740885385431,
+     27.66395886670814,
+     28.096488614586093,
+     28.108184534434418
+    ]
+   },
+   "size": [
+    640,
+    480
+   ]
+  }
+ ]
+}

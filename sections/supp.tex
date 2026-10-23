@@ -146,7 +146,8 @@ images are bitwise equal to the 50-step reference.
 cross-checked against the forward pass's own record of computed steps: every DrawBench run has zero mismatches and no
 partial block stack, and \pcgs never calls a block. Per image, \ours evaluates $\Emb$ and $\Out$ 44.0 times at 18.1
 \nfe and 47.0 times at 13 \nfe (skipped steps plus corrected computed steps; \cref{tab:supp-correction}), each about
-3.4\,GFLOP (main paper, \maincref{sec:cost}), plus 11.2 and 9.0 gate refreshes, in total below 0.3\% of one transformer
+3.4\,GFLOP at $1024^2$ (linear maps between 64 and 3072 channels over 4096 tokens; one transformer evaluation costs
+59.5\,TFLOPs, 2976 for 50 steps~\cite{chung2026seacache}), plus 11.2 and 9.0 gate refreshes, in total below 0.3\% of one transformer
 evaluation. The peak allocated memory exceeds that of the uncached sampler by 0.16\,GiB (\kalsea: 0.14\,GiB; \seacache:
 0.05\,GiB). Wall-clock measurements are pending (\cref{supp:cost}).
 % Memory: dMem column of research_v2/runs/drawbench_eval/eval_dct_pcgs.txt / eval_final.txt (0.164 / 0.141 / 0.047 GiB).
@@ -310,8 +311,11 @@ reaches 29.62\,dB, 2.73\,dB [2.34, 3.12] above our re-run of \seacache (26.89\,d
 \cref{tab:ablation-full} extends the main paper's \maincref{tab:ablation} with all metrics, the continuation variants
 (group (c)), the forecasters without correction (group (d)) and the forecasting targets (group (f)). Re-embedding the
 corrected latents matters at the larger budget: the batched re-integration on the stored inputs $\hin_i$ loses
-\suppBatchedLossA{} at 20.8 \nfe and \suppBatchedLossB{} at 13 \nfe. \cref{tab:ablation-2x2} crosses the two
-forecaster parametrizations with \pcgs at the budgets of \maincref{tab:flux-main}.
+\suppBatchedLossA{} at 20.8 \nfe and \suppBatchedLossB{} at 13 \nfe. The shape of the gains matters little: a linear
+interpolation from $\res_a$ to $\res_b$ and the forecast plus a linearly weighted innovation match the RTS gains at
+13 \nfe and exceed them by 0.14\,dB [0.04, 0.25] at 20.8 \nfe (group (b) of \maincref{tab:ablation}); we keep the RTS
+gains, which were chosen on the development set. \cref{tab:ablation-2x2} crosses the two forecaster parametrizations
+with \pcgs at the budgets of \maincref{tab:flux-main}.
 
 \maybeinput{tables/tab_ablation_full}
 \maybeinput{tables/tab_ablation_2x2}
@@ -585,6 +589,34 @@ of the two guidance branches, not the correction, limits \ours.
 % provenance of the threshold rule: paper_plan/video_ablations_20.json, provenance.sweep_delta_selection (rule fixed
 % before the sweep runs; select_sweep_deltas.py).
 
+\subsection{Video examples}
+\label{supp:video-examples}
+% Selection and frames: figures/src/video_qual_select.py (select / export), figures: fig_video_examples.py, captions:
+% make_captions.py. The videos of the selected prompts were regenerated (v02_work/video_examples) and verified against
+% the frame checksums recorded for the evaluated videos and against the per-video PSNR of the evaluation files.
+\cref{fig:video-examples-hunyuan,fig:video-examples-wan} show two videos per model at the lower budget of
+\maincref{tab:video-main} (HunyuanVideo: $\delta=0.48$, 16 \nfe; Wan2.1: $\delta=0.35$, 17 \nfe), each as five frames
+spread over the 65-frame clip. The videos are selected by a fixed rule, not by hand: among the prompts on which
+\seacache and \ours computed the identical steps, we compute the per-video PSNR gain of \ours over \seacache with
+respect to the 50-step reference and show the video whose gain is closest to the median and the one closest to the
+upper quartile of the gains. The latter is also the video example of the main paper's \maincref{fig:qual-models},
+which shows its middle frame; the \flux example there is selected by the same rule among the DrawBench prompts at
+$\delta=0.6$ (13 \nfe). On Wan2.1 the median gain is small, in line with the small mean gain at this budget. Note
+that the per-video PSNR is a mean over all 65 frames, so a single frame can look closer to the reference than the
+number suggests.
+
+\begin{figure*}[t]
+  \centering
+  \maybegraphics[width=\textwidth]{figures/fig_video_examples_hunyuan.pdf}
+  \input{figures/fig_video_examples_hunyuan_caption}
+\end{figure*}
+
+\begin{figure*}[t]
+  \centering
+  \maybegraphics[width=\textwidth]{figures/fig_video_examples_wan.pdf}
+  \input{figures/fig_video_examples_wan_caption}
+\end{figure*}
+
 \subsection{Reproducibility}
 \label{supp:video-repro}
 The video runs are deterministic. For \suppVidDetRuns{} configurations of both models, the full runs regenerated the 20
@@ -592,7 +624,10 @@ prompts of an earlier pilot run and reproduced its videos bit for bit (\suppVidD
 frames and computed steps), in part after code changes in between. After the ablation options were added to the code,
 the configurations of the main comparison (\seacache and \ours at both budgets of both models, one prompt each,
 \suppVidDetAfter{} videos) again reproduced the videos of the full runs bit for bit. Differences between video methods
-are therefore not run-to-run noise; their intervals reflect the variability over prompts only.
+are therefore not run-to-run noise; their intervals reflect the variability over prompts only. The twelve videos of
+\cref{fig:video-examples-hunyuan,fig:video-examples-wan} (reference, \seacache and \ours for two prompts per model)
+were generated again for this supplement with the same code and seeds; their frames are bit-identical to those of the
+evaluated videos, and their per-video PSNR equals the evaluated value.
 
 %% ====================================================================================================================
 \section{TFLOPs and latency}

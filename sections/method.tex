@@ -91,8 +91,7 @@ $\mathbf h=[1,0]^\top$,
 On skipped steps the moments are not updated ($\post{\kstate}_i=\prior{\kstate}_i$, $\post{\kP}_i=\prior{\kP}_i$),
 and the cache writes the predicted value, $\hat\res_i=\prior{m}_i$, into $\hout_i=\hin_i+\hat\res_i$; the output
 layers run as usual. The intensity $\kappa$ is adapted online so that the mean squared innovation matches its
-predicted variance $S_b$~\cite{mehra1972approaches}: $\kappa\gets\mathrm{clip}_{[0.1,10]}(\kappa\,\gamma_b^{0.2})$,
-where $\gamma_b$ is the ratio of the two, clipped to $[0.1,10]$.
+predicted variance $S_b$~\cite{mehra1972approaches} (supplement).
 
 \paragraph{Parametrizations.}
 The covariance $\kP$ is shared by all elements (per-element variant) or by all coefficients of a frequency band (DCT
@@ -100,10 +99,9 @@ variant), so the filter costs a few elementwise operations per step and its gain
 \emph{per-element} variant, $s$ is a warped log signal-to-noise ratio of the schedule. In the
 \emph{DCT} variant, which follows SpecKCast and is our default for \flux, the residual of each channel is transformed
 with an orthonormal 2D DCT on the token grid, the coefficients are grouped into seven radial frequency bands, and each
-band has its own warped time coordinate and covariance. Values are normalized by the residual power of their band.
-The process-noise intensities, the initial trend variances and the band powers are calibrated once per model from 16
-uncached trajectories whose prompts are disjoint from all evaluation prompts, and we use $\tau=0.5$ and $R=10^{-3}$
-throughout (details in the supplement). The two variants perform the same (\cref{sec:ablations}). With the corrector of
+band has its own warped time coordinate and covariance. Noise intensities, initial trend variances and band powers
+are calibrated once per model from 16 uncached trajectories of prompts disjoint from all evaluation prompts; $\tau=0.5$
+and $R=10^{-3}$ throughout (supplement). The two variants perform the same (\cref{sec:ablations}). With the corrector of
 \cref{sec:pcgs}, this predictor forms our full method, \ours; the predictor alone (the \sea gate with Kalman residual
 forecasting) is labeled \kalsea in tables and figures.
 
@@ -126,9 +124,8 @@ $\prior{\kP}_i\kPhi(b,i)^\top\mathbf h$, and conditioning the joint Gaussian on 
   g_i=\frac{\big[\prior{\kP}_i\,\kPhi(b,i)^\top\big]_{00}}{[\prior{\kP}_b]_{00}+R}.
   \label{eq:smooth}
 \end{equation}
-This is the RTS smoother~\cite{rauch1965maximum} over $[a,b]$: inside the gap the filtered and predicted moments
-coincide, so the products of the smoother gains $\post{\kP}_i\kA_{i+1}^\top(\prior{\kP}_{i+1})^{-1}$ telescope into
-$\prior{\kP}_i\kPhi(b,i)^\top(\prior{\kP}_b)^{-1}$ (proof in the supplement). The gains use only quantities that the
+This is the RTS smoother~\cite{rauch1965maximum} over $[a,b]$, whose gain products telescope because the filtered and
+predicted moments coincide inside the gap (proof in the supplement). The gains use only quantities that the
 filter already maintains, so the smoother has no parameters of its own. They increase across the gap: the steps
 closest to $b$, whose forecasts were the least reliable, absorb most of the innovation. In residual space, the smoothed
 residual is the forecast plus a gain-weighted share of the forecast error revealed at $b$,
@@ -164,24 +161,16 @@ $\lat_{b+1}=\lat'_b+(\sigma_{b+1}-\sigma_b)\,\Out(\Emb(\lat'_b)+\res_b,\cond_b)$
 $\lat'_b$, and \pcgs remains a drop-in replacement of the network output.
 
 \paragraph{(4) Gate refresh.}
-We recompute the gate's reference input of step $b$ from $\lat'_b$ (one adaptive normalization and one \sea filter),
-so that the gate follows the corrected trajectory; this detail has no measurable effect (\cref{sec:ablations}).
-
-\paragraph{Why smoothing corrects the latent.}
-To first order, the latent error at step $b$ is a linear function of the residual errors in the gap, each scaled by
-its step size and propagated by Jacobians of $\Emb$ and $\Out$. Substituting conditional means into a linear function
-minimizes its expected squared error, so, under the filter's model and to first order, re-integrating with the
-smoothed residuals minimizes the expected squared error of $\lat'_b$ given the observations up to step $b$; the
-forecasts are optimal only given those up to step $a$.
+The gate's reference input of step $b$ is recomputed from $\lat'_b$ (no measurable effect, \cref{sec:ablations}).
 
 \paragraph{Remarks.}
-\pcgs does not change the predictor for the next gap, because smoothed and filtered estimates coincide at the latest
+Under the filter's model and to first order, re-integrating with the smoothed residuals minimizes the expected squared
+error of $\lat'_b$ given the observations up to step $b$ (supplement). \pcgs does not change the predictor for the next gap, because smoothed and filtered estimates coincide at the latest
 observation. It only requires the solver update to be linear in the network output: for a multistep solver such as
 the UniPC sampler~\cite{zhao2023unipc} of Wan2.1, the solver state is restored at step $a{+}1$ and the updates are
 replayed with the corrected outputs; with classifier-free guidance~\cite{ho2022cfg}, the conditional and
-unconditional residuals are filtered and smoothed separately under a shared gate. For plain reuse, the smoother of the
-corresponding random-walk model with noise-free observations is the linear interpolation between $\res_a$ and
-$\res_b$. \cref{alg:kalsea} summarizes the procedure.
+unconditional residuals are filtered and smoothed separately under a shared gate. \cref{alg:kalsea} summarizes the
+procedure.
 
 % Requires \usepackage{algorithm} and \usepackage{algpseudocode} (added to macros.tex).
 \begin{algorithm}[t]
@@ -220,11 +209,9 @@ $\res_b$. \cref{alg:kalsea} summarizes the procedure.
 
 \ours performs exactly the block-stack evaluations of the gate's schedule; \pcgs adds none. It adds one evaluation of
 $\Emb$ and $\Out$ per skipped step and, at each computed step that closes a gap, one more of each plus the gate
-refresh. For \flux at $1024^2$, $\Emb$ and $\Out$ are linear maps between 64 and 3072 channels over 4096 tokens,
-about 3.4\,GFLOP per skipped step, whereas one transformer evaluation costs 59.5\,TFLOPs (2976 for 50
-steps~\cite{chung2026seacache}); over an image, \pcgs costs about 0.3\% of one transformer evaluation. The filter
-state and the gap buffer raise the peak memory by 0.16\,GiB over the uncached sampler (\seacache: 0.05\,GiB;
-\kalsea: 0.14\,GiB).
+refresh: for \flux at $1024^2$, about 0.3\% of one transformer evaluation per image. The filter state and the gap
+buffer raise the peak memory by 0.16\,GiB over the uncached sampler (\seacache: 0.05\,GiB; \kalsea: 0.14\,GiB;
+supplement).
 % Wall-clock overhead: to be added with the controlled latency measurement (latency columns are blank until then).
 % FLOP count (analytic, from the layer shapes; verify with calflops before submission): x_embedder Linear(64->3072)
 % and proj_out Linear(3072->64) on 4096 tokens cost 2*4096*64*3072 = 1.61 GFLOP each, norm_out ~0.1 GFLOP, i.e.
