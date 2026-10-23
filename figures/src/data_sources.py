@@ -85,3 +85,10 @@ VIDEO_HV_PILOT = ("/home/ubuntu/video_runs/hunyuan/eval/pilot20.json", "seacache
 # 20-prompt video ablations (A2-A6), released-vs-corrected gate summary (A7) and the default-path bitwise checks; written
 # by video_code/abl20/abl20_report.py from video_runs/{hunyuan,wan}/eval/abl20.json
 VIDEO_ABL = "/home/ubuntu/KalSea-dev/paper_plan/video_ablations_20.json"
+
+# ---------------------------------------------------------------- Fig. 1 collage (make_collage.py)
+# FLUX.1-dev, 1024x1024, 50 steps, guidance 3.5, our cache (gate + Kalman forecaster + PCGS) at delta 0.2, generated with
+# the released FLUX/kalsea_generate.py (seed = 2027 + line index of the prompt file; 4 candidates per prompt).
+COLLAGE_RAW = "/home/ubuntu/KalSea-dev/v02_work/collage/raw"
+# chosen candidate (line index of prompts_collage.txt) per tile: top row C V P R, bottom row 20 / KalSea billboard / 27
+COLLAGE_PICK = {"C": 3, "V": 5, "P": 11, "R": 13, "20": 16, "KalSea": 22, "27": 24}

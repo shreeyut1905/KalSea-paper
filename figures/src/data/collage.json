@@ -1,0 +1,53 @@
+{
+ "model": "FLUX.1-dev",
+ "resolution": "1024x1024",
+ "steps": 50,
+ "delta": 0.2,
+ "tiles": {
+  "C": {
+   "prompt": "A giant capital letter \"C\" made of lush green ivy and small white flowers, standing alone in a sunlit garden, centered, sharp photograph",
+   "seed": 2030,
+   "nfe": 27,
+   "method": "kalsea_pcgs"
+  },
+  "V": {
+   "prompt": "A giant capital letter \"V\" carved from clear blue ice, standing on a snowy mountain ridge under a blue sky, centered, sharp photograph",
+   "seed": 2032,
+   "nfe": 27,
+   "method": "kalsea_pcgs"
+  },
+  "P": {
+   "prompt": "A giant capital letter \"P\" made of glowing pink neon tubes mounted on a dark brick wall at night, centered, sharp photograph",
+   "seed": 2038,
+   "nfe": 27,
+   "method": "kalsea_pcgs"
+  },
+  "R": {
+   "prompt": "A giant capital letter \"R\" sculpted from golden sand on a beach at sunset, centered, sharp photograph",
+   "seed": 2040,
+   "nfe": 27,
+   "method": "kalsea_pcgs"
+  },
+  "20": {
+   "prompt": "The number \"20\" in large white painted digits on the hull of a red wooden fishing boat in a harbor, centered, sharp photograph",
+   "seed": 2043,
+   "nfe": 27,
+   "method": "kalsea_pcgs"
+  },
+  "KalSea": {
+   "prompt": "A large roadside billboard that reads \"KalSea\" in bold dark blue letters on a white background, with the ocean and a clear blue sky behind it, the wide billboard is centered in the frame, sharp photograph",
+   "seed": 2049,
+   "nfe": 27,
+   "method": "kalsea_pcgs"
+  },
+  "27": {
+   "prompt": "A wooden lifeguard tower on a sandy beach with the number \"27\" painted in large white digits on its side, centered, sharp photograph",
+   "seed": 2051,
+   "nfe": 27,
+   "method": "kalsea_pcgs"
+  }
+ },
+ "nfe_all_candidates": [
+  27
+ ]
+}

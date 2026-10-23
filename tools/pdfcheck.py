@@ -34,9 +34,9 @@ PAPER_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PAGE_LIMIT = 8                      # CVPR: 8 pages incl. figures/tables; extra pages only for references
 COLUMN_W_IN = (6.875 - 0.3125) / 2  # \columnwidth in cvpr.sty = 3.28125 in
 TEXT_W_IN = 6.875                   # \textwidth in cvpr.sty
-# Official kit files must stay byte-identical (kit/KIT_SOURCE.txt).  Update when switching to the 2027 kit.
+# Official kit files must stay byte-identical (kit/KIT_SOURCE.txt; CVPR 2027 kit v1).
 KIT_HASHES = {
-    "cvpr.sty": "2602473285d1a7df2a445ac89b76e1afa0acab78e056f0369d19770245190153",
+    "cvpr.sty": "1cd7f434b13d41c475df4a1901a5d82d9ca8b80b8cf6205dc4602a5c164286b4",
     "ieeenat_fullname.bst": "e38e6166bd7b1e6d23a1b79dcdb55c656e4fcdbe91bdf6b50d827e6b5d1aacfc",
     "preamble.tex": "f666a85903f49929395951e7afb620e96d4e208334623f23135298b4d7f06228",
 }
@@ -79,12 +79,13 @@ def endofbody_page(aux):
 
 
 def references_heading(doc):
-    """(page number, y0 in pt) of the bold 'References' heading, or None."""
+    """(page number, y0 in pt) of the first heading after the body: the mandatory 'LLM Usage Statement' (CVPR 2027;
+    allowed on the extra pages, like the references) or the bold 'References' heading; None if neither is found."""
     for pno, page in enumerate(doc, start=1):
         for block in page.get_text("dict")["blocks"]:
             for line in block.get("lines", []):
                 text = "".join(s["text"] for s in line["spans"]).strip()
-                if text == "References" and max(s["size"] for s in line["spans"]) > 10.5:
+                if text in ("References", "LLM Usage Statement") and max(s["size"] for s in line["spans"]) > 10.5:
                     return pno, line["bbox"][1]
     return None
 
@@ -128,6 +129,86 @@ def kit_changes():
 def leaks(pdf_path, doc):
     raw = open(pdf_path, "rb").read()
     found = [p.decode() for p in LEAK_PATTERNS if p in raw]
+    meta = doc.metadata or {}
+    if (meta.get("author") or "").strip():
+        found.append(f"metadata author={meta['author']!r}")
+    return found
+
+
+def figure_mode(path):
+    doc = pymupdf.open(path)
+    r = doc[0].rect
+    w_in, h_in = r.width / 72, r.height / 72
+    print(f"{path}: {doc.page_count} page(s), {w_in:.3f} x {h_in:.3f} in "
+          f"({w_in * 2.54:.2f} x {h_in * 2.54:.2f} cm)")
+    print(f"  width = {w_in / COLUMN_W_IN:.2f} x columnwidth ({COLUMN_W_IN:.3f} in), "
+          f"{w_in / TEXT_W_IN:.2f} x textwidth ({TEXT_W_IN} in)")
+    fonts = fonts_of(doc)
+    for basefont, ftype, ext in fonts:
+        print(f"  font {basefont}  type={ftype}  embedded={'no' if ext in ('n/a', '') else ext}")
+    if not fonts:
+        print("  no fonts (text converted to paths, or no text)")
+    probs = font_problems(fonts)
+    for p in probs:
+        print("  PROBLEM:", p)
+    return 1 if probs else 0
+
+
+def paper_mode(a):
+    doc = pymupdf.open(a.pdf)
+    problems, notes = [], []
+    n = doc.page_count
+    r = doc[0].rect
+    size_ok = abs(r.width - 612) < 1 and abs(r.height - 792) < 1
+    body = None if a.supp else endofbody_page(a.aux)
+    refs = references_heading(doc)
+    print(f"PDF        {a.pdf}: {n} pages, {'US letter' if size_ok else f'{r.width:.0f}x{r.height:.0f} pt'}"
+          + ("  (supplementary material: no page limit)" if a.supp else ""))
+    if not size_ok:
+        problems.append("page size is not US letter")
+    if a.supp:
+        pass
+    elif body is None:
+        notes.append("no \\label{endofbody} found in the aux file; body length unknown")
+        print("Body       end page unknown (no \\label{endofbody})")
+    else:
+        print(f"Body       ends on page {body} (limit {PAGE_LIMIT})")
+        if body > PAGE_LIMIT:
+            problems.append(f"body ends on page {body} > {PAGE_LIMIT}")
+    if refs:
+        print(f"References heading on page {refs[0]} (y = {refs[1]:.0f} pt)")
+        if not a.supp and (refs[0] > PAGE_LIMIT + 1 or (refs[0] == PAGE_LIMIT + 1 and refs[1] > 110)):
+            problems.append(f"material before the references on page {refs[0]} (floats or text past page {PAGE_LIMIT}?)")
+    else:
+        print("References heading not found")
+    fonts = fonts_of(doc)
+    fprob = font_problems(fonts)
+    print(f"Fonts      {len(fonts)} fonts, {len(fprob)} problems")
+    problems += fprob
+    li = log_issues(a.log)
+    if li["errors"]:
+        problems += [f"LaTeX error: {e}" for e in li["errors"]]
+    if li["undefined"]:
+        problems.append(f"undefined refs/citations: {', '.join(li['undefined'])}")
+    if li["missing"]:
+        problems.append(f"missing figure/table files (placeholders shown): {', '.join(li['missing'])}")
+    if li["rerun"]:
+        notes.append("LaTeX asked for a rerun (labels may have changed)")
+    if li["overfull"]:
+        notes.append(f"{li['overfull']} overfull hbox warnings beyond cvpr.sty's 30pt hfuzz")
+    marks = source_markers(supp=a.supp)
+    if marks:
+        problems.append(f"{len(marks)} TODO/TBD markers left in the sources (first: {', '.join(marks[:6])})")
+    lk = leaks(a.pdf, doc)
+    if lk:
+        problems.append(f"possible anonymity leaks in the PDF: {', '.join(lk)}")
+    kc = kit_changes()
+    if kc:
+        problems.append(f"official kit files modified: {', '.join(kc)}")
+    # The CVPR 2027 kit has no paper ID (removed to avoid leaking IDs); a leftover \paperID definition is flagged.
+    main_tex = os.path.join(PAPER_DIR, "supp_main.tex" if a.supp else "main.tex")
+    if os.path.exists(main_tex) and re.search(r"\\def\\paperID", open(main_tex, encoding="utf-8").read()):
+        problems.append(f"{os.path.basename(main_tex)} still defines \\paperID (not used by the CVPR 2027 kit)")
     meta = doc.metadata or {}
     if (meta.get("author") or "").strip():
         found.append(f"metadata author={meta['author']!r}")
