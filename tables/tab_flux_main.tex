@@ -6,7 +6,7 @@
 % TFLOPs / latency: \nodata for every row until measured on one machine. Bold: best per block.
 \begin{table}[t]
   \centering
-  \caption{\textbf{Text-to-image results on \flux} (DrawBench, 200 held-out prompts). $^\dagger$Published by \seacache~\cite{chung2026seacache} (its Table~1; other hardware; seeds and metric code not stated); \nfe{} $=50\,{\times}\,$TFLOPs$/2976$, a FLOP equivalent for $\Delta$-DiT and ToCa. $^\ddagger$The two rows appear swapped there. \seacache's released gate computes 20.9 steps at $\delta{=}0.3$ in our setup, not 18.4, so we match \nfe rather than $\delta$ ($\delta{=}0.3$: \cref{tab:ablation}, supplement). \kalsea: \ours without \pcgs. Lat.: s/image; \nodata: not yet measured.}
+  \caption{\textbf{Text-to-image results on \flux} (DrawBench, 200 held-out prompts). $^\dagger$Published by \seacache~\cite{chung2026seacache} (its Table~1; other hardware; seeds and metric code not stated); \nfe{} $=50\,{\times}\,$TFLOPs$/2976$, a FLOP equivalent for $\Delta$-DiT and ToCa. $^\ddagger$The two rows appear swapped there. \seacache's released gate computes 20.9 steps at $\delta{=}0.3$ in our setup, not 18.4, so we match \nfe rather than $\delta$ ($\delta{=}0.3$: \cref{tab:ablation}, supplement). Lat.: s/image; \nodata: not yet measured.}
   \label{tab:flux-main}
   \footnotesize
   \setlength{\tabcolsep}{2.2pt}
@@ -24,7 +24,6 @@
     TaylorSeer~\cite{liu2025taylorseer} ($S{=}3$)$^\dagger$ & 20.0 & \nodata & \nodata & 22.78 & 0.828 & 0.163 \\
     \seacache~\cite{chung2026seacache} ($\delta{=}0.3$)$^\dagger$ & 18.4 & \nodata & \nodata & 26.29 & 0.893 & 0.106 \\
     \addlinespace[1pt]
-    \kalsea ($\delta{=}0.37$) & 18.1 & \nodata & \nodata & 26.91 & 0.907 & 0.080 \\
     \ours ($\delta{=}0.37$) & 18.1 & \nodata & \nodata & \best{27.72} & \best{0.916} & \best{0.070} \\
     \midrule
     \multicolumn{7}{@{}l}{\emph{13 \nfe (baselines: 13--15 \nfe)}} \\
@@ -33,7 +32,6 @@
     TaylorSeer~\cite{liu2025taylorseer} ($S{=}5$)$^\dagger$ & 14.0 & \nodata & \nodata & 19.97 & 0.762 & 0.236 \\
     \seacache~\cite{chung2026seacache} ($\delta{=}0.6$)$^\dagger$ & 13.0 & \nodata & \nodata & 21.33 & 0.798 & 0.226 \\
     \addlinespace[1pt]
-    \kalsea ($\delta{=}0.6$) & 13.0 & \nodata & \nodata & 21.91 & 0.826 & 0.172 \\
     \ours ($\delta{=}0.6$) & 13.0 & \nodata & \nodata & \best{22.53} & \best{0.842} & \best{0.154} \\
     \bottomrule
   \end{tabular}

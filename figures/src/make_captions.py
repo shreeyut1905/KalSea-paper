@@ -39,8 +39,6 @@ def tradeoff(long=False):
     P, S = ST["paired"], ST["summary"]
     lo_d = min(ST["deltas"], key=lambda d: S[d]["ours"]["nfe"])
     hi_d = max(ST["deltas"], key=lambda d: S[d]["ours"]["nfe"])
-    ok_kal = all(P[d]["ours-kalsea"]["psnr"]["ci95"][0] > 0 for d in ST["deltas"])
-    assert ok_kal
     sig_sea = [d for d in ST["deltas"] if P[d]["ours-seacache"]["psnr"]["ci95"][0] <= 0]
     lp = P[lo_d]["ours-seacache"]["lpips"]
     deltas = ", ".join(ST["deltas"])
@@ -54,8 +52,7 @@ def tradeoff(long=False):
             r" bootstrap CIs. \textbf{(c)}~Paired PSNR gain of \ours (95\% CIs): over \seacache, it grows from "
             + ci(P[lo_d]["ours-seacache"]["psnr"]) + rf" at {nfe_label(S[lo_d]['ours']['nfe'])} \nfe"
             + (r" (not significant)" if lo_d in sig_sea else "") + " to "
-            + ci(P[hi_d]["ours-seacache"]["psnr"]) + rf" at {nfe_label(S[hi_d]['ours']['nfe'])} \nfe; over \kalsea"
-            r" (\pcgs alone), it is positive at every budget.}" "\n"
+            + ci(P[hi_d]["ours-seacache"]["psnr"]) + rf" at {nfe_label(S[hi_d]['ours']['nfe'])} \nfe.}}" "\n"
             r"\label{fig:tradeoff}")
         write("fig_tradeoff", body, r"\begin{figure*}[t]\centering\includegraphics[width=\textwidth]{figures/fig_tradeoff.pdf}"
               r"\input{figures/fig_tradeoff_caption}\end{figure*}   (one-column variant: figures/fig_tradeoff_1col.pdf,"
@@ -66,14 +63,13 @@ def tradeoff(long=False):
         r" \textbf{(a)}~PSNR and \textbf{(b)}~LPIPS with respect to the 50-step reference vs.\ the mean number of transformer"
         rf" evaluations per image (\nfe). The budget is set by the \sea-gate threshold $\delta \in \{{{deltas}\}}$, shared by"
         r" all methods; gray bands mark the two budgets of \cref{tab:flux-main} ($\delta = 0.37$, $0.6$). Lines: means over"
-        r" prompts; shaded: 95\% bootstrap CIs. \textbf{(c)}~Paired per-prompt PSNR gain of \ours over \seacache and over"
-        r" \kalsea (mean, 95\% bootstrap CI). The gain over \seacache grows with the budget, from "
+        r" prompts; shaded: 95\% bootstrap CIs. \textbf{(c)}~Paired per-prompt PSNR gain of \ours over \seacache"
+        r" (mean, 95\% bootstrap CI). The gain over \seacache grows with the budget, from "
         + ci(P[lo_d]["ours-seacache"]["psnr"]) + rf" at {nfe_label(S[lo_d]['ours']['nfe'])} \nfe"
         + (r" (not significant; LPIPS still improves by" if lo_d in sig_sea else r" (LPIPS improves by")
         + rf" {abs(lp['mean']):.3f} [{abs(lp['ci95'][1]):.3f}, {abs(lp['ci95'][0]):.3f}]) to "
-        + ci(P[hi_d]["ours-seacache"]["psnr"]) + rf" at {nfe_label(S[hi_d]['ours']['nfe'])} \nfe; the gain over \kalsea"
-        r" (gap smoothing alone) is positive at every budget. \seacache: \sea gate with residual reuse; \kalsea: \sea gate"
-        r" with Kalman residual forecasting; \ours: \kalsea with predictor-corrector gap smoothing.}" "\n"
+        + ci(P[hi_d]["ours-seacache"]["psnr"]) + rf" at {nfe_label(S[hi_d]['ours']['nfe'])} \nfe. \seacache: \sea gate with residual reuse; \ours: \sea gate with"
+        r" Kalman residual forecasting and predictor-corrector gap smoothing.}" "\n"
         r"\label{fig:tradeoff}")
     write("fig_tradeoff", body, r"\begin{figure*}[t]\centering\includegraphics[width=\textwidth]{figures/fig_tradeoff.pdf}"
           r"\input{figures/fig_tradeoff_caption}\end{figure*}   (one-column variant: figures/fig_tradeoff_1col.pdf,"
@@ -93,10 +89,9 @@ def teaser(tag, name, label):
     body = (
         rf"\caption{{\textbf{{Closing the loop at {nfes[0]} \nfe}} (\flux, $\delta = {meta['delta']}$, ${ratio:.1f}\times$"
         r" fewer transformer evaluations than the 50-step reference). \seacache (our run of its released gate) reuses the"
-        r" last computed residual on skipped steps, \kalsea forecasts it, and \ours (\kalsea with \pcgs) also corrects each"
-        r" skipped gap once the"
-        r" next step is computed. Fixed selection rule: among the "
-        rf"{r['n_identical_steps']} of {r['n_total']} held-out DrawBench prompts on which the three caches computed the"
+        r" last computed residual on skipped steps; \ours forecasts it with a Kalman filter and corrects each skipped gap"
+        r" once the next step is computed (\pcgs). Fixed selection rule: among the "
+        rf"{r['n_identical_steps']} of {r['n_total']} held-out DrawBench prompts on which the two caches computed the"
         r" same steps, those whose PSNR gain of \ours over \seacache is closest to the median"
         rf" ({sg(gq['50'])}\,dB; left) and the upper quartile ({sg(gq['75'])}\,dB; right). Crops (${ww}\times{wh}$"
         r" of $1024^2$ pixels) are placed where the cached images differ most, without using the reference. Numbers: PSNR"
@@ -127,11 +122,11 @@ def qualitative(tag, name, label, main=True, positions=None):
         rf"\caption{{\textbf{{Qualitative comparison at {budget}}} (\flux, DrawBench, $\delta = {meta['delta']}$,"
         rf" ${ratio:.1f}\times$ fewer transformer evaluations than the 50-step reference)."
         r" The prompts are selected by a fixed rule, not by hand: among the "
-        rf"{r['n_identical_steps']} of {r['n_total']} prompts on which \seacache, \kalsea and \ours computed the identical"
+        rf"{r['n_identical_steps']} of {r['n_total']} prompts on which \seacache and \ours computed the identical"
         r" set of steps, we compute the per-prompt PSNR gain of \ours over \seacache and show "
         rf"{rows_txt}."
         rf" Below each image, a fixed ${ww}\times{wh}$-pixel crop (of $1024\times1024$) is magnified; it is placed where"
-        r" the three accelerated samples differ most from one another (largest mean pairwise absolute difference), without"
+        r" the two accelerated samples differ most (largest mean absolute difference), without"
         r" looking at the reference. Numbers: PSNR (dB) with respect to the reference, best in bold."
         + (r" Examples near the lower quartile and at the $\approx$21-\nfe budget are in the supplementary material."
            if main else "")

@@ -26,7 +26,7 @@ C = {
     "seacache": "#d95926",
     "reference": "#0b0b0b",
 }
-LABEL = {"ours": "Ours", "kalsea": "KalSea", "seacache": "SeaCache", "reference": "Reference"}
+LABEL = {"ours": "KalSea", "kalsea": "KalSea w/o PCGS", "seacache": "SeaCache", "reference": "Reference"}
 MARKER = {"ours": "o", "kalsea": "D", "seacache": "s"}
 MSIZE = {"ours": 3.6, "kalsea": 3.0, "seacache": 3.2}
 ZORDER = {"ours": 5, "kalsea": 4, "seacache": 3}

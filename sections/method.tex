@@ -103,9 +103,9 @@ with an orthonormal 2D DCT on the token grid, the coefficients are grouped into 
 band has its own warped time coordinate and covariance. Values are normalized by the residual power of their band.
 The process-noise intensities, the initial trend variances and the band powers are calibrated once per model from 16
 uncached trajectories whose prompts are disjoint from all evaluation prompts, and we use $\tau=0.5$ and $R=10^{-3}$
-throughout (details in the supplement). The two variants perform the same (\cref{sec:ablations}). We call the
-predictor alone (the \sea gate with Kalman residual forecasting) \kalsea; with the corrector of \cref{sec:pcgs} it
-becomes our full method, labeled \ours in tables and figures.
+throughout (details in the supplement). The two variants perform the same (\cref{sec:ablations}). With the corrector of
+\cref{sec:pcgs}, this predictor forms our full method, \ours; the predictor alone (the \sea gate with Kalman residual
+forecasting) is labeled \kalsea in tables and figures.
 
 \subsection{Predictor-corrector gap smoothing (corrector)}
 \label{sec:pcgs}
@@ -186,7 +186,7 @@ $\res_b$. \cref{alg:kalsea} summarizes the procedure.
 % Requires \usepackage{algorithm} and \usepackage{algpseudocode} (added to macros.tex).
 \begin{algorithm}[t]
   \caption{\ours sampling. The second \textbf{if} block is \pcgs; without it, the procedure is the predictor
-  \kalsea.}
+  alone (\kalsea).}
   \label{alg:kalsea}
   \small
   \begin{algorithmic}[1]

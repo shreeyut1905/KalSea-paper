@@ -15,8 +15,9 @@ import subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIG_DIR = os.path.dirname(HERE)
-METHODS = ("seacache", "kalsea", "ours")
-LABEL = {"reference": "Reference", "seacache": "SeaCache", "kalsea": "KalSea", "ours": "Ours"}
+METHODS = ("seacache", "ours")   # KalSea vs SeaCache
+NC = 1 + len(METHODS)              # image columns per prompt group (reference + methods)
+LABEL = {"reference": "Reference", "seacache": "SeaCache", "kalsea": "KalSea w/o PCGS", "ours": "KalSea"}
 COLOR = {"seacache": "cSeaCache", "kalsea": "cKalSea", "ours": "cOurs"}
 QNAME = {50.0: "Median gain", 75.0: "Upper-quartile gain", 25.0: "Lower-quartile gain"}
 
@@ -65,7 +66,7 @@ def build(meta, tag, ncols_groups=2):
     rows_q = [{float(p["quantile"]) for p in prompts[i:i + ncols_groups]} for i in range(0, len(prompts), ncols_groups)]
     per_group = any(len(q) > 1 for q in rows_q)
     gap_group = max(GAP_GROUP, LEFT) if per_group else GAP_GROUP
-    w = (W_TOTAL - LEFT - ncols_groups * 3 * GAP_COL - (ncols_groups - 1) * gap_group) / (4 * ncols_groups)
+    w = (W_TOTAL - LEFT - ncols_groups * (NC - 1) * GAP_COL - (ncols_groups - 1) * gap_group) / (NC * ncols_groups)
     zh = w * meta["prompts"][0]["window"][3] / meta["prompts"][0]["window"][2]
     row_h = PROMPT_H + w + GAP_ZOOM + zh + PSNR_H
     nrows = (len(prompts) + ncols_groups - 1) // ncols_groups
@@ -74,8 +75,8 @@ def build(meta, tag, ncols_groups=2):
     L.append(r"\begin{tikzpicture}[x=1bp,y=1bp,line join=round]")
     L.append(fr"\path[use as bounding box] (0,0) rectangle ({W_TOTAL:.2f},{-H:.2f});")
 
-    def gx(gi, j):  # left x of column j (0..3) in group gi
-        return LEFT + gi * (4 * w + 3 * GAP_COL + gap_group) + j * (w + GAP_COL)
+    def gx(gi, j):  # left x of column j (0..NC-1) in group gi
+        return LEFT + gi * (NC * w + (NC - 1) * GAP_COL + gap_group) + j * (w + GAP_COL)
 
     # header: Reference column + a spanning "13 NFE" label over the three accelerated columns
     for gi in range(ncols_groups):
@@ -83,7 +84,7 @@ def build(meta, tag, ncols_groups=2):
         L.append(fr"\node[anchor=south,inner sep=0] at ({x0 + w / 2:.2f},{-HEADER_H + 2.2:.2f}) {{\hdr Reference}};")
         L.append(fr"\node[anchor=south,inner sep=0] at ({x0 + w / 2:.2f},{-HEADER_H + 12.6:.2f}) {{\sub 50 NFE}};")
         L.append(fr"\draw[cMuted,line width=0.4bp] ({x0 + 1:.2f},{-HEADER_H + 11.6:.2f}) -- ({x0 + w - 1:.2f},{-HEADER_H + 11.6:.2f});")
-        xa, xb = gx(gi, 1), gx(gi, 3) + w
+        xa, xb = gx(gi, 1), gx(gi, NC - 1) + w
         L.append(fr"\node[anchor=south,inner sep=0] at ({(xa + xb) / 2:.2f},{-HEADER_H + 12.6:.2f}) {{\sub {nfe_txt} NFE, identical computed steps}};")
         L.append(fr"\draw[cMuted,line width=0.4bp] ({xa + 1:.2f},{-HEADER_H + 11.6:.2f}) -- ({xb - 1:.2f},{-HEADER_H + 11.6:.2f});")
         for j, m in enumerate(METHODS, start=1):
@@ -96,7 +97,7 @@ def build(meta, tag, ncols_groups=2):
         r, gi = divmod(k, ncols_groups)
         ytop = -HEADER_H - r * (row_h + GAP_ROW)
         # prompt text
-        xg0, xg1 = gx(gi, 0), gx(gi, 3) + w
+        xg0, xg1 = gx(gi, 0), gx(gi, NC - 1) + w
         txt = tex_escape(p["prompt"])
         L.append(fr"\node[anchor=south west,inner sep=0,text width={xg1 - xg0:.2f}bp,align=flush left,font=\prm] "
                  fr"at ({xg0:.2f},{ytop - PROMPT_H + 2.0:.2f}) {{``{txt}''}};")

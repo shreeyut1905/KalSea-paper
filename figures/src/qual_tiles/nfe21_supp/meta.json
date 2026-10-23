@@ -12,34 +12,34 @@
    128
   ],
   "stride": 8,
-  "n_identical_steps": 188,
+  "n_identical_steps": 192,
   "n_total": 200,
   "gain_quantiles": {
-   "25": 1.0729580660122728,
-   "50": 2.565741266364907,
-   "75": 4.496564698914127
+   "25": 1.0411048160649843,
+   "50": 2.534707113325817,
+   "75": 4.476225517433407
   }
  },
  "nfe": 20.84,
  "prompts": [
   {
    "quantile": 25.0,
-   "target": 1.0729580660122728,
-   "gain": 1.0768325930259834,
-   "idx": 171,
-   "prompt": "A maglev train going vertically downward in high speed, New York Times photojournalism.",
+   "target": 1.0411048160649843,
+   "gain": 1.047117060213143,
+   "idx": 194,
+   "prompt": "New York Skyline with 'Diffusion' written with fireworks on the sky.",
    "window": [
-    200,
-    56,
+    416,
+    232,
     256,
     128
    ],
-   "window_disagreement": 10.018951654434204,
+   "window_disagreement": 14.527511596679688,
    "size": [
     1024,
     1024
    ],
-   "n_same_steps": 188,
+   "n_same_steps": 192,
    "compute_steps": [
     0,
     1,
@@ -57,65 +57,57 @@
     25,
     29,
     33,
-    37,
-    41,
-    45,
-    48,
+    38,
+    42,
+    46,
     49
    ],
-   "nfe": 21,
+   "nfe": 20,
    "psnr": {
-    "seacache": 29.409984830041537,
-    "kalsea": 28.288473233930247,
-    "ours": 30.48681742306752
+    "seacache": 22.81798178696734,
+    "ours": 23.865098847180484
    },
    "ssim": {
-    "seacache": 0.9424412764312452,
-    "kalsea": 0.9405681529616379,
-    "ours": 0.9633140290001712
+    "seacache": 0.8321568608347997,
+    "ours": 0.8767756090179618
    },
    "lpips": {
-    "seacache": 0.051855769008398056,
-    "kalsea": 0.043055400252342224,
-    "ours": 0.025632448494434357
+    "seacache": 0.10848924517631531,
+    "ours": 0.07161116600036621
    },
    "tiles": {
     "reference": {
-     "full": "171_reference_full.jpg",
-     "crop": "171_reference_crop.jpg"
+     "full": "194_reference_full.jpg",
+     "crop": "194_reference_crop.jpg"
     },
     "seacache": {
-     "full": "171_seacache_full.jpg",
-     "crop": "171_seacache_crop.jpg"
-    },
-    "kalsea": {
-     "full": "171_kalsea_full.jpg",
-     "crop": "171_kalsea_crop.jpg"
+     "full": "194_seacache_full.jpg",
+     "crop": "194_seacache_crop.jpg"
     },
     "ours": {
-     "full": "171_ours_full.jpg",
-     "crop": "171_ours_crop.jpg"
+     "full": "194_ours_full.jpg",
+     "crop": "194_ours_crop.jpg"
     }
    }
   },
   {
    "quantile": 25.0,
-   "target": 1.0729580660122728,
-   "gain": 1.061334484971141,
-   "idx": 19,
-   "prompt": "A yellow book and a red vase.",
+   "target": 1.0411048160649843,
+   "gain": 1.0230680836205082,
+   "idx": 33,
+   "prompt": "Rainbow coloured penguin.",
    "window": [
-    240,
-    448,
+    496,
+    80,
     256,
     128
    ],
-   "window_disagreement": 5.924391269683838,
+   "window_disagreement": 4.76976615190506,
    "size": [
     1024,
     1024
    ],
-   "n_same_steps": 188,
+   "n_same_steps": 192,
    "compute_steps": [
     0,
     1,
@@ -141,207 +133,50 @@
    ],
    "nfe": 21,
    "psnr": {
-    "seacache": 33.34727384628253,
-    "kalsea": 33.393038012011665,
-    "ours": 34.408608331253674
+    "seacache": 34.36197766338643,
+    "ours": 35.38504574700694
    },
    "ssim": {
-    "seacache": 0.9664955357276769,
-    "kalsea": 0.9682310830827671,
-    "ours": 0.9743870415623993
+    "seacache": 0.9762624579586867,
+    "ours": 0.9768535268518682
    },
    "lpips": {
-    "seacache": 0.0417930893599987,
-    "kalsea": 0.037201542407274246,
-    "ours": 0.031299009919166565
+    "seacache": 0.03409363329410553,
+    "ours": 0.030200302600860596
    },
    "tiles": {
     "reference": {
-     "full": "019_reference_full.jpg",
-     "crop": "019_reference_crop.jpg"
+     "full": "033_reference_full.jpg",
+     "crop": "033_reference_crop.jpg"
     },
     "seacache": {
-     "full": "019_seacache_full.jpg",
-     "crop": "019_seacache_crop.jpg"
-    },
-    "kalsea": {
-     "full": "019_kalsea_full.jpg",
-     "crop": "019_kalsea_crop.jpg"
+     "full": "033_seacache_full.jpg",
+     "crop": "033_seacache_crop.jpg"
     },
     "ours": {
-     "full": "019_ours_full.jpg",
-     "crop": "019_ours_crop.jpg"
+     "full": "033_ours_full.jpg",
+     "crop": "033_ours_crop.jpg"
     }
    }
   },
   {
    "quantile": 50.0,
-   "target": 2.565741266364907,
-   "gain": 2.5746899822464897,
-   "idx": 133,
-   "prompt": "A zebra to the right of a fire hydrant.",
+   "target": 2.534707113325817,
+   "gain": 2.551347628257261,
+   "idx": 111,
+   "prompt": "An instqrumemnt used for cutting cloth, paper, axdz othr thdin mteroial, consamistng of two blades lad one on tvopb of the other and fhastned in tle mixdqdjle so as to bllow them txo be pened and closed by thumb and fitngesr inserted tgrough rings on kthe end oc thei vatndlzes.",
    "window": [
-    208,
-    344,
+    368,
+    496,
     256,
     128
    ],
-   "window_disagreement": 27.81010103225708,
+   "window_disagreement": 24.864127039909363,
    "size": [
     1024,
     1024
    ],
-   "n_same_steps": 188,
-   "compute_steps": [
-    0,
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    8,
-    10,
-    12,
-    15,
-    18,
-    21,
-    25,
-    29,
-    33,
-    38,
-    42,
-    46,
-    49
-   ],
-   "nfe": 20,
-   "psnr": {
-    "seacache": 20.151003355141444,
-    "kalsea": 21.89495037595976,
-    "ours": 22.725693337387934
-   },
-   "ssim": {
-    "seacache": 0.8194619165159364,
-    "kalsea": 0.8523203932976103,
-    "ours": 0.8728674352561442
-   },
-   "lpips": {
-    "seacache": 0.1525413542985916,
-    "kalsea": 0.1292666345834732,
-    "ours": 0.10693489015102386
-   },
-   "tiles": {
-    "reference": {
-     "full": "133_reference_full.jpg",
-     "crop": "133_reference_crop.jpg"
-    },
-    "seacache": {
-     "full": "133_seacache_full.jpg",
-     "crop": "133_seacache_crop.jpg"
-    },
-    "kalsea": {
-     "full": "133_kalsea_full.jpg",
-     "crop": "133_kalsea_crop.jpg"
-    },
-    "ours": {
-     "full": "133_ours_full.jpg",
-     "crop": "133_ours_crop.jpg"
-    }
-   }
-  },
-  {
-   "quantile": 50.0,
-   "target": 2.565741266364907,
-   "gain": 2.5567925504833244,
-   "idx": 166,
-   "prompt": "Colouring page of large cats climbing the eifel tower in a cyberpunk future.",
-   "window": [
-    432,
-    200,
-    256,
-    128
-   ],
-   "window_disagreement": 56.34739685058594,
-   "size": [
-    1024,
-    1024
-   ],
-   "n_same_steps": 188,
-   "compute_steps": [
-    0,
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    8,
-    10,
-    12,
-    15,
-    18,
-    21,
-    25,
-    29,
-    33,
-    38,
-    42,
-    46,
-    49
-   ],
-   "nfe": 20,
-   "psnr": {
-    "seacache": 14.221427042917567,
-    "kalsea": 15.965099430208937,
-    "ours": 16.77821959340089
-   },
-   "ssim": {
-    "seacache": 0.6799961640403076,
-    "kalsea": 0.7660793919291088,
-    "ours": 0.7918625379427496
-   },
-   "lpips": {
-    "seacache": 0.23806074261665344,
-    "kalsea": 0.17473675310611725,
-    "ours": 0.15672311186790466
-   },
-   "tiles": {
-    "reference": {
-     "full": "166_reference_full.jpg",
-     "crop": "166_reference_crop.jpg"
-    },
-    "seacache": {
-     "full": "166_seacache_full.jpg",
-     "crop": "166_seacache_crop.jpg"
-    },
-    "kalsea": {
-     "full": "166_kalsea_full.jpg",
-     "crop": "166_kalsea_crop.jpg"
-    },
-    "ours": {
-     "full": "166_ours_full.jpg",
-     "crop": "166_ours_crop.jpg"
-    }
-   }
-  },
-  {
-   "quantile": 75.0,
-   "target": 4.496564698914127,
-   "gain": 4.4870088950965545,
-   "idx": 58,
-   "prompt": "A sphere made of kitchen tile. A sphere with the texture of kitchen tile.",
-   "window": [
-    464,
-    120,
-    256,
-    128
-   ],
-   "window_disagreement": 22.353057861328125,
-   "size": [
-    1024,
-    1024
-   ],
-   "n_same_steps": 188,
+   "n_same_steps": 192,
    "compute_steps": [
     0,
     1,
@@ -367,42 +202,103 @@
    ],
    "nfe": 21,
    "psnr": {
-    "seacache": 22.401094199598933,
-    "kalsea": 25.743411182857816,
-    "ours": 26.888103094695488
+    "seacache": 23.41984037667008,
+    "ours": 25.971188004927342
    },
    "ssim": {
-    "seacache": 0.8156360152961408,
-    "kalsea": 0.9051501782827862,
-    "ours": 0.9293603026164025
+    "seacache": 0.9431873331140296,
+    "ours": 0.960601397374353
    },
    "lpips": {
-    "seacache": 0.15151876211166382,
-    "kalsea": 0.06361570209264755,
-    "ours": 0.04533493518829346
+    "seacache": 0.0319356769323349,
+    "ours": 0.019825942814350128
    },
    "tiles": {
     "reference": {
-     "full": "058_reference_full.jpg",
-     "crop": "058_reference_crop.jpg"
+     "full": "111_reference_full.jpg",
+     "crop": "111_reference_crop.jpg"
     },
     "seacache": {
-     "full": "058_seacache_full.jpg",
-     "crop": "058_seacache_crop.jpg"
-    },
-    "kalsea": {
-     "full": "058_kalsea_full.jpg",
-     "crop": "058_kalsea_crop.jpg"
+     "full": "111_seacache_full.jpg",
+     "crop": "111_seacache_crop.jpg"
     },
     "ours": {
-     "full": "058_ours_full.jpg",
-     "crop": "058_ours_crop.jpg"
+     "full": "111_ours_full.jpg",
+     "crop": "111_ours_crop.jpg"
+    }
+   }
+  },
+  {
+   "quantile": 50.0,
+   "target": 2.534707113325817,
+   "gain": 2.5180665983943733,
+   "idx": 152,
+   "prompt": "An IT-guy trying to fix hardware of a PC tower is being tangled by the PC cables like Laokoon. Marble, copy after Hellenistic original from ca. 200 BC. Found in the Baths of Trajan, 1506.",
+   "window": [
+    400,
+    408,
+    256,
+    128
+   ],
+   "window_disagreement": 30.772523880004883,
+   "size": [
+    1024,
+    1024
+   ],
+   "n_same_steps": 192,
+   "compute_steps": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8,
+    10,
+    12,
+    15,
+    18,
+    21,
+    25,
+    29,
+    33,
+    38,
+    42,
+    46,
+    49
+   ],
+   "nfe": 20,
+   "psnr": {
+    "seacache": 21.343594167977432,
+    "ours": 23.861660766371806
+   },
+   "ssim": {
+    "seacache": 0.7941914611485673,
+    "ours": 0.8753700951588225
+   },
+   "lpips": {
+    "seacache": 0.1584598422050476,
+    "ours": 0.09255873411893845
+   },
+   "tiles": {
+    "reference": {
+     "full": "152_reference_full.jpg",
+     "crop": "152_reference_crop.jpg"
+    },
+    "seacache": {
+     "full": "152_seacache_full.jpg",
+     "crop": "152_seacache_crop.jpg"
+    },
+    "ours": {
+     "full": "152_ours_full.jpg",
+     "crop": "152_ours_crop.jpg"
     }
    }
   },
   {
    "quantile": 75.0,
-   "target": 4.496564698914127,
+   "target": 4.476225517433407,
    "gain": 4.472631058212357,
    "idx": 14,
    "prompt": "A brown colored giraffe.",
@@ -412,12 +308,12 @@
     256,
     128
    ],
-   "window_disagreement": 7.679071426391602,
+   "window_disagreement": 9.72061538696289,
    "size": [
     1024,
     1024
    ],
-   "n_same_steps": 188,
+   "n_same_steps": 192,
    "compute_steps": [
     0,
     1,
@@ -444,17 +340,14 @@
    "nfe": 21,
    "psnr": {
     "seacache": 32.37507110178863,
-    "kalsea": 34.594384482885445,
     "ours": 36.847702160000985
    },
    "ssim": {
     "seacache": 0.9661904681966452,
-    "kalsea": 0.9819910998963705,
     "ours": 0.9879013755798104
    },
    "lpips": {
     "seacache": 0.022074013948440552,
-    "kalsea": 0.010574335232377052,
     "ours": 0.006786329206079245
    },
    "tiles": {
@@ -466,13 +359,78 @@
      "full": "014_seacache_full.jpg",
      "crop": "014_seacache_crop.jpg"
     },
-    "kalsea": {
-     "full": "014_kalsea_full.jpg",
-     "crop": "014_kalsea_crop.jpg"
-    },
     "ours": {
      "full": "014_ours_full.jpg",
      "crop": "014_ours_crop.jpg"
+    }
+   }
+  },
+  {
+   "quantile": 75.0,
+   "target": 4.476225517433407,
+   "gain": 4.4870088950965545,
+   "idx": 58,
+   "prompt": "A sphere made of kitchen tile. A sphere with the texture of kitchen tile.",
+   "window": [
+    464,
+    120,
+    256,
+    128
+   ],
+   "window_disagreement": 28.635735034942627,
+   "size": [
+    1024,
+    1024
+   ],
+   "n_same_steps": 192,
+   "compute_steps": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8,
+    10,
+    12,
+    15,
+    18,
+    21,
+    25,
+    29,
+    33,
+    37,
+    41,
+    45,
+    48,
+    49
+   ],
+   "nfe": 21,
+   "psnr": {
+    "seacache": 22.401094199598933,
+    "ours": 26.888103094695488
+   },
+   "ssim": {
+    "seacache": 0.8156360152961408,
+    "ours": 0.9293603026164025
+   },
+   "lpips": {
+    "seacache": 0.15151876211166382,
+    "ours": 0.04533493518829346
+   },
+   "tiles": {
+    "reference": {
+     "full": "058_reference_full.jpg",
+     "crop": "058_reference_crop.jpg"
+    },
+    "seacache": {
+     "full": "058_seacache_full.jpg",
+     "crop": "058_seacache_crop.jpg"
+    },
+    "ours": {
+     "full": "058_ours_full.jpg",
+     "crop": "058_ours_crop.jpg"
     }
    }
   }

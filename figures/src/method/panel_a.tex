@@ -49,7 +49,7 @@
 
 %% ------------------------------------------------------------------------------------------------ Kalman filter
 \draw[comp=cKalSea] (\Fx-0.03,0.28) rectangle (\Fx+\Fw+0.03,1.92);
-\node[title] at (\Fx+0.07,1.84) {Kalman filter {\normalfont\scriptsize(KalSea)}};
+\node[title] at (\Fx+0.07,1.84) {Kalman filter {\normalfont\scriptsize(predictor)}};
 \node[lbl, anchor=north west, align=left] at (\Fx+0.07,1.53) {%
   predict: $\prior{\kstate}_i=\kA_i\post{\kstate}_{i-1}$,\ \ $\kA_i=\begin{psmallmatrix}1&\ds_i\\0&\rho_i\end{psmallmatrix}$\\[0.5pt]
   update (computed): $z_i=\DCT(\res_i)$\\[0.5pt]
@@ -79,7 +79,7 @@
 
 %% ------------------------------------------------------------------------------------------------ PCGS
 \draw[comp=cOurs] (\Bx,-0.22) rectangle (17.4625,2.30);
-\node[title] at (\Bx+0.1,2.22) {Gap smoothing {\normalfont\scriptsize(PCGS, ours)}};
+\node[title] at (\Bx+0.1,2.22) {Gap smoothing {\normalfont\scriptsize(PCGS, corrector)}};
 \node[lbl, anchor=north west, align=left] at (\Bx+0.1,1.86) {%
   at computed step $b$ ending a gap $a{+}1,\dots,b{-}1$:\\[2pt]
   (1) RTS: $\smooth{m}_i=\prior{m}_i+g_i\,e_b$,\ \ $e_b=z_b-\prior{m}_b$\\[2pt]

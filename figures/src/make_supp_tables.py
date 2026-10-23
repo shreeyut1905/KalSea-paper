@@ -223,7 +223,7 @@ def tab_openloop():
          r" of the \sea gate, (0, 1, 2, 4, 6, 9, 13, 18, 25, 33, 41, 47, 49); at the skipped steps of its two seven-step"
          r" gaps we report the relative error $\|\hat\vel_i-\vel_i\|/\|\vel_i\|$ (\%) of the velocity obtained from the"
          r" forecast, along the uncached trajectory (no error feedback). Targets: block-stack residual $\res$ (per-element"
-         r" or DCT filter, as in \kalsea) and, with per-element filters, the clean-image estimate $\hat\lat_0$, the noise"
+         r" or DCT filter, as in \ours) and, with per-element filters, the clean-image estimate $\hat\lat_0$, the noise"
          r" estimate $\hat{\boldsymbol\epsilon}$ and the velocity $\vel$ (sampler quantities, see \cref{supp:negative}).}",
          r"  \label{tab:supp-openloop}", r"  \footnotesize", r"  \setlength{\tabcolsep}{4pt}",
          r"  \begin{tabular}{@{}c ccccc @{\hspace{12pt}} ccccc@{}}", r"    \toprule",

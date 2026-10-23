@@ -27,7 +27,7 @@ from PIL import Image
 import data_sources as DS
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-METHODS = ("seacache", "kalsea", "ours")
+METHODS = ("seacache", "ours")   # KalSea vs SeaCache
 
 
 def load_per_image():
@@ -78,7 +78,7 @@ def main():
     P = {m: per[DS.MAIN[m].format(d=d)] for m in METHODS}
     img_dir = {"reference": DS.run_dir(DS.REF_RUN), **{m: DS.run_dir(DS.MAIN[m].format(d=d)) for m in METHODS}}
     files = sorted(P["ours"])
-    same = [f for f in files if P["ours"][f]["compute_steps"] == P["seacache"][f]["compute_steps"] == P["kalsea"][f]["compute_steps"]]
+    same = [f for f in files if P["ours"][f]["compute_steps"] == P["seacache"][f]["compute_steps"]]
     g = np.array([P["ours"][f]["psnr"] - P["seacache"][f]["psnr"] for f in same])
     prompts = prompts_from_stats(img_dir["reference"])
     out_dir = os.path.join(HERE, "qual_tiles", a.tag)
@@ -103,7 +103,7 @@ def main():
         f = c["file"]
         imgs = {m: np.asarray(Image.open(os.path.join(img_dir[m], f)).convert("RGB")) for m in ("reference",) + METHODS}
         A = {m: imgs[m].astype(np.float32) for m in METHODS}
-        D = (np.abs(A["seacache"] - A["kalsea"]) + np.abs(A["seacache"] - A["ours"]) + np.abs(A["kalsea"] - A["ours"])).mean(2) / 3
+        D = np.abs(A["seacache"] - A["ours"]).mean(2)
         (x0, y0), score = window_argmax(D, ww, wh, a.stride)
         idx, prompt = prompts[f]
         c.update(idx=idx, prompt=prompt, window=[x0, y0, ww, wh], window_disagreement=score,
@@ -121,7 +121,7 @@ def main():
             crop.save(os.path.join(out_dir, fn_crop), quality=92, subsampling=0, optimize=True)
             c["tiles"][m] = dict(full=fn_full, crop=fn_crop)
         print(f"q{c['quantile']:.0f} target {c['target']:+.3f}  {idx:3d} gain {c['gain']:+.3f}  window {x0},{y0} "
-              f"(D={score:.1f})  PSNR S {c['psnr']['seacache']:.2f} K {c['psnr']['kalsea']:.2f} O {c['psnr']['ours']:.2f}  {prompt}")
+              f"(D={score:.1f})  PSNR S {c['psnr']['seacache']:.2f} O {c['psnr']['ours']:.2f}  {prompt}")
     for c in chosen:
         c.pop("file", None)          # internal file name; idx + prompt identify the image
     meta = dict(delta=d, rule=dict(quantiles=a.quantiles, k=a.k, window=[ww, wh], stride=a.stride,

@@ -21,7 +21,7 @@ import figstyle as S  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIG_DIR = os.path.dirname(HERE)
-METHODS = ("seacache", "kalsea", "ours")
+METHODS = ("seacache", "ours")   # main comparison: KalSea vs SeaCache (the predictor-only ablation is in Tab. 3 / supplement)
 # SeaCache curve = our same-setup re-run of its released gate + reuse (the main table cites its published numbers)
 LABEL = {**S.LABEL, "seacache": "SeaCache (re-run)"}
 MAIN_BUDGETS = {"0.37": r"$\delta\!=\!0.37$", "0.6": r"$\delta\!=\!0.6$"}   # budgets of the main table (18.1 / 13 NFE)
@@ -36,7 +36,7 @@ def load():
         rows.sort(key=lambda t: t[1])
         series[m] = rows
     gains = {}
-    for key, base in (("ours-seacache", "seacache"), ("ours-kalsea", "kalsea")):
+    for key, base in (("ours-seacache", "seacache"),):
         rows = []
         for d in deltas:
             p = st["paired"][d][key]["psnr"]
@@ -85,8 +85,8 @@ def nfe_ticks(ax, budget_nfe):
 
 def gain_panel(ax, gains, budget_nfe, label_budgets=True, annotate=True):
     ax.axhline(0, color=S.AXIS, lw=0.6, zorder=1)
-    off = {"seacache": -0.18, "kalsea": 0.18}   # small horizontal dodge so the CIs do not overlap
-    for base in ("seacache", "kalsea"):
+    off = {"seacache": 0.0}
+    for base in ("seacache",):
         rows = gains[base]
         x = [r[1] + off[base] for r in rows]
         y = [r[2] for r in rows]
@@ -101,11 +101,11 @@ def gain_panel(ax, gains, budget_nfe, label_budgets=True, annotate=True):
                     ax.annotate(f"{r[2]:+.2f}", (xx, r[3][1]), xytext=(0, 2.5), textcoords="offset points",
                                 ha="center", va="bottom", fontsize=6.5, color=S.INK)
     budget_marks(ax, budget_nfe, label=label_budgets)
-    ax.set_ylabel(r"$\Delta$PSNR of Ours (dB)", labelpad=2)
+    ax.set_ylabel(r"$\Delta$PSNR of KalSea (dB)", labelpad=2)
     nfe_ticks(ax, budget_nfe)
     # same color + marker as the baseline the gain is measured against
     handles = [Line2D([], [], color=S.C[b], lw=1.2, marker=S.MARKER[b], ms=S.MSIZE[b], mfc=S.C[b], mec="white", mew=0.6,
-                      label=f"vs. {LABEL[b]}") for b in ("seacache", "kalsea")]
+                      label=f"vs. {LABEL[b]}") for b in ("seacache",)]
     ax.legend(handles=handles, loc="upper left", borderaxespad=0.3, handlelength=1.8, labelspacing=0.35)
 
 
@@ -127,7 +127,7 @@ def full_width():
     axes[1].set_ylim(0, 0.33)
     axes[2].set_ylim(-0.3, 4.6)
     titles = ["(a) PSNR w.r.t. the 50-step reference", "(b) LPIPS w.r.t. the 50-step reference",
-              "(c) Paired PSNR gain of Ours (95\% CI)"]
+              "(c) Paired PSNR gain of KalSea (95\% CI)"]
     for ax, t in zip(axes, titles):
         ax.set_title(t, loc="left", fontsize=7.5, pad=4, color=S.INK)
         ax.set_xlabel("NFE (of 50)", labelpad=1.5)
@@ -159,7 +159,7 @@ def one_col():
     ax_g.set_ylim(-0.3, 4.6)
     ax_g.set_ylabel(r"$\Delta$PSNR (dB)", labelpad=2)
     for ax, t in zip((ax_p, ax_l, ax_g), ("(a) PSNR w.r.t. reference", "(b) LPIPS w.r.t. reference",
-                                          "(c) Paired PSNR gain of Ours (95\% CI)")):
+                                          "(c) Paired PSNR gain of KalSea (95\% CI)")):
         ax.set_title(t, loc="left", fontsize=7.5, pad=4, color=S.INK)
         ax.set_xlabel("NFE (of 50)", labelpad=1.5)
     method_legend(fig, y=1.0)

@@ -50,10 +50,10 @@
   \node[lbl, anchor=west] at (4.3,0) {full computation (oracle, not used)};
   \fill[cKalSea, opacity=0.13] (8.72,-0.09) rectangle (9.32,0.09);
   \draw[cKalSea, line width=0.8pt, dash pattern=on 2.6pt off 1.3pt] (8.72,0) -- (9.32,0);
-  \node[lbl, anchor=west] at (9.37,0) {Kalman extrapolation ${\pm}1$\,s.d.\ (KalSea)};
+  \node[lbl, anchor=west] at (9.37,0) {Kalman extrapolation ${\pm}1$\,s.d.\ (predictor)};
   \draw[cOurs, line width=0.8pt] (13.55,0) -- (14.15,0);
   \fill[cOurs] (13.85,0) circle (1.0pt);
-  \node[lbl, anchor=west] at (14.2,0) {PCGS (ours)};
+  \node[lbl, anchor=west] at (14.2,0) {PCGS (corrector)};
 \end{scope}
 \end{tikzpicture}
 \end{document}

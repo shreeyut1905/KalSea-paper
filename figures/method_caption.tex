@@ -8,7 +8,7 @@
 \caption{\textbf{Overview.}
 \textbf{(a)}~In each step~$i$, the \sea gate of \seacache accumulates the \sea-filtered relative change $\gdist_i$ of
 the first block's modulated input and runs the blocks $\blocks$ only when the sum reaches~$\delta$; the residual
-$\res_i$ of a computed step updates a damped-trend Kalman filter per DCT coefficient (\kalsea), whose forecast
+$\res_i$ of a computed step updates a damped-trend Kalman filter per DCT coefficient (the predictor), whose forecast
 $\hat\res_i$ replaces it on skipped steps; $\Emb$ and $\Out$ run at every step.
 \textbf{(b)}~When a computed step~$b$ ends the gap $a{+}1,\dots,b{-}1$, \pcgs spreads the innovation $e_b$ over the
 gap with the RTS gains $g_i$, which grow toward~$b$; the smoothed residuals $\smooth{m}_i$ replace the extrapolation
@@ -16,7 +16,7 @@ $\prior{m}_i$.
 \textbf{(c)}~Re-integrating the gap from $\lat_{a+1}$ with $\Emb$ and $\Out$ only lowers the latent deviation from full
 computation at~$b$ by 25--59\% in all ten gaps of this sample (here $5.0\%\to2.4\%$ and $7.8\%\to3.2\%$), without
 extra transformer evaluations.
-(b, c): one \flux generation at $\delta=0.6$ for the DrawBench prompt whose PSNR gains (\kalsea over \seacache,
-\ours over \kalsea) are closest to the benchmark means (``McDonalds Church.''); residual projected onto a fixed random unit direction~$\mathbf{u}$ in the lowest DCT
+(b, c): one \flux generation at $\delta=0.6$ for the DrawBench prompt whose PSNR gains (forecast over reuse,
+and gap smoothing over the forecast) are closest to the benchmark means (``McDonalds Church.''); residual projected onto a fixed random unit direction~$\mathbf{u}$ in the lowest DCT
 band (89\% of its energy); gray: full computation, evaluated only for this figure.}
 \label{fig:method}

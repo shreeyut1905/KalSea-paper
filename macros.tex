@@ -35,14 +35,14 @@
 
 %% ------------------------------------------------------------------ title
 %% Shared by main.tex and supp_main.tex (the supplement repeats the title). Candidates: TITLES.md.
-\newcommand{\papertitle}{Closing the Loop on Diffusion Transformer Caching with Kalman Gap Smoothing}
+\newcommand{\papertitle}{KalSea: Closing the Loop on Diffusion Transformer Caching with Kalman Gap Smoothing}
 
 %% ------------------------------------------------------------------ method names
 %% Use these macros everywhere (text, tables, captions), never the literal names.
-%% TODO(name): \ours stays "Ours" until the full method has a name.  Then change it here and in
-%% figures/src/figstyle.py (LABEL["ours"]) at the same time.
-\newcommand{\ours}{Ours\xspace}          % full method: Kalman residual forecasting + predictor-corrector gap smoothing
-\newcommand{\kalsea}{KalSea\xspace}      % Kalman residual forecasting on the SEA gate, no gap smoothing
+%% Naming (owner, 2026-10-23): the full method is KalSea; the predictor alone is "KalSea w/o PCGS". Keep
+%% figures/src/figstyle.py (LABEL) and figures/src/fig_qualitative.py (LABEL) in sync.
+\newcommand{\ours}{KalSea\xspace}               % full method: SEA gate + Kalman residual forecasting + gap smoothing
+\newcommand{\kalsea}{KalSea w/o \pcgs}          % ablation: SEA gate + Kalman residual forecasting, no gap smoothing
 \newcommand{\seacache}{SeaCache\xspace}  % SEA gate + residual reuse (Chung et al., CVPR 2026)
 \newcommand{\pcgs}{PCGS\xspace}          % predictor-corrector gap smoothing (the new component)
 \newcommand{\sea}{SEA\xspace}            % Spectral-Evolution-Aware (filter / gate) of SeaCache

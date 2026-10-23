@@ -111,10 +111,10 @@ def _round_str(s, nd):
 
 
 def tab_flux_main():
-    """Main FLUX table: published SeaCache Table-1 rows (\\dagger) + our two rows (KalSea, Ours) per block, NFE column.
+    """Main FLUX table: published SeaCache Table-1 rows (\\dagger) + KalSea (our full method) per block, NFE column.
     Our same-setup SeaCache re-run is NOT in this table (ablation table / supplement only)."""
     S = ST["summary"]
-    ours_rows = [("kalsea", r"\kalsea"), ("ours", r"\ours")]
+    ours_rows = [("ours", r"\ours")]
     L = [HEADER,
          "% FLUX.1-dev, DrawBench-200 (held out). Rows marked \\dagger: numbers published in SeaCache's Table 1 (different",
          "% hardware and seeds), NFE = 50 x TFLOPs / 2976. Our rows: SEA gate at delta 0.37 (18.1 NFE, matches the NFE implied",
@@ -127,7 +127,7 @@ def tab_flux_main():
          r" \nfe{} $=50\,{\times}\,$TFLOPs$/2976$, a FLOP equivalent for $\Delta$-DiT and ToCa."
          r" $^\ddagger$The two rows appear swapped there. \seacache's released gate computes 20.9 steps at $\delta{=}0.3$ in"
          r" our setup, not 18.4, so we match \nfe rather than $\delta$ ($\delta{=}0.3$: \cref{tab:ablation}, supplement)."
-         r" \kalsea: \ours without \pcgs. Lat.: s/image; \nodata: not yet measured.}",
+         r" Lat.: s/image; \nodata: not yet measured.}",
          r"  \label{tab:flux-main}",
          r"  \footnotesize",
          r"  \setlength{\tabcolsep}{2.2pt}",
@@ -349,7 +349,7 @@ def tab_flux_sweep():
          r"  \setlength{\tabcolsep}{3pt}",
          r"  \begin{tabular}{@{}cc ccc ccc ccc cc@{}}",
          r"    \toprule",
-         r"    & & \multicolumn{3}{c}{\seacache} & \multicolumn{3}{c}{\kalsea (no smoothing)} & \multicolumn{3}{c}{\ours}"
+         r"    & & \multicolumn{3}{c}{\seacache} & \multicolumn{3}{c}{\kalsea} & \multicolumn{3}{c}{\ours}"
          r" & \multicolumn{2}{c}{$\Delta$PSNR of \ours (dB)} \\",
          r"    \cmidrule(lr){3-5} \cmidrule(lr){6-8} \cmidrule(lr){9-11} \cmidrule(l){12-13}",
          r"    $\delta$ & \nfe & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$"
