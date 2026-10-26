@@ -78,6 +78,35 @@ def ci(p, nd=2):
     return f"{signed(p['mean'], nd)}\\,dB [{signed(lo, nd)}, {signed(hi, nd)}]"
 
 
+# ---------------------------------------------------------------- TFLOPs / latency (cost_stats.py -> data/cost.json)
+# One example per configuration (released scripts, one B200 per job, all 8 GPUs busy). TFLOPs in SeaCache's Calflops
+# convention (2 x MACs of linear / conv / matmul in the sampling loop; attention core, text encoders and VAE not counted);
+# the count of the 50-step FLUX.1-dev reference (2975.6) reproduces SeaCache's 2976. \dagger rows keep their published
+# TFLOPs (Wan2.1: rescaled from 81 to 65 frames by our full-run count / 8214). Latency of every row is measured here on
+# one example (the published latencies come from other GPUs): the published baselines (TeaCache, TaylorSeer, fewer steps)
+# with their official code at the published setting (data/cost.json "baselines"); Delta-DiT and ToCa were not run (--).
+# The SeaCache rows get the latency of SeaCache's method (gate + reuse, same code and GPU) at the NFE of the KalSea row
+# (\ast).
+_COST_PATH = os.path.join(HERE, "data", "cost.json")
+COST = json.load(open(_COST_PATH)) if os.path.exists(_COST_PATH) else {}
+
+
+def cost_cell(model, entry, field, nd):
+    v = COST.get(model, {}).get(entry, {}).get(field)
+    return r"\nodata" if v is None else f"{v:.{nd}f}"
+
+
+LAT_ND = {"flux": 2, "hunyuan": 1, "wan": 1}
+LAT_MARK = r"$^\ast$"
+
+
+def bl_lat(model, key, b=None):
+    """Measured latency of a published baseline row ("--" if it was not run)."""
+    B = COST.get("baselines", {}).get(model, {})
+    r = (B.get(b, {}) if b else B).get(key, {})
+    return "--" if "latency" not in r else f"{r['latency']:.{LAT_ND[model]}f}"
+
+
 # ---------------------------------------------------------------- Table: FLUX main (SeaCache Table-1 style)
 # Published FLUX.1-dev results of SeaCache (Chung et al., CVPR 2026), Table 1, copied verbatim (their hardware and seeds;
 # "\dagger" rows). Source: KalSea-dev/SeaCache_paper_2602.18993.txt, Table 1 (also paper_plan/seacache_protocol_from_paper.md
@@ -119,7 +148,7 @@ def tab_flux_main():
          "% FLUX.1-dev, DrawBench-200 (held out). Rows marked \\dagger: numbers published in SeaCache's Table 1 (different",
          "% hardware and seeds), NFE = 50 x TFLOPs / 2976. Our rows: SEA gate at delta 0.37 (18.1 NFE, matches the NFE implied",
          "% by SeaCache's delta-0.3 TFLOPs; their released gate gives 20.9 NFE at delta 0.3 in our setup) and 0.6 (13.0 NFE).",
-         "% TFLOPs / latency: \\nodata for every row until measured on one machine. Bold: best per block.",
+         "% TFLOPs / latency: data/cost.json (cost_stats.py), one example per configuration; see the cost block above.",
          r"\begin{table}[t]",
          r"  \centering",
          r"  \caption{\textbf{Text-to-image results on \flux} (DrawBench, 200 held-out prompts)."
@@ -127,7 +156,8 @@ def tab_flux_main():
          r" \nfe{} $=50\,{\times}\,$TFLOPs$/2976$, a FLOP equivalent for $\Delta$-DiT and ToCa."
          r" $^\ddagger$The two rows appear swapped there. \seacache's released gate computes 20.9 steps at $\delta{=}0.3$ in"
          r" our setup, not 18.4, so we match \nfe rather than $\delta$ ($\delta{=}0.3$: \cref{tab:ablation}, supplement)."
-         r" Lat.: s/image; \nodata: not yet measured.}",
+         r" TFLOPs: \seacache's convention; Lat.: s/image on one B200, one prompt, all rows measured by us (supplement;"
+         r" $\Delta$-DiT, ToCa: not run). $^\ast$\seacache's method in our code at the \nfe of \ours.}",
          r"  \label{tab:flux-main}",
          r"  \footnotesize",
          r"  \setlength{\tabcolsep}{2.2pt}",
@@ -135,16 +165,21 @@ def tab_flux_main():
          r"    \toprule",
          r"    Method & \nfe & TFLOPs & Lat. & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ \\",
          r"    \midrule",
-         r"    Original (50 steps) & 50 & \nodata & \nodata & -- & -- & -- \\"]
-    for title, pub, d in FLUX_MAIN_BLOCKS:
+         rf"    Original (50 steps) & 50 & {cost_cell('flux', 'ref', 'tflops', 0)} & {cost_cell('flux', 'ref', 'latency', 2)}"
+         r" & -- & -- & -- \\"]
+    for (title, pub, d), b in zip(FLUX_MAIN_BLOCKS, ("hi", "lo")):
         rows = []
         for k in pub:
             lab, tf, p, s, l = SEACACHE_T1[k]
-            rows.append((lab % CITE, 50.0 * tf / SEACACHE_T1_TFLOPS_FULL, float(_round_str(p, 2)), float(s), float(l)))
+            lat = (cost_cell("flux", f"{b}_seacache", "latency", 2) + LAT_MARK) if k.startswith("seacache") \
+                else bl_lat("flux", k)
+            rows.append((lab % CITE, 50.0 * tf / SEACACHE_T1_TFLOPS_FULL, float(_round_str(p, 2)), float(s), float(l),
+                         str(tf), lat))
         rows.sort(key=lambda r: -r[1])
         for k, lab in ours_rows:
             s = S[d][k]
-            rows.append((lab + rf" ($\delta{{=}}{d}$)", s["nfe"], s["psnr"]["mean"], s["ssim"]["mean"], s["lpips"]["mean"]))
+            rows.append((lab + rf" ($\delta{{=}}{d}$)", s["nfe"], s["psnr"]["mean"], s["ssim"]["mean"], s["lpips"]["mean"],
+                         cost_cell("flux", f"{b}_ours", "tflops", 0), cost_cell("flux", f"{b}_ours", "latency", 2)))
         cols = {}
         for j, (m, lo) in enumerate((("psnr", False), ("ssim", False), ("lpips", True))):
             cols[m] = bold_best({i: r[2 + j] for i, r in enumerate(rows)}, m, lower_better=lo)
@@ -154,7 +189,7 @@ def tab_flux_main():
         for i, r in enumerate(rows):
             if i == n_pub:
                 L.append(r"    \addlinespace[1pt]")
-            L.append(rf"    {r[0]} & {r[1]:.1f} & \nodata & \nodata & {cols['psnr'][i]} & {cols['ssim'][i]} & {cols['lpips'][i]} \\")
+            L.append(rf"    {r[0]} & {r[1]:.1f} & {r[5]} & {r[6]} & {cols['psnr'][i]} & {cols['ssim'][i]} & {cols['lpips'][i]} \\")
     L += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}", ""]
     return "\n".join(L)
 
@@ -211,11 +246,22 @@ def tab_video_main():
             vals["ours"] = (o["nfe"], o["psnr"], o["ssim"], o["lpips"])
         cols = {m: bold_best({k: v[1 + j] for k, v in vals.items()}, m, lower_better=lo)
                 for j, (m, lo) in enumerate((("psnr", False), ("ssim", False), ("lpips", True)))}
+        ref_tf = COST.get(model, {}).get("ref", {}).get("tflops")
+        scale = 1.0 if model != "wan" else (ref_tf / SEACACHE_VIDEO_FULL["wan"] if ref_tf else None)  # 81 -> 65 frames
+        nd = LAT_ND[model]
         out = {}
         for key, _ in VIDEO_ROWS:
             if key in vals:
                 mark = (r"$^\S$" if rerun else r"$^\dagger$") if key == "seacache" else ""
-                out[key] = [f"{vals[key][0]:.1f}{mark}", r"\nodata", r"\nodata", cols["psnr"][key], cols["ssim"][key],
+                if key == "ours" or (key == "seacache" and rerun):        # measured (same code, seeds, GPU)
+                    ent = f"{b}_ours" if key == "ours" else f"{b}_seacache"
+                    tf, lat = cost_cell(model, ent, "tflops", 0), cost_cell(model, ent, "latency", nd)
+                else:                                                      # published TFLOPs
+                    pub_tf = SEACACHE_VIDEO[model][b][key][1]
+                    tf = r"\nodata" if scale is None else f"{pub_tf * scale:.0f}"
+                    lat = (cost_cell(model, f"{b}_seacache", "latency", nd) + LAT_MARK) if key == "seacache" \
+                        else bl_lat(model, key, b)
+                out[key] = [f"{vals[key][0]:.1f}{mark}", tf, lat, cols["psnr"][key], cols["ssim"][key],
                             cols["lpips"][key]]
             elif key == "ours":
                 out[key] = [r"\tbd", r"\nodata", r"\nodata", r"\tbd", r"\tbd", r"\tbd"]
@@ -236,7 +282,7 @@ def tab_video_main():
     L = [HEADER.replace("flux_drawbench_stats.json", "video_stats.json (video_stats.py)"),
          "% Rows marked \\dagger: SeaCache's Tables 3/4, NFE = 50 x TFLOPs / full-run TFLOPs (14038 / 8214). KalSea: SEA gate,",
          f"% delta {ours_delta['hunyuan']} (HunyuanVideo, gate reads the live sampler sigma) and {ours_delta['wan']} (Wan2.1).",
-         "% TFLOPs / latency: \\nodata until measured on one machine. Bold: best per model and budget block.",
+         "% TFLOPs / latency: data/cost.json (cost_stats.py), one example per configuration; see the cost block above.",
          r"\begin{table*}[t]",
          r"  \centering",
          r"  \caption{\textbf{Text-to-video results} (944 VBench prompts, 65 frames, fidelity to the 50-step output)."
@@ -244,7 +290,9 @@ def tab_video_main():
          r" Wan2.1 compute corresponds to 81 frames), \nfe{} $=50\,{\times}\,$TFLOPs$/$TFLOPs of the full run."
          + sec_note +
          r" Thresholds and strides of all rows: supplement."
-         + (r" \tbd: runs in progress;" if tbd else "") + r" \nodata: not yet measured.}",
+         + r" TFLOPs: \seacache's convention ($^\dagger$Wan2.1 rows rescaled to 65 frames); Lat.: s/video on one B200,"
+         r" one prompt, all rows measured by us (supplement). $^\ast$\seacache's method in our code at the \nfe of \ours."
+         + (r" \tbd: runs in progress." if tbd else "") + "}",
          r"  \label{tab:video-main}",
          r"  \footnotesize",
          r"  \setlength{\tabcolsep}{3.2pt}",
@@ -255,7 +303,9 @@ def tab_video_main():
          r"    Method & \nfe & TFLOPs & Lat.\,(s) & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$"
          r" & \nfe & TFLOPs & Lat.\,(s) & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ \\",
          r"    \midrule",
-         r"    Reference (50 steps) & 50 & \nodata & \nodata & -- & -- & -- & 50 & \nodata & \nodata & -- & -- & -- \\"]
+         rf"    Reference (50 steps) & 50 & {cost_cell('hunyuan', 'ref', 'tflops', 0)} & {cost_cell('hunyuan', 'ref', 'latency', 1)}"
+         rf" & -- & -- & -- & 50 & {cost_cell('wan', 'ref', 'tflops', 0)} & {cost_cell('wan', 'ref', 'latency', 1)}"
+         r" & -- & -- & -- \\"]
     for b, title in (("hi", r"$\approx$\,50\% budget (24--26 \nfe)"), ("lo", r"$\approx$\,30\% budget (15--18 \nfe)")):
         cells = {m: block_cells(m, b) for m in VIDEO_MODELS}
         L.append(r"    \midrule")

@@ -11,12 +11,14 @@ the correction also repairs reuse and linear extrapolation. Promising directions
 with the corrector and to correct caches that operate on features inside the block stack.
 
 \paragraph{Limitations.}
-Matched \nfe is not matched latency: \pcgs adds output-layer evaluations (about 0.3\% of one transformer evaluation per
-image) and 0.02\,GiB of memory over \kalsea, and the filter adds elementwise work on every step. Our metrics measure
-fidelity to the 50-step sampler, the goal of a cache, not sample quality. Our image results cover a single model.
+Matched \nfe is not matched latency: \pcgs adds output-layer evaluations (\cref{sec:cost}) and 0.02\,GiB over
+\kalsea, and the filter adds elementwise work: at equal \nfe, \ours is 3--5\% slower than
+\seacache on \flux and at most 1.4\% on video.
+% cost_measure (one prompt per configuration, B200): FLUX 2.12 vs 2.05 s (18 NFE), 1.60 vs 1.53 s (13); HunyuanVideo
+% 38.6 vs 38.4 s, 27.5 vs 27.4 s; Wan2.1 26.5 vs 26.1 s, 19.4 vs 19.1 s (figures/src/data/cost.json).
+Our metrics measure fidelity to the 50-step sampler, the goal of a cache, not sample quality. Our image results cover a single model.
 % Wan2.1: full set +0.33 dB [0.16, 0.49] at 17 NFE (fr_metrics.json); 20-prompt sweep -1.69 dB [-2.37, -1.07] at 10 NFE
 % (supplement, fig_video_sweep; paper_plan/video_ablations_20.json).
-On Wan2.1, the same-setup PSNR gain is only 0.33\,dB at 17 \nfe and negative at 10 \nfe on 20 prompts (supplement). At a computed
-step, \pcgs attaches the residual
-evaluated at the uncorrected latent to the corrected one, an approximation that is accurate only for small
-corrections; at the smallest budget, with gaps of up to twelve steps, its gain is modest (0.31\,dB at 9 \nfe).
+On Wan2.1, the same-setup PSNR gain is only 0.33\,dB at 17 \nfe and negative at 10 \nfe on 20 prompts (supplement). \pcgs attaches the
+residual of the uncorrected latent to the corrected one, accurate only for small corrections; with gaps of up to
+twelve steps its gain is modest (0.31\,dB at 9 \nfe).

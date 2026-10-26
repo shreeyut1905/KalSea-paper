@@ -1,0 +1,330 @@
+{
+ "flux": {
+  "ref": {
+   "latency": 5.25328480405733,
+   "latency_calls": [
+    5.963543468853459,
+    5.235897468868643,
+    5.25328480405733,
+    5.259792710887268
+   ],
+   "nfe": 50,
+   "prompt": "A red colored car.",
+   "tflops": 2975.6127707136,
+   "tflops_attn": 743.6199002112,
+   "tflops_outside_forward": 0.0
+  },
+  "hi_seacache": {
+   "latency": 2.0472437751013786,
+   "latency_calls": [
+    2.8325066971592605,
+    2.0438642180524766,
+    2.0472437751013786,
+    2.0569714040029794
+   ],
+   "nfe": 18,
+   "prompt": "A red colored car.",
+   "tflops": 1071.744927399936,
+   "tflops_attn": 267.703164076032,
+   "tflops_outside_forward": 0.0
+  },
+  "hi_ours": {
+   "latency": 2.1245408011600375,
+   "latency_calls": [
+    3.058457843028009,
+    2.1245408011600375,
+    2.130923595977947,
+    2.1134684609714895
+   ],
+   "nfe": 18,
+   "prompt": "A red colored car.",
+   "tflops": 1072.192363167744,
+   "tflops_attn": 267.703164076032,
+   "tflops_outside_forward": 0.0
+  },
+  "lo_seacache": {
+   "latency": 1.52810516115278,
+   "latency_calls": [
+    2.3484461829066277,
+    1.5211931560188532,
+    1.52810516115278,
+    1.533294009976089
+   ],
+   "nfe": 13,
+   "prompt": "A red colored car.",
+   "tflops": 774.264692146176,
+   "tflops_attn": 193.341174054912,
+   "tflops_outside_forward": 0.0
+  },
+  "lo_ours": {
+   "latency": 1.603549653897062,
+   "latency_calls": [
+    2.609782241983339,
+    1.6134529849514365,
+    1.603549653897062,
+    1.5977710590232164
+   ],
+   "nfe": 13,
+   "prompt": "A red colored car.",
+   "tflops": 774.731342020608,
+   "tflops_attn": 193.341174054912,
+   "tflops_outside_forward": 0.0
+  }
+ },
+ "hunyuan": {
+  "ref": {
+   "latency": 74.48,
+   "latency_calls": [
+    75.247,
+    74.48
+   ],
+   "nfe": 50,
+   "prompt": "In a still frame, a stop sign",
+   "tflops": 14042.5563734016,
+   "tflops_attn": 0.0805306368,
+   "tflops_outside_forward": 0.0
+  },
+  "hi_seacache": {
+   "latency": 38.362,
+   "latency_calls": [
+    39.35,
+    38.362
+   ],
+   "nfe": 24,
+   "prompt": "In a still frame, a stop sign",
+   "tflops": 6744.03871358976,
+   "tflops_attn": 0.0805306368,
+   "tflops_outside_forward": 0.0
+  },
+  "hi_ours": {
+   "latency": 38.604,
+   "latency_calls": [
+    39.449,
+    38.604
+   ],
+   "nfe": 24,
+   "prompt": "In a still frame, a stop sign",
+   "tflops": 6744.683537498112,
+   "tflops_attn": 0.0805306368,
+   "tflops_outside_forward": 0.0
+  },
+  "lo_seacache": {
+   "latency": 27.384,
+   "latency_calls": [
+    28.273,
+    27.384
+   ],
+   "nfe": 16,
+   "prompt": "In a still frame, a stop sign",
+   "tflops": 4498.33922985984,
+   "tflops_attn": 0.0805306368,
+   "tflops_outside_forward": 0.0
+  },
+  "lo_ours": {
+   "latency": 27.473,
+   "latency_calls": [
+    28.314,
+    27.473
+   ],
+   "nfe": 16,
+   "prompt": "In a still frame, a stop sign",
+   "tflops": 4499.064118837248,
+   "tflops_attn": 0.0805306368,
+   "tflops_outside_forward": 0.0
+  }
+ },
+ "wan": {
+  "ref": {
+   "latency": 52.001,
+   "latency_calls": [
+    54.903,
+    52.001
+   ],
+   "nfe": 50,
+   "prompt": "In a still frame, a stop sign",
+   "tflops": 6648.6917136384,
+   "tflops_attn": 0.0,
+   "tflops_outside_forward": 0.0
+  },
+  "hi_seacache": {
+   "latency": 26.135,
+   "latency_calls": [
+    28.853,
+    26.135
+   ],
+   "nfe": 24,
+   "prompt": "In a still frame, a stop sign",
+   "tflops": 3192.37667684352,
+   "tflops_attn": 0.0,
+   "tflops_outside_forward": 0.0
+  },
+  "hi_ours": {
+   "latency": 26.505,
+   "latency_calls": [
+    29.617,
+    26.505
+   ],
+   "nfe": 24,
+   "prompt": "In a still frame, a stop sign",
+   "tflops": 3192.98672001024,
+   "tflops_attn": 0.0,
+   "tflops_outside_forward": 0.61004316672
+  },
+  "lo_seacache": {
+   "latency": 19.131,
+   "latency_calls": [
+    22.029,
+    19.131
+   ],
+   "nfe": 17,
+   "prompt": "In a still frame, a stop sign",
+   "tflops": 2261.83032078336,
+   "tflops_attn": 0.0,
+   "tflops_outside_forward": 0.0
+  },
+  "lo_ours": {
+   "latency": 19.398,
+   "latency_calls": [
+    23.31,
+    19.398
+   ],
+   "nfe": 17,
+   "prompt": "In a still frame, a stop sign",
+   "tflops": 2262.51857461248,
+   "tflops_attn": 0.0,
+   "tflops_outside_forward": 0.68825382912
+  }
+ },
+ "baselines": {
+  "flux": {
+   "vanilla25": {
+    "latency": 2.682004238013178,
+    "latency_calls": [
+     3.496076992014423,
+     2.6761750569567084,
+     2.682004238013178,
+     2.6845022740308195
+    ],
+    "nfe": 25,
+    "prompt": "A red colored car."
+   },
+   "vanilla15": {
+    "latency": 1.6579679741989821,
+    "latency_calls": [
+     2.514920130139217,
+     1.6626668660901487,
+     1.6579679741989821,
+     1.6487579150125384
+    ],
+    "nfe": 15,
+    "prompt": "A red colored car."
+   },
+   "teacache0.3": {
+    "latency": 2.8051093299873173,
+    "latency_calls": [
+     3.522783169988543,
+     2.76849328703247,
+     2.815684420056641,
+     2.8051093299873173
+    ],
+    "nfe": 26,
+    "prompt": "A red colored car."
+   },
+   "teacache0.6": {
+    "latency": 1.7083838321268559,
+    "latency_calls": [
+     2.445353312883526,
+     1.7075471598654985,
+     1.709807228995487,
+     1.7083838321268559
+    ],
+    "nfe": 15,
+    "prompt": "A red colored car."
+   },
+   "taylorseer3": {
+    "latency": 2.6359941409900784,
+    "latency_calls": [
+     3.443363989936188,
+     2.6359941409900784,
+     2.634241993073374,
+     2.6488561760634184
+    ],
+    "nfe": 20,
+    "prompt": "A red colored car."
+   },
+   "taylorseer5": {
+    "latency": 2.08879532199353,
+    "latency_calls": [
+     2.8400098208803684,
+     2.0910867678467184,
+     2.084929324919358,
+     2.08879532199353
+    ],
+    "nfe": 14,
+    "prompt": "A red colored car."
+   }
+  },
+  "hunyuan": {
+   "hi": {
+    "vanilla": {
+     "latency": 39.85,
+     "nfe": 25,
+     "prompt": "In a still frame, a stop sign"
+    },
+    "teacache": {
+     "latency": 40.25,
+     "nfe": 25,
+     "prompt": "In a still frame, a stop sign"
+    },
+    "taylorseer": {
+     "latency": 43.33,
+     "nfe": 26,
+     "prompt": "In a still frame, a stop sign"
+    }
+   },
+   "lo": {
+    "vanilla": {
+     "latency": 25.95,
+     "nfe": 15,
+     "prompt": "In a still frame, a stop sign"
+    },
+    "teacache": {
+     "latency": 28.86,
+     "nfe": 17,
+     "prompt": "In a still frame, a stop sign"
+    },
+    "taylorseer": {
+     "latency": 32.56,
+     "nfe": 18,
+     "prompt": "In a still frame, a stop sign"
+    }
+   }
+  },
+  "wan": {
+   "hi": {
+    "teacache": {
+     "latency": 27.645,
+     "nfe": 25,
+     "prompt": "In a still frame, a stop sign"
+    },
+    "taylorseer": {
+     "latency": 29.101,
+     "nfe": 26,
+     "prompt": "In a still frame, a stop sign"
+    }
+   },
+   "lo": {
+    "teacache": {
+     "latency": 20.574,
+     "nfe": 18,
+     "prompt": "In a still frame, a stop sign"
+    },
+    "taylorseer": {
+     "latency": 20.949,
+     "nfe": 18,
+     "prompt": "In a still frame, a stop sign"
+    }
+   }
+  }
+ }
+}

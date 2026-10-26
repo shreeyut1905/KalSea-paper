@@ -102,3 +102,25 @@ COLLAGE_PICK = {"C": 3, "V": 5, "P": 11, "R": 13, "20": 16, "KalSea": 22, "27": 
 VIDEO_QUAL_DIR = "/home/ubuntu/KalSea-dev/v02_work/video_examples"
 VIDEO_REF_STATS = {"hunyuan": "/home/ubuntu/video_runs/hunyuan/ref_meta/stats/*.jsonl",   # frames_sha1 (pre-encode)
                    "wan": "/home/ubuntu/KalSea-dev/video_logs/wan_ref/stats.jsonl"}       # frames_md5 (decoded)
+
+# ---------------------------------------------------------------- TFLOPs / latency (cost_stats.py -> data/cost.json)
+# One example per configuration of the main tables, released KalSea-v0.2 scripts (--no_cache / --reuse / default), all 8
+# B200 GPUs in use at once (one job per GPU). Latency: <COST_DIR>/out/latency/<model>/<config>/stats*.jsonl, line 0 =
+# warm-up, line 1 = timed call. TFLOPs: <COST_DIR>/out/flops_<model>_<config>.json (FlopCounterMode, Calflops convention).
+# Prompts: FLUX DrawBench #0 (seed 0), video VBench #0 (seed 42); both have exactly the table NFE in the evaluated runs.
+COST_DIR = "/home/ubuntu/KalSea-dev/cost_measure"
+COST_CONFIGS = {"flux": {"ref": "ref", "hi": ("seacache_0.37", "kalsea_0.37"), "lo": ("seacache_0.6", "kalsea_0.6")},
+                "hunyuan": {"model": "hv", "ref": "ref", "hi": ("seacache_0.2575", "kalsea_0.2575"),
+                            "lo": ("seacache_0.48", "kalsea_0.48")},
+                "wan": {"ref": "ref", "hi": ("seacache_0.2", "kalsea_0.2"), "lo": ("seacache_0.35", "kalsea_0.35")}}
+# Published baselines of the main tables (TFLOPs as published; latency measured here, one example): FLUX via
+# cost_measure/flux_baselines.py (official TeaCache4FLUX / TaylorSeer-diffusers code, release-script settings, warm-up + 3
+# timed calls), video via the research baseline drivers (video_code/*/gen_vbench_baselines.py; warm-up prompt, then the
+# example). Keys = make_tables.py SEACACHE_T1 / SEACACHE_VIDEO keys -> run folder under <COST_DIR>/out/latency_bl/<model>.
+COST_BASELINES = {"flux": {"vanilla25": "vanilla_25", "vanilla15": "vanilla_15", "teacache0.3": "teacache_0.3",
+                           "teacache0.6": "teacache_0.6", "taylorseer3": "taylorseer_s3", "taylorseer5": "taylorseer_s5"},
+                  "hunyuan": {"hi": {"vanilla": "vanilla_25", "teacache": "teacache_0.12", "taylorseer": "taylorseer_s2"},
+                              "lo": {"vanilla": "vanilla_15", "teacache": "teacache_0.2", "taylorseer": "taylorseer_s3"}},
+                  "wan": {"hi": {"teacache": "teacache_0.09", "taylorseer": "taylorseer_s2"},
+                          "lo": {"teacache": "teacache_0.15", "taylorseer": "taylorseer_s3"}}}
+COST_VIDEO_PROMPT = "In a still frame, a stop sign"

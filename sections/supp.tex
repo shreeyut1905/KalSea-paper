@@ -149,7 +149,7 @@ partial block stack, and \pcgs never calls a block. Per image, \ours evaluates $
 3.4\,GFLOP at $1024^2$ (linear maps between 64 and 3072 channels over 4096 tokens; one transformer evaluation costs
 59.5\,TFLOPs, 2976 for 50 steps~\cite{chung2026seacache}), plus 11.2 and 9.0 gate refreshes, in total below 0.3\% of one transformer
 evaluation. The peak allocated memory exceeds that of the uncached sampler by 0.16\,GiB (\kalsea: 0.14\,GiB; \seacache:
-0.05\,GiB). Wall-clock measurements are pending (\cref{supp:cost}).
+0.05\,GiB). Wall-clock times: \cref{supp:cost}.
 % Memory: dMem column of research_v2/runs/drawbench_eval/eval_dct_pcgs.txt / eval_final.txt (0.164 / 0.141 / 0.047 GiB).
 
 %% ====================================================================================================================
@@ -632,6 +632,22 @@ evaluated videos, and their per-video PSNR equals the evaluated value.
 %% ====================================================================================================================
 \section{TFLOPs and latency}
 \label{supp:cost}
-The TFLOPs and latency columns of the main paper's tables are blank because these quantities have not yet been measured
-for all methods under the same conditions (one machine, one process per GPU, warm-up, identical batch size).
-Controlled measurement: \tbd.
+% Source: KalSea-dev/cost_measure (measure.py, run.sh, flux_baselines.py, run_baselines.sh) -> figures/src/data/cost.json.
+\paragraph{TFLOPs.} We use \seacache's convention (Calflops): twice the multiply-accumulates of the linear, convolution
+and matrix-product operations of the denoiser over the sampling loop; attention cores, text encoders and the VAE are not
+counted. We count them with PyTorch's FLOP counter on one generation per configuration. Our counts of the 50-step
+originals reproduce the published ones (\flux: 2975.6 vs.\ 2976; HunyuanVideo: 14043 vs.\ 14038), so the baselines'
+published TFLOPs are used as they are. \seacache's Wan2.1 TFLOPs correspond to 81 frames (8214 for the original; our
+count at 65 frames is 6649), so those rows are rescaled by $6649/8214$. \pcgs and the filter add less than 0.1\% to the
+count of \seacache at the same \nfe (output layers only; elementwise operations are not counted).
+
+\paragraph{Latency.} End-to-end time of one generation call (text encoding, sampling and VAE decoding; synchronized),
+bf16, one NVIDIA B200 per job with all eight GPUs of the node running measurement jobs, after a warm-up call in the same
+process. One prompt per configuration: \flux, DrawBench ``A red colored car.'' (seed 0, median of three calls); video,
+VBench ``In a still frame, a stop sign'' (seed 42, one call). On these prompts \seacache and \ours compute exactly the
+tables' \nfe at both budgets. The original, \seacache and \ours run with our code; TeaCache, TaylorSeer and fewer-step
+sampling with their official implementations at the published settings (TaylorSeer on \flux: order 1, first five steps
+computed; the single-block calls of TeaCache's \flux forward are adapted to the current diffusers interface, with the
+same operations). As a check, the 50-step original timed with the baselines' drivers agrees with our script to within
+0.1\% (\flux, HunyuanVideo) and 1.3\% (Wan2.1). $\Delta$-DiT and ToCa were not run. At equal \nfe, \ours takes 3--5\%
+longer than \seacache on \flux and 0.3--1.4\% longer on video, for elementwise work that the count omits (filter updates, gate refresh).

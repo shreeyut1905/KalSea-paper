@@ -2,10 +2,10 @@
 
 % Rows marked \dagger: SeaCache's Tables 3/4, NFE = 50 x TFLOPs / full-run TFLOPs (14038 / 8214). KalSea: SEA gate,
 % delta 0.2575/0.48 (HunyuanVideo, gate reads the live sampler sigma) and 0.2/0.35 (Wan2.1).
-% TFLOPs / latency: \nodata until measured on one machine. Bold: best per model and budget block.
+% TFLOPs / latency: data/cost.json (cost_stats.py), one example per configuration; see the cost block above.
 \begin{table*}[t]
   \centering
-  \caption{\textbf{Text-to-video results} (944 VBench prompts, 65 frames, fidelity to the 50-step output). $^\dagger$Published by \seacache~\cite{chung2026seacache} (its Tables~3 and 4; other GPUs, seed not stated; its Wan2.1 compute corresponds to 81 frames), \nfe{} $=50\,{\times}\,$TFLOPs$/$TFLOPs of the full run. $^\S$Our re-run of \seacache's released code with the corrected gate (same code, seeds and GPUs as \ours); published: 32.39\,dB at 24.0 \nfe and 26.46\,dB at 16.4 \nfe, the latter not reproducible with the released code (its gate gives 20.52\,dB at 16.0 \nfe). Thresholds and strides of all rows: supplement. \nodata: not yet measured.}
+  \caption{\textbf{Text-to-video results} (944 VBench prompts, 65 frames, fidelity to the 50-step output). $^\dagger$Published by \seacache~\cite{chung2026seacache} (its Tables~3 and 4; other GPUs, seed not stated; its Wan2.1 compute corresponds to 81 frames), \nfe{} $=50\,{\times}\,$TFLOPs$/$TFLOPs of the full run. $^\S$Our re-run of \seacache's released code with the corrected gate (same code, seeds and GPUs as \ours); published: 32.39\,dB at 24.0 \nfe and 26.46\,dB at 16.4 \nfe, the latter not reproducible with the released code (its gate gives 20.52\,dB at 16.0 \nfe). Thresholds and strides of all rows: supplement. TFLOPs: \seacache's convention ($^\dagger$Wan2.1 rows rescaled to 65 frames); Lat.: s/video on one B200, one prompt, all rows measured by us (supplement). $^\ast$\seacache's method in our code at the \nfe of \ours.}
   \label{tab:video-main}
   \footnotesize
   \setlength{\tabcolsep}{3.2pt}
@@ -15,23 +15,23 @@
     \cmidrule(lr){2-7} \cmidrule(l){8-13}
     Method & \nfe & TFLOPs & Lat.\,(s) & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ & \nfe & TFLOPs & Lat.\,(s) & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ \\
     \midrule
-    Reference (50 steps) & 50 & \nodata & \nodata & -- & -- & -- & 50 & \nodata & \nodata & -- & -- & -- \\
+    Reference (50 steps) & 50 & 14043 & 74.5 & -- & -- & -- & 50 & 6649 & 52.0 & -- & -- & -- \\
     \midrule
     \multicolumn{13}{@{}l}{\emph{$\approx$\,50\% budget (24--26 \nfe)}} \\
-    Fewer steps$^\dagger$ & 25.0 & \nodata & \nodata & 19.97 & 0.731 & 0.263 & -- & -- & -- & -- & -- & -- \\
-    TeaCache~\cite{liu2025teacache}$^\dagger$ & 24.9 & \nodata & \nodata & 23.40 & 0.805 & 0.133 & 25.0 & \nodata & \nodata & 20.84 & 0.721 & 0.171 \\
-    TaylorSeer~\cite{liu2025taylorseer}$^\dagger$ & 26.0 & \nodata & \nodata & 24.14 & 0.820 & 0.152 & 25.5 & \nodata & \nodata & 16.15 & 0.543 & 0.336 \\
-    \seacache~\cite{chung2026seacache} & 24.0$^\S$ & \nodata & \nodata & 32.43 & 0.929 & 0.048 & 24.0$^\dagger$ & \nodata & \nodata & 26.60 & 0.873 & 0.075 \\
+    Fewer steps$^\dagger$ & 25.0 & 7019 & 39.9 & 19.97 & 0.731 & 0.263 & -- & -- & -- & -- & -- & -- \\
+    TeaCache~\cite{liu2025teacache}$^\dagger$ & 24.9 & 6994 & 40.2 & 23.40 & 0.805 & 0.133 & 25.0 & 3324 & 27.6 & 20.84 & 0.721 & 0.171 \\
+    TaylorSeer~\cite{liu2025taylorseer}$^\dagger$ & 26.0 & 7299 & 43.3 & 24.14 & 0.820 & 0.152 & 25.5 & 3391 & 29.1 & 16.15 & 0.543 & 0.336 \\
+    \seacache~\cite{chung2026seacache} & 24.0$^\S$ & 6744 & 38.4 & 32.43 & 0.929 & 0.048 & 24.0$^\dagger$ & 3191 & 26.1$^\ast$ & 26.60 & 0.873 & 0.075 \\
     \addlinespace[1pt]
-    \ours & 24.0 & \nodata & \nodata & \best{35.60} & \best{0.951} & \best{0.028} & 24.0 & \nodata & \nodata & \best{31.67} & \best{0.953} & \best{0.020} \\
+    \ours & 24.0 & 6745 & 38.6 & \best{35.60} & \best{0.951} & \best{0.028} & 24.0 & 3193 & 26.5 & \best{31.67} & \best{0.953} & \best{0.020} \\
     \midrule
     \multicolumn{13}{@{}l}{\emph{$\approx$\,30\% budget (15--18 \nfe)}} \\
-    Fewer steps$^\dagger$ & 15.0 & \nodata & \nodata & 17.49 & 0.662 & 0.371 & -- & -- & -- & -- & -- & -- \\
-    TeaCache~\cite{liu2025teacache}$^\dagger$ & 17.1 & \nodata & \nodata & 20.42 & 0.734 & 0.172 & 18.0 & \nodata & \nodata & 18.88 & 0.645 & 0.245 \\
-    TaylorSeer~\cite{liu2025taylorseer}$^\dagger$ & 18.0 & \nodata & \nodata & 20.42 & 0.733 & 0.242 & 18.0 & \nodata & \nodata & 14.18 & 0.453 & 0.455 \\
-    \seacache~\cite{chung2026seacache} & 16.0$^\S$ & \nodata & \nodata & 24.53 & 0.813 & 0.155 & 17.0$^\dagger$ & \nodata & \nodata & 21.78 & 0.740 & 0.170 \\
+    Fewer steps$^\dagger$ & 15.0 & 4211 & 25.9 & 17.49 & 0.662 & 0.371 & -- & -- & -- & -- & -- & -- \\
+    TeaCache~\cite{liu2025teacache}$^\dagger$ & 17.1 & 4794 & 28.9 & 20.42 & 0.734 & 0.172 & 18.0 & 2393 & 20.6 & 18.88 & 0.645 & 0.245 \\
+    TaylorSeer~\cite{liu2025taylorseer}$^\dagger$ & 18.0 & 5053 & 32.6 & 20.42 & 0.733 & 0.242 & 18.0 & 2393 & 20.9 & 14.18 & 0.453 & 0.455 \\
+    \seacache~\cite{chung2026seacache} & 16.0$^\S$ & 4498 & 27.4 & 24.53 & 0.813 & 0.155 & 17.0$^\dagger$ & 2261 & 19.1$^\ast$ & 21.78 & 0.740 & 0.170 \\
     \addlinespace[1pt]
-    \ours & 16.0 & \nodata & \nodata & \best{26.45} & \best{0.846} & \best{0.117} & 17.0 & \nodata & \nodata & \best{23.85} & \best{0.851} & \best{0.090} \\
+    \ours & 16.0 & 4499 & 27.5 & \best{26.45} & \best{0.846} & \best{0.117} & 17.0 & 2263 & 19.4 & \best{23.85} & \best{0.851} & \best{0.090} \\
     \bottomrule
   \end{tabular}
 \end{table*}

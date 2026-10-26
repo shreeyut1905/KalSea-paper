@@ -212,7 +212,7 @@ $\Emb$ and $\Out$ per skipped step and, at each computed step that closes a gap,
 refresh: for \flux at $1024^2$, about 0.3\% of one transformer evaluation per image. The filter state and the gap
 buffer raise the peak memory by 0.16\,GiB over the uncached sampler (\seacache: 0.05\,GiB; \kalsea: 0.14\,GiB;
 supplement).
-% Wall-clock overhead: to be added with the controlled latency measurement (latency columns are blank until then).
+% Wall-clock overhead (measured, one prompt per configuration): Limitations (Sec. 5) and supplement, TFLOPs and latency.
 % FLOP count (analytic, from the layer shapes; verify with calflops before submission): x_embedder Linear(64->3072)
 % and proj_out Linear(3072->64) on 4096 tokens cost 2*4096*64*3072 = 1.61 GFLOP each, norm_out ~0.1 GFLOP, i.e.
 % ~3.36 GFLOP per skipped step. Per image at delta 0.6: 37 skipped steps + 10 corrected computed steps (+ gate refresh,

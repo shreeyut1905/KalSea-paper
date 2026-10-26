@@ -3,10 +3,10 @@
 % FLUX.1-dev, DrawBench-200 (held out). Rows marked \dagger: numbers published in SeaCache's Table 1 (different
 % hardware and seeds), NFE = 50 x TFLOPs / 2976. Our rows: SEA gate at delta 0.37 (18.1 NFE, matches the NFE implied
 % by SeaCache's delta-0.3 TFLOPs; their released gate gives 20.9 NFE at delta 0.3 in our setup) and 0.6 (13.0 NFE).
-% TFLOPs / latency: \nodata for every row until measured on one machine. Bold: best per block.
+% TFLOPs / latency: data/cost.json (cost_stats.py), one example per configuration; see the cost block above.
 \begin{table}[t]
   \centering
-  \caption{\textbf{Text-to-image results on \flux} (DrawBench, 200 held-out prompts). $^\dagger$Published by \seacache~\cite{chung2026seacache} (its Table~1; other hardware; seeds and metric code not stated); \nfe{} $=50\,{\times}\,$TFLOPs$/2976$, a FLOP equivalent for $\Delta$-DiT and ToCa. $^\ddagger$The two rows appear swapped there. \seacache's released gate computes 20.9 steps at $\delta{=}0.3$ in our setup, not 18.4, so we match \nfe rather than $\delta$ ($\delta{=}0.3$: \cref{tab:ablation}, supplement). Lat.: s/image; \nodata: not yet measured.}
+  \caption{\textbf{Text-to-image results on \flux} (DrawBench, 200 held-out prompts). $^\dagger$Published by \seacache~\cite{chung2026seacache} (its Table~1; other hardware; seeds and metric code not stated); \nfe{} $=50\,{\times}\,$TFLOPs$/2976$, a FLOP equivalent for $\Delta$-DiT and ToCa. $^\ddagger$The two rows appear swapped there. \seacache's released gate computes 20.9 steps at $\delta{=}0.3$ in our setup, not 18.4, so we match \nfe rather than $\delta$ ($\delta{=}0.3$: \cref{tab:ablation}, supplement). TFLOPs: \seacache's convention; Lat.: s/image on one B200, one prompt, all rows measured by us (supplement; $\Delta$-DiT, ToCa: not run). $^\ast$\seacache's method in our code at the \nfe of \ours.}
   \label{tab:flux-main}
   \footnotesize
   \setlength{\tabcolsep}{2.2pt}
@@ -14,25 +14,25 @@
     \toprule
     Method & \nfe & TFLOPs & Lat. & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ \\
     \midrule
-    Original (50 steps) & 50 & \nodata & \nodata & -- & -- & -- \\
+    Original (50 steps) & 50 & 2976 & 5.25 & -- & -- & -- \\
     \midrule
     \multicolumn{7}{@{}l}{\emph{$\approx$\,18 \nfe (baselines: 18--33 \nfe)}} \\
-    $\Delta$-DiT~\cite{chen2024deltadit}$^\dagger$ & 33.3 & \nodata & \nodata & 17.40 & 0.710 & 0.336 \\
-    TeaCache~\cite{liu2025teacache} ($\delta{=}0.3$)$^\dagger$ & 26.0 & \nodata & \nodata & 20.76 & 0.810 & 0.211 \\
-    Vanilla, 25 steps$^{\dagger\ddagger}$ & 25.0 & \nodata & \nodata & 15.55 & 0.668 & 0.409 \\
-    ToCa~\cite{zou2025toca}$^\dagger$ & 21.2 & \nodata & \nodata & 18.40 & 0.700 & 0.324 \\
-    TaylorSeer~\cite{liu2025taylorseer} ($S{=}3$)$^\dagger$ & 20.0 & \nodata & \nodata & 22.78 & 0.828 & 0.163 \\
-    \seacache~\cite{chung2026seacache} ($\delta{=}0.3$)$^\dagger$ & 18.4 & \nodata & \nodata & 26.29 & 0.893 & 0.106 \\
+    $\Delta$-DiT~\cite{chen2024deltadit}$^\dagger$ & 33.3 & 1984 & -- & 17.40 & 0.710 & 0.336 \\
+    TeaCache~\cite{liu2025teacache} ($\delta{=}0.3$)$^\dagger$ & 26.0 & 1547 & 2.81 & 20.76 & 0.810 & 0.211 \\
+    Vanilla, 25 steps$^{\dagger\ddagger}$ & 25.0 & 1487 & 2.68 & 15.55 & 0.668 & 0.409 \\
+    ToCa~\cite{zou2025toca}$^\dagger$ & 21.2 & 1263 & -- & 18.40 & 0.700 & 0.324 \\
+    TaylorSeer~\cite{liu2025taylorseer} ($S{=}3$)$^\dagger$ & 20.0 & 1191 & 2.64 & 22.78 & 0.828 & 0.163 \\
+    \seacache~\cite{chung2026seacache} ($\delta{=}0.3$)$^\dagger$ & 18.4 & 1098 & 2.05$^\ast$ & 26.29 & 0.893 & 0.106 \\
     \addlinespace[1pt]
-    \ours ($\delta{=}0.37$) & 18.1 & \nodata & \nodata & \best{27.72} & \best{0.916} & \best{0.070} \\
+    \ours ($\delta{=}0.37$) & 18.1 & 1072 & 2.12 & \best{27.72} & \best{0.916} & \best{0.070} \\
     \midrule
     \multicolumn{7}{@{}l}{\emph{13 \nfe (baselines: 13--15 \nfe)}} \\
-    TeaCache~\cite{liu2025teacache} ($\delta{=}0.6$)$^\dagger$ & 15.0 & \nodata & \nodata & 17.21 & 0.714 & 0.348 \\
-    Vanilla, 15 steps$^{\dagger\ddagger}$ & 15.0 & \nodata & \nodata & 17.84 & 0.740 & 0.305 \\
-    TaylorSeer~\cite{liu2025taylorseer} ($S{=}5$)$^\dagger$ & 14.0 & \nodata & \nodata & 19.97 & 0.762 & 0.236 \\
-    \seacache~\cite{chung2026seacache} ($\delta{=}0.6$)$^\dagger$ & 13.0 & \nodata & \nodata & 21.33 & 0.798 & 0.226 \\
+    TeaCache~\cite{liu2025teacache} ($\delta{=}0.6$)$^\dagger$ & 15.0 & 892 & 1.71 & 17.21 & 0.714 & 0.348 \\
+    Vanilla, 15 steps$^{\dagger\ddagger}$ & 15.0 & 892 & 1.66 & 17.84 & 0.740 & 0.305 \\
+    TaylorSeer~\cite{liu2025taylorseer} ($S{=}5$)$^\dagger$ & 14.0 & 834 & 2.09 & 19.97 & 0.762 & 0.236 \\
+    \seacache~\cite{chung2026seacache} ($\delta{=}0.6$)$^\dagger$ & 13.0 & 773 & 1.53$^\ast$ & 21.33 & 0.798 & 0.226 \\
     \addlinespace[1pt]
-    \ours ($\delta{=}0.6$) & 13.0 & \nodata & \nodata & \best{22.53} & \best{0.842} & \best{0.154} \\
+    \ours ($\delta{=}0.6$) & 13.0 & 775 & 1.60 & \best{22.53} & \best{0.842} & \best{0.154} \\
     \bottomrule
   \end{tabular}
 \end{table}
