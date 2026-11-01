@@ -19,28 +19,21 @@ Adaptive caches decide online when to recompute: AdaCache~\cite{kahatapitiya2025
 video, TeaCache~\cite{liu2025teacache} accumulates the relative change of the first block's timestep-modulated input
 until it exceeds a threshold, MagCache~\cite{ma2025magcache} models the magnitude ratio of successive residuals, and
 DiCache~\cite{bu2026dicache} probes a shallow layer. \seacache~\cite{chung2026seacache} measures this change after a
-spectral-evolution-aware filter, so that the gate responds to content rather than noise; we adopt its gate unchanged.
+spectral-evolution-aware filter, so that the gate responds to content rather than noise.
 Forecasting caches extrapolate the skipped outputs with Taylor expansions~\cite{liu2025taylorseer},
 Hermite~\cite{feng2026hicache} or Chebyshev~\cite{han2026spectrum} polynomials, or a BDF2 predictor with Heun-type
 calibration~\cite{zheng2026foca}, and other methods verify~\cite{liu2025speca} or
 rectify~\cite{peng2026ertacache,shen2026gprefiner} the value written on skipped steps. All of them improve the value
-used at the \emph{current or upcoming} steps; none revises the latent of steps that have already been skipped, which
-is what \pcgs corrects. Contemporaneous with our work, SpecKCast~\cite{rajabi2026speckcast} forecasts the DCT
-coefficients of the model output with damped-trend Kalman filters and schedules computation by their uncertainty. Our
-predictor uses the same state-space model for the block-stack residual behind the \sea gate, where the frequency
-decomposition is unnecessary (\cref{sec:ablations}). SpecKCast uses the filter only as a predictor; \pcgs adds the
-smoother and the latent correction, which also improve reuse and linear extrapolation.
+used at the \emph{current or upcoming} steps; none revises the latent of steps that have already been skipped.
+Contemporaneous with our work, SpecKCast~\cite{rajabi2026speckcast} forecasts the DCT
+coefficients of the model output with damped-trend Kalman filters and schedules computation by their uncertainty.
 % TODO(owner): direct comparison with SpecKCast's full method (output forecasting + uncertainty scheduler) if its code
 % becomes available; CVPR asks to compare with contemporaneous work "to the degree feasible".
 
 \paragraph{Filtering, smoothing and predictor-corrector integration.}
 The Kalman filter~\cite{kalman1960new} and the RTS smoother~\cite{rauch1965maximum} are the exact recursive
-estimators of linear-Gaussian state-space models~\cite{sarkka2013bayesian}. Our forecaster uses the integrated Wiener
-process (constant-velocity) model of target tracking~\cite{barshalom2001estimation} with a damped
-trend~\cite{gardner1985forecasting} and adapts its process noise from the innovations~\cite{mehra1972approaches}.
+estimators of linear-Gaussian state-space models~\cite{sarkka2013bayesian}.
 Probabilistic ODE solvers infer the solution of an ODE from evaluations of its vector field by Gauss--Markov filtering
-and smoothing~\cite{schober2019probabilistic,tronarp2019probabilistic}; we instead smooth to infer the network
-evaluations that a cache skipped. In diffusion sampling, predictor-corrector schemes add Langevin
+and smoothing~\cite{schober2019probabilistic,tronarp2019probabilistic}. In diffusion sampling, predictor-corrector schemes add Langevin
 steps~\cite{song2021score} or a second evaluation as in Heun's method~\cite{karras2022edm}; UniPC~\cite{zhao2023unipc}
-corrects multistep solvers~\cite{lu2025dpmsolverpp} by reusing the next evaluation, as \pcgs does, but \pcgs corrects
-a whole gap of skipped steps.
+corrects multistep solvers~\cite{lu2025dpmsolverpp} by reusing the next evaluation.
