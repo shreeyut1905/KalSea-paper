@@ -26,10 +26,16 @@ flow-matching sampling, residual caching and the gate (\cref{sec:prelim}), then 
 \label{sec:prelim}
 
 \paragraph{Flow-matching sampling.}
-Rectified-flow models~\cite{liu2023rectifiedflow,lipman2023flow,albergo2023interpolants,esser2024scaling} interpolate
-$\lat_\sigma=(1-\sigma)\lat^\star+\sigma\boldsymbol\epsilon$ between data $\lat^\star$ and Gaussian noise
-$\boldsymbol\epsilon$, and learn the velocity $\boldsymbol\epsilon-\lat^\star$. Sampling integrates the learned
-velocity over a decreasing schedule $\sigma_0>\sigma_1>\dots>\sigma_N=0$ with Euler steps,
+Flow matching~\cite{lipman2023flow}, rectified flow~\cite{liu2023rectifiedflow} and stochastic
+interpolants~\cite{albergo2023interpolants} learn a velocity field that transports Gaussian noise to data. We use the
+linear path and the time convention of Esser~\etal~\cite{esser2024scaling}: data $\lat^\star$ and noise
+$\boldsymbol\epsilon\sim\mathcal{N}(\mathbf{0},\mathbf{I})$ are interpolated as
+$\lat_\sigma=(1-\sigma)\lat^\star+\sigma\boldsymbol\epsilon$ with noise level $\sigma\in[0,1]$, and a network
+$\vel_\theta$ is trained to predict the velocity of this path by minimizing
+$\E\,\|\vel_\theta(\lat_\sigma,\sigma)-(\boldsymbol\epsilon-\lat^\star)\|^2$. Sampling starts from noise and solves
+$\mathrm{d}\lat_\sigma/\mathrm{d}\sigma=\vel_\theta(\lat_\sigma,\sigma)$ from $\sigma=1$ to $\sigma=0$ on a decreasing
+schedule $\sigma_0>\sigma_1>\dots>\sigma_N=0$, \eg, with Euler steps on the velocity
+$\vel_i=\vel_\theta(\lat_i,\sigma_i)$ at step $i$,
 \begin{equation}
   \lat_{i+1}=\lat_i+(\sigma_{i+1}-\sigma_i)\,\vel_i,\qquad i=0,\dots,N-1.
   \label{eq:euler}
