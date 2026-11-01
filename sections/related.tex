@@ -23,8 +23,9 @@ spectral-evolution-aware filter, so that the gate responds to content rather tha
 Forecasting caches extrapolate the skipped outputs with Taylor expansions~\cite{liu2025taylorseer},
 Hermite~\cite{feng2026hicache} or Chebyshev~\cite{han2026spectrum} polynomials, or a BDF2 predictor with Heun-type
 calibration~\cite{zheng2026foca}, and other methods verify~\cite{liu2025speca} or
-rectify~\cite{peng2026ertacache,shen2026gprefiner} the value written on skipped steps. All of them improve the value
-used at the \emph{current or upcoming} steps; none revises the latent of steps that have already been skipped.
+rectify~\cite{peng2026ertacache,shen2026gprefiner} the value written on skipped steps.
+Concurrently, SpecKCast~\cite{rajabi2026speckcast} forecasts the DCT coefficients of the model output with
+damped-trend Kalman filters and schedules computation by their uncertainty. All of them improve the value used at the \emph{current or upcoming} steps; none revises the latent of steps that have already been skipped.
 % TODO(owner): direct comparison with SpecKCast's full method (output forecasting + uncertainty scheduler) if its code
 % becomes available; CVPR asks to compare with contemporaneous work "to the degree feasible".
 
