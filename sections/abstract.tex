@@ -4,16 +4,16 @@
 % (speckcast_<d>), figures/src/data/flux_drawbench_stats.json (eval_sweep_vs_kalsea.json per-image metrics, eval2 bootstrap);
 % gains on reuse / linear extrapolation: research_v2/ablations/eval/eval_all.json.
 Diffusion transformers spend most of their sampling time in the block stack, which runs at each of tens of sampling
-steps. Training-free caches skip it on some steps: a gate decides \emph{when} to compute, and a filler decides
+steps. Training-free caches skip it on some steps with a gate decides \emph{when} to compute, and a filler decides
 \emph{what} to write on the skipped steps, typically the last block-stack residual or a forecast of it. Both fillers
-are open loop: when the next computed step reveals how wrong the filler was, its error has already been integrated
+are open loop, when the next computed step reveals how wrong the filler was, its error has already been integrated
 into the latent and is never corrected. We close this loop with predictor-corrector gap smoothing (\pcgs). Behind the
 spectrally aligned gate of \seacache, a damped-trend Kalman filter forecasts the block-stack residual on skipped
-steps. When the next step is computed, a Rauch--Tung--Striebel smoother turns the filter's innovation into corrected
+steps. When the next step is computed, a Rauch-Tung-Striebel smoother turns the filter's innovation into corrected
 residuals for the whole skipped gap, which we re-integrate through the output layers only before sampling continues
 from the corrected latent. \pcgs requires no additional transformer evaluations. On \flux and held-out DrawBench
-prompts, our cache reaches a PSNR of 27.72\,dB with respect to the 50-step sampler at 18.1 of 50 transformer
-evaluations, against 26.29\,dB reported for \seacache at 18.4, and 22.53 against 21.33\,dB at 13 evaluations. In
+prompts, our cache reaches a PSNR of 27.72\,dB with respect to the 50-step sampler at 18 of 50 transformer
+evaluations, against 26.29\,dB reported for \seacache at 18, and 22.53 against 21.33\,dB at 13 evaluations. In
 paired comparisons, \pcgs alone contributes 0.81\,dB (95\% CI [0.63, 1.00]) and 0.61\,dB [0.48, 0.76], and it also
 improves plain reuse and linear extrapolation.
 % Video: HunyuanVideo eval/full/fr_metrics_live.json + fr_metrics_live048.json, Wan eval/full/fr_metrics.json (paired vs.

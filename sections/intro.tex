@@ -2,14 +2,14 @@
 \label{sec:intro}
 
 Diffusion and flow-matching transformers~\cite{peebles2023dit,esser2024scaling} generate high-resolution images
-and videos~\cite{blackforestlabs2024flux,kong2024hunyuanvideo,wan2025wan}, but sampling is slow: each of tens of steps
+and videos~\cite{blackforestlabs2024flux,kong2024hunyuanvideo,wan2025wan}, but sampling is slow, each of tens of steps
 runs dozens of transformer blocks over thousands of tokens. Training-free caching exploits the similarity of
-consecutive steps~\cite{ma2024deepcache,selvaraju2024fora,liu2025teacache}: on some steps the block stack is skipped
+consecutive steps~\cite{ma2024deepcache,selvaraju2024fora,liu2025teacache}, on some steps the block stack is skipped
 and its output is approximated from the computed steps. A cache thus makes two decisions: \emph{when} to compute, and
 \emph{what} to write on the steps it skips.
 
 Most work has focused on the first decision. Adaptive gates accumulate a cheap proxy of the change of the network
-output and recompute once it exceeds a threshold~\cite{liu2025teacache,ma2025magcache,bu2026dicache};
+output and recompute once it exceeds a threshold~\cite{liu2025teacache,ma2025magcache,bu2026dicache}.
 \seacache~\cite{chung2026seacache} measures this change after a spectral-evolution-aware (\sea) filter that suppresses
 the noise component of the features. For the second decision, most caches reuse the last computed
 output~\cite{ma2024deepcache,selvaraju2024fora,liu2025teacache,chung2026seacache}, while forecasting methods extrapolate
@@ -21,7 +21,7 @@ Reuse and forecasting share a structural limitation: they are \emph{open loop}. 
 from the past alone, and the sampler integrates its errors into the latent. These errors grow with the distance to
 the last computed step: on six reference trajectories of our development set, the relative error of the velocity
 obtained from a Kalman forecast of the residual grows from 4--5\% at the first skipped step to over 20\% at the
-seventh (supplement). When the next step is computed, its block-stack output reveals how wrong the forecast was, but
+seventh, as reported in the Sec.~D of the supplementary material. When the next step is computed, its block-stack output reveals how wrong the forecast was, but
 existing caches use this observation only to predict the \emph{next} gap; the latent, already advanced along erroneous
 velocities, is never revisited. Forecasting reduces this drift but does not remove it: as gaps grow, its advantage
 over reuse vanishes (\cref{sec:main-results}).
@@ -29,10 +29,13 @@ over reuse vanishes (\cref{sec:main-results}).
 % gaps 25->33 and 33->41, open loop along the 50-step trajectories of COCO-64 prompts 0-5).
 
 We close the loop without evaluating the network again. Our key observation is that a skipped gap is a
-\emph{smoothing} problem. With a Kalman filter as the predictor of the block-stack residual, the innovation at the next
-computed step~$b$, \ie, the observed minus the forecast residual, and the covariances accumulated over the gap
-determine, through the Rauch--Tung--Striebel (RTS) smoother~\cite{rauch1965maximum}, the minimum-mean-square-error
-residuals of all skipped steps under the filter's model. Because only the cheap output layers depend on the residual,
+\emph{smoothing} problem. 
+% With a Kalman filter as the predictor of the block-stack residual, the innovation at the next
+% computed step~$b$, \ie, the observed minus the forecast residual, and the covariances accumulated over the gap
+% determine, through the Rauch-Tung-Striebel (RTS) smoother~\cite{rauch1965maximum}, the minimum-mean-square-error
+% residuals of all skipped steps under the filter's model.
+We predict the block-stack residual with a Kalman filter. At the next computed step~$b$, its innovation is the observed minus the forecast residual. The Rauch-Tung-Striebel (RTS) smoother~\cite{rauch1965maximum} then uses this innovation and the covariances accumulated over the gap to compute the minimum-mean-square-error residuals of all the skipped steps under the filter's model.
+Because only the cheap output layers depend on the residual,
 we re-integrate the gap through them and continue sampling from the corrected latent. We call this procedure \emph{predictor-corrector gap smoothing} (\pcgs,
 \cref{fig:method}). Like the corrector of UniPC~\cite{zhao2023unipc}, it reuses a network evaluation that the sampler
 performs anyway; unlike it, it corrects an entire gap of steps whose network outputs were never computed.
@@ -43,12 +46,12 @@ evaluations. Our contributions are:
 \begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
   \item We identify the open-loop nature of caching fillers: errors made on skipped steps are integrated into the
   latent and never corrected, and forecasting loses its advantage over reuse as gaps grow.
-  \item We propose \pcgs, which casts each skipped gap as a smoothing problem: once the next step is computed, the RTS
+  \item We propose \pcgs, which casts each skipped gap as a smoothing problem. Once the next step is computed, the RTS
   smoother of the forecaster's own state-space model gives the residuals of the gap, which is re-integrated with the
   output layers only. We give the smoother gain in closed form for the damped-trend model under the irregular
   observations of an adaptive gate. \pcgs adds neither transformer evaluations nor hyperparameters.
   \item On \flux and held-out DrawBench prompts~\cite{saharia2022imagen}, our cache reaches 27.72\,dB PSNR with
-  respect to the 50-step sampler at 18.1 of 50 evaluations, against 26.29\,dB published for \seacache at 18.4, and
+  respect to the 50-step sampler at 18 of 50 evaluations, against 26.29\,dB published for \seacache at 18, and
   22.53 against 21.33\,dB at 13. Against our re-run of \seacache in the same setup, the paired gains are 2.39\,dB
   [2.03, 2.75] and 1.27\,dB [1.02, 1.52], of which \pcgs contributes 0.81 and 0.61\,dB. \pcgs improves on the
   predictor at every budget from 9 to 27 evaluations and also improves reuse and linear extrapolation; its gain comes
@@ -56,4 +59,4 @@ evaluations. Our contributions are:
   \seacache in the same setup by 3.17 and 1.92\,dB at 24 and 16 evaluations; on Wan2.1 it exceeds the published
   results by 5.07 and 2.07\,dB at 24 and 17 evaluations.
 \end{itemize}
-Code will be released.
+
