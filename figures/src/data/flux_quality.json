@@ -1,0 +1,65 @@
+{
+ "what": "Reference-free quality on FLUX.1-dev, DrawBench-200, seed = prompt index. ImageReward-v1.0 (THUDM); CLIP score = 100 * max(cos(image, text), 0) with openai/clip-vit-large-patch14 (torchmetrics' definition). KalSea / SeaCache / reference: KalSea's released FLUX script (diffusers 0.41; default DCT mode; --reuse for SeaCache; --no_cache for the reference). Baselines: their released code (diffusers 0.34), same prompts and seeds. Source: /home/ubuntu/exp/kalsea_flux_idx/quality.json and /home/ubuntu/exp/flux/quality.json (scripts/quality.py).",
+ "ref": {
+  "imagereward": 0.9995,
+  "clip": 27.657
+ },
+ "ref_baseline_env": {
+  "imagereward": 0.9991,
+  "clip": 27.698
+ },
+ "0.37": {
+  "ours": {
+   "imagereward": 1.0126,
+   "clip": 27.673
+  },
+  "kalsea": {
+   "imagereward": 1.0119,
+   "clip": 27.689
+  },
+  "seacache": {
+   "imagereward": 0.9959,
+   "clip": 27.714
+  }
+ },
+ "0.6": {
+  "ours": {
+   "imagereward": 1.005,
+   "clip": 27.769
+  },
+  "kalsea": {
+   "imagereward": 0.9946,
+   "clip": 27.714
+  },
+  "seacache": {
+   "imagereward": 0.9726,
+   "clip": 27.805
+  }
+ },
+ "baselines": {
+  "teacache0.3": {
+   "imagereward": 1.0504,
+   "clip": 27.821
+  },
+  "teacache0.6": {
+   "imagereward": 0.991,
+   "clip": 27.85
+  },
+  "vanilla25": {
+   "imagereward": 0.9937,
+   "clip": 27.705
+  },
+  "vanilla15": {
+   "imagereward": 0.9383,
+   "clip": 27.616
+  },
+  "taylorseer3": {
+   "imagereward": 0.9981,
+   "clip": 27.566
+  },
+  "taylorseer5": {
+   "imagereward": 0.9772,
+   "clip": 27.528
+  }
+ }
+}

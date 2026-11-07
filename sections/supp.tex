@@ -37,7 +37,7 @@ residual's coefficients in that band, so that the filter operates in relative un
 the seven calibrated powers.
 
 \paragraph{Time coordinate.}
-Following SpecKCast~\cite{rajabi2026speckcast}, every band has its own time coordinate derived from the noise schedule.
+As in~\cite{rajabi2026speckcast}, every band has its own time coordinate derived from the noise schedule.
 With the log signal-to-noise ratio $\lambda_i=2\log((1-\sigma_i)/\sigma_i)$ ($\sigma_i$ clamped to
 $[10^{-4},1-10^{-4}]$) and $t_\ell(i)=\mathrm{sigmoid}\big((\lambda_i+\log p_\ell)/T_w\big)$ with $T_w=2$,
 \begin{equation}
@@ -75,8 +75,7 @@ prediction on~\cite{mehra1972approaches}.
 
 \paragraph{Constants.}
 $\tau=0.5$, $R=10^{-3}$, $T_w=2$, the exponent $0.2$ and the clipping ranges in \eqref{eq:supp-adapt} are the same for
-all budgets and models. They were fixed on the development set; $\tau=0.1$ is the default of
-SpecKCast~\cite{rajabi2026speckcast} (ablated in \cref{tab:ablation-full}, group (d)).
+all budgets and models. They were fixed on the development set; $\tau=0.1$ is ablated in \cref{tab:ablation-full}, group (d).
 
 \input{tables/supp_calib}
 
@@ -246,8 +245,8 @@ which is why simpler gains can do as well in practice (main paper, \maincref{sec
 
 \paragraph{Published results and the mapping from $\delta$ to \nfe.}
 \seacache reports compute as TFLOPs (2976 for its 50-step original, \ie, 59.5 per transformer evaluation). We convert
-its published rows to \nfe (\cref{tab:supp-published}); these are the rows marked $^\dagger$ in the main paper's
-\maincref{tab:flux-main}. Its larger-budget row is labelled $\delta=0.3$, but its 1098 TFLOPs imply 18.45 evaluations.
+its published rows to \nfe (\cref{tab:supp-published}) for reference; every row of the main paper's
+\maincref{tab:flux-main} is measured in our setup instead. Its larger-budget row is labelled $\delta=0.3$, but its 1098 TFLOPs imply 18.45 evaluations.
 With the released gate, $\delta=0.3$ computes 20.88 steps per image on average in our setup (20 or 21 per prompt), and
 $\delta=0.37$ computes 18.14; its $\delta=0.6$ row (12.99) agrees with our measurement (13.00, on every prompt). We
 cannot tell whether the TFLOPs or the threshold of the $\delta=0.3$ row are off. Running our cache at the \nfe implied by
@@ -255,9 +254,10 @@ the TFLOPs ($\delta=0.37$) is the conservative choice in both cases: if their ru
 matched; if it used 20.9, \seacache had more compute than our cache. Our re-run of \seacache reaches 26.89\,dB at
 $\delta=0.3$, close to the published 26.29\,dB, and 25.33\,dB at $\delta=0.37$; at $\delta=0.6$ it reproduces the
 published 21.33\,dB (21.26\,dB). The published numbers were obtained on different hardware (NVIDIA Blackwell Pro 6000,
-according to the paper) and with seeds the paper does not state, so the main paper compares with them without
-confidence intervals, and with our re-run with paired intervals (\cref{tab:supp-samesetup}). The published 25- and
-15-step rows appear swapped (the 25-step row is worse on every metric); we cite them as published.
+according to the paper) and with seeds the paper does not state, so the main paper compares with our re-run, with
+paired intervals (\cref{tab:supp-samesetup}), and mentions the published numbers only in the text. The published 25- and
+15-step rows appear swapped (the 25-step row is worse on every metric); the main table uses our own 25- and 15-step
+runs.
 
 \paragraph{Matched schedules.}
 Within one threshold, all our caches use the same \sea gate, but the gate is closed loop: its decisions depend on the

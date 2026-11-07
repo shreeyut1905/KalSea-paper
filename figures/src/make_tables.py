@@ -20,11 +20,10 @@ PAPER_DIR = os.path.dirname(TAB_DIR)
 # default keys (verified entries in tables/tables_refs.bib); a paper already in refs.bib is cited with refs.bib's key,
 # found by title, so the tables follow whatever key the bibliography uses.
 CITE = {"seacache": "chung2026seacache", "teacache": "liu2025teacache", "taylorseer": "liu2025taylorseer",
-        "deltadit": "chen2024deltadit", "toca": "zou2025toca", "hunyuanvideo": "kong2024hunyuanvideo",
-        "wan": "wan2025wan"}
+        "toca": "zou2025toca", "hunyuanvideo": "kong2024hunyuanvideo", "wan": "wan2025wan"}
 TITLE = {"seacache": "spectral-evolution-aware cache", "teacache": "timestep embedding tells",
-         "taylorseer": "from reusing to forecasting", "deltadit": "training-free acceleration method tailored for diffusion",
-         "toca": "token-wise feature caching", "hunyuanvideo": "systematic framework for large video generative",
+         "taylorseer": "from reusing to forecasting", "toca": "token-wise feature caching",
+         "hunyuanvideo": "systematic framework for large video generative",
          "wan": "open and advanced large-scale video generative"}
 
 
@@ -107,30 +106,50 @@ def bl_lat(model, key, b=None):
     return "--" if "latency" not in r else f"{r['latency']:.{LAT_ND[model]}f}"
 
 
-# ---------------------------------------------------------------- Table: FLUX main (SeaCache Table-1 style)
-# Published FLUX.1-dev results of SeaCache (Chung et al., CVPR 2026), Table 1, copied verbatim (their hardware and seeds;
-# "\dagger" rows). Source: KalSea-dev/SeaCache_paper_2602.18993.txt, Table 1 (also paper_plan/seacache_protocol_from_paper.md
-# section 2.3). Columns: TFLOPs, PSNR, SSIM, LPIPS. NFE-equivalent = 50 * TFLOPs / 2976 (their 50-step original), printed
-# with one decimal; for Delta-DiT and ToCa (partial computation) it is a FLOP equivalent. Their "Vanilla 25 steps" row scores
-# below "Vanilla 15 steps" on every metric (rows apparently swapped); cited as published, marked \ddagger.
+# ---------------------------------------------------------------- Table: FLUX main
+# Every row is measured in our setup: DrawBench-200, 1024^2, 50 steps, guidance 3.5, seed = prompt index, each accelerated
+# image compared with the uncached 50-step output of the same code. Baselines with their released code (diffusers 0.34,
+# same prompts and seeds; ReSPect-rebuttal harness, /home/ubuntu/exp/flux/fidelity.json and fidelity_taylorseer_o2.json):
+# TeaCache delta 0.3 / 0.6, fewer sampling steps (25 / 15), TaylorSeer interval S = 3 / 5 with order 2 (scores higher than
+# its default order 1: 19.39 / 16.63 dB). SeaCache = our same-setup re-run (summary[d]["seacache"]); scoring SeaCache's
+# method in both setups agrees within 0.01 dB (25.34 vs 25.33, 21.26 vs 21.26), so the two references are comparable.
+# NFE = full block-stack evaluations per image; TFLOPs in SeaCache's convention = NFE x 2975.6 / 50 for the baselines
+# (data/cost.json for the SeaCache and KalSea rows). Latency: data/cost.json (baselines at these settings).
+# Published FLUX.1-dev results of SeaCache (Chung et al., CVPR 2026), Table 1, verbatim (their hardware and seeds). Used
+# only by the supplementary table of published numbers (make_supp_tables.tab_published); the main table is measured.
+# NFE-equivalent = 50 * TFLOPs / 2976; their "Vanilla 25 steps" row scores below "Vanilla 15 steps" (rows apparently swapped).
 SEACACHE_T1_TFLOPS_FULL = 2976
 SEACACHE_T1 = {   # key: (label, TFLOPs, PSNR, SSIM, LPIPS)
-    "vanilla25": (r"Vanilla, 25 steps$^{\dagger\ddagger}$", 1487, "15.553", "0.668", "0.409"),
-    "vanilla15": (r"Vanilla, 15 steps$^{\dagger\ddagger}$", 892, "17.842", "0.740", "0.305"),
-    "teacache0.3": (r"TeaCache~\cite{%(teacache)s} ($\delta{=}0.3$)$^\dagger$", 1547, "20.762", "0.810", "0.211"),
-    "taylorseer3": (r"TaylorSeer~\cite{%(taylorseer)s} ($S{=}3$)$^\dagger$", 1191, "22.783", "0.828", "0.163"),
-    "seacache0.3": (r"\seacache~\cite{%(seacache)s} ($\delta{=}0.3$)$^\dagger$", 1098, "26.285", "0.893", "0.106"),
-    "deltadit": (r"$\Delta$-DiT~\cite{%(deltadit)s}$^\dagger$", 1984, "17.403", "0.710", "0.336"),
-    "toca": (r"ToCa~\cite{%(toca)s}$^\dagger$", 1263, "18.398", "0.700", "0.324"),
-    "teacache0.6": (r"TeaCache~\cite{%(teacache)s} ($\delta{=}0.6$)$^\dagger$", 892, "17.214", "0.714", "0.348"),
-    "taylorseer5": (r"TaylorSeer~\cite{%(taylorseer)s} ($S{=}5$)$^\dagger$", 834, "19.972", "0.762", "0.236"),
-    "seacache0.6": (r"\seacache~\cite{%(seacache)s} ($\delta{=}0.6$)$^\dagger$", 773, "21.332", "0.798", "0.226"),
+    "vanilla25": (r"Vanilla, 25 steps", 1487, "15.553", "0.668", "0.409"),
+    "vanilla15": (r"Vanilla, 15 steps", 892, "17.842", "0.740", "0.305"),
+    "teacache0.3": (r"TeaCache~\cite{%(teacache)s} ($\delta{=}0.3$)", 1547, "20.762", "0.810", "0.211"),
+    "taylorseer3": (r"TaylorSeer~\cite{%(taylorseer)s} ($S{=}3$)", 1191, "22.783", "0.828", "0.163"),
+    "seacache0.3": (r"\seacache~\cite{%(seacache)s} ($\delta{=}0.3$)", 1098, "26.285", "0.893", "0.106"),
+    "toca": (r"ToCa~\cite{%(toca)s}", 1263, "18.398", "0.700", "0.324"),
+    "teacache0.6": (r"TeaCache~\cite{%(teacache)s} ($\delta{=}0.6$)", 892, "17.214", "0.714", "0.348"),
+    "taylorseer5": (r"TaylorSeer~\cite{%(taylorseer)s} ($S{=}5$)", 834, "19.972", "0.762", "0.236"),
+    "seacache0.6": (r"\seacache~\cite{%(seacache)s} ($\delta{=}0.6$)", 773, "21.332", "0.798", "0.226"),
 }
-# blocks of the main table: (title, published rows, our delta). Published rows are sorted by NFE (descending) below.
+FLUX_FULL_TFLOPS = 2975.6127707136
+# Reference-free quality (ImageReward, CLIP score): data/flux_quality.json (see its "what" field).
+_Q_PATH = os.path.join(HERE, "data", "flux_quality.json")
+QUAL = json.load(open(_Q_PATH)) if os.path.exists(_Q_PATH) else {}
+
+
+def qcells(q):
+    return (f"{q['imagereward']:.3f}", f"{q['clip']:.2f}") if q else (r"\nodata", r"\nodata")
+MEASURED_BL = {   # key: (label, NFE, PSNR, SSIM, LPIPS)
+    "teacache0.3": (r"TeaCache~\cite{%(teacache)s} ($\delta{=}0.3$)", 26.00, 20.688, 0.8025, 0.2026),
+    "vanilla25": (r"Fewer steps (25)", 25.00, 17.543, 0.7284, 0.3018),
+    "taylorseer3": (r"TaylorSeer~\cite{%(taylorseer)s} ($S{=}3$)", 18.00, 19.68, 0.779, 0.222),
+    "teacache0.6": (r"TeaCache~\cite{%(teacache)s} ($\delta{=}0.6$)", 15.01, 17.134, 0.6990, 0.3433),
+    "vanilla15": (r"Fewer steps (15)", 15.00, 15.344, 0.6466, 0.4146),
+    "taylorseer5": (r"TaylorSeer~\cite{%(taylorseer)s} ($S{=}5$)", 12.00, 16.92, 0.689, 0.342),
+}
+# blocks of the main table: (title, baseline rows, our delta, cost key). Baselines sorted by NFE (descending) below.
 FLUX_MAIN_BLOCKS = [
-    (r"$\approx$\,18 \nfe (baselines: 18--33 \nfe)",
-     ["deltadit", "teacache0.3", "vanilla25", "toca", "taylorseer3", "seacache0.3"], "0.37"),
-    (r"13 \nfe (baselines: 13--15 \nfe)", ["teacache0.6", "vanilla15", "taylorseer5", "seacache0.6"], "0.6"),
+    (r"$\approx$\,18 \nfe (baselines: 18--26 \nfe)", ["teacache0.3", "vanilla25", "taylorseer3"], "0.37", "hi"),
+    (r"13 \nfe (baselines: 12--15 \nfe)", ["teacache0.6", "vanilla15", "taylorseer5"], "0.6", "lo"),
 ]
 
 
@@ -140,56 +159,56 @@ def _round_str(s, nd):
 
 
 def tab_flux_main():
-    """Main FLUX table: published SeaCache Table-1 rows (\\dagger) + KalSea (our full method) per block, NFE column.
-    Our same-setup SeaCache re-run is NOT in this table (ablation table / supplement only)."""
+    """Main FLUX table: baselines measured in our setup (released code), SeaCache's method in our code, and KalSea."""
     S = ST["summary"]
-    ours_rows = [("ours", r"\ours")]
     L = [HEADER,
-         "% FLUX.1-dev, DrawBench-200 (held out). Rows marked \\dagger: numbers published in SeaCache's Table 1 (different",
-         "% hardware and seeds), NFE = 50 x TFLOPs / 2976. Our rows: SEA gate at delta 0.37 (18.1 NFE, matches the NFE implied",
-         "% by SeaCache's delta-0.3 TFLOPs; their released gate gives 20.9 NFE at delta 0.3 in our setup) and 0.6 (13.0 NFE).",
+         "% FLUX.1-dev, DrawBench-200 (held out). All rows measured in our setup (see MEASURED_BL in make_tables.py).",
+         "% SEA gate at delta 0.37 (18.1 NFE) and 0.6 (13.0 NFE) for SeaCache and KalSea.",
          "% TFLOPs / latency: data/cost.json (cost_stats.py), one example per configuration; see the cost block above.",
          r"\begin{table}[t]",
          r"  \centering",
-         r"  \caption{\textbf{Text-to-image results on \flux} (DrawBench, 200 held-out prompts)."
-         r" $^\dagger$Published by \seacache~\cite{" + CITE["seacache"] + r"} (its Table~1; other hardware; seeds and metric code not stated);"
-         r" \nfe{} $=50\,{\times}\,$TFLOPs$/2976$, a FLOP equivalent for $\Delta$-DiT and ToCa."
-         r" $^\ddagger$The two rows appear swapped there. \seacache's released gate computes 20.9 steps at $\delta{=}0.3$ in"
-         r" our setup, not 18.4, so we match \nfe rather than $\delta$ ($\delta{=}0.3$: \cref{tab:ablation}, supplement)."
-         r" TFLOPs: \seacache's convention; Lat.: s/image on one B200, one prompt, all rows measured by us (supplement;"
-         r" $\Delta$-DiT, ToCa: not run). $^\ast$\seacache's method in our code at the \nfe of \ours.}",
+         r"  \caption{\textbf{Text-to-image results on \flux} (DrawBench, 200 held-out prompts). Every row is run in our setup"
+         r" with the same prompts and seeds and compared with the uncached 50-step output of the same code: TeaCache,"
+         r" TaylorSeer (order 2, which scores higher than its default order 1) and fewer sampling steps with their released"
+         r" code, \seacache with the same gate as \ours. One evaluation costs 59.5 TFLOPs in \seacache's convention."
+         r" Lat.: s/image on one B200, one"
+         r" prompt (supplement). IR: ImageReward; CLIP: CLIP score (ViT-L/14); both reference-free sanity checks"
+         r" (uncached 50-step output: " + (f"{QUAL['ref']['imagereward']:.3f} / {QUAL['ref']['clip']:.2f}" if QUAL else "--") + r").}",
          r"  \label{tab:flux-main}",
          r"  \footnotesize",
-         r"  \setlength{\tabcolsep}{2.2pt}",
-         r"  \begin{tabular}{@{}lcccccc@{}}",
+         r"  \setlength{\tabcolsep}{1.4pt}",
+         r"  \begin{tabular}{@{}lccccccc@{}}",
          r"    \toprule",
-         r"    Method & \nfe & TFLOPs & Lat. & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ \\",
+         r"    Method & \nfe & Lat. & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ & IR$\uparrow$ & CLIP$\uparrow$ \\",
          r"    \midrule",
-         rf"    Original (50 steps) & 50 & {cost_cell('flux', 'ref', 'tflops', 0)} & {cost_cell('flux', 'ref', 'latency', 2)}"
-         r" & -- & -- & -- \\"]
-    for (title, pub, d), b in zip(FLUX_MAIN_BLOCKS, ("hi", "lo")):
+         rf"    Original (50 steps) & 50 & {cost_cell('flux', 'ref', 'latency', 2)}"
+         rf" & -- & -- & -- & {qcells(QUAL.get('ref'))[0]} & {qcells(QUAL.get('ref'))[1]} \\"]
+    for title, bl, d, b in FLUX_MAIN_BLOCKS:
         rows = []
-        for k in pub:
-            lab, tf, p, s, l = SEACACHE_T1[k]
-            lat = (cost_cell("flux", f"{b}_seacache", "latency", 2) + LAT_MARK) if k.startswith("seacache") \
-                else bl_lat("flux", k)
-            rows.append((lab % CITE, 50.0 * tf / SEACACHE_T1_TFLOPS_FULL, float(_round_str(p, 2)), float(s), float(l),
-                         str(tf), lat))
+        for k in bl:
+            lab, nfe, p, s_, l_ = MEASURED_BL[k]
+            rows.append((lab % CITE, nfe, p, s_, l_, f"{FLUX_FULL_TFLOPS * nfe / 50:.0f}", bl_lat("flux", k),
+                         *qcells(QUAL.get("baselines", {}).get(k))))
         rows.sort(key=lambda r: -r[1])
-        for k, lab in ours_rows:
-            s = S[d][k]
-            rows.append((lab + rf" ($\delta{{=}}{d}$)", s["nfe"], s["psnr"]["mean"], s["ssim"]["mean"], s["lpips"]["mean"],
-                         cost_cell("flux", f"{b}_ours", "tflops", 0), cost_cell("flux", f"{b}_ours", "latency", 2)))
+        sc = S[d]["seacache"]
+        rows.append((r"\seacache~\cite{" + CITE["seacache"] + rf"}} ($\delta{{=}}{d}$)", sc["nfe"], sc["psnr"]["mean"],
+                     sc["ssim"]["mean"], sc["lpips"]["mean"], cost_cell("flux", f"{b}_seacache", "tflops", 0),
+                     cost_cell("flux", f"{b}_seacache", "latency", 2), *qcells(QUAL.get(d, {}).get("seacache"))))
+        n_bl = len(rows)
+        o = S[d]["ours"]
+        rows.append((r"\ours" + rf" ($\delta{{=}}{d}$)", o["nfe"], o["psnr"]["mean"], o["ssim"]["mean"], o["lpips"]["mean"],
+                     cost_cell("flux", f"{b}_ours", "tflops", 0), cost_cell("flux", f"{b}_ours", "latency", 2),
+                     *qcells(QUAL.get(d, {}).get("ours"))))
         cols = {}
         for j, (m, lo) in enumerate((("psnr", False), ("ssim", False), ("lpips", True))):
             cols[m] = bold_best({i: r[2 + j] for i, r in enumerate(rows)}, m, lower_better=lo)
         L.append(r"    \midrule")
-        L.append(rf"    \multicolumn{{7}}{{@{{}}l}}{{\emph{{{title}}}}} \\")
-        n_pub = len(pub)
+        L.append(rf"    \multicolumn{{8}}{{@{{}}l}}{{\emph{{{title}}}}} \\")
         for i, r in enumerate(rows):
-            if i == n_pub:
+            if i == n_bl:
                 L.append(r"    \addlinespace[1pt]")
-            L.append(rf"    {r[0]} & {r[1]:.1f} & {r[5]} & {r[6]} & {cols['psnr'][i]} & {cols['ssim'][i]} & {cols['lpips'][i]} \\")
+            L.append(rf"    {r[0]} & {r[1]:.1f} & {r[6]} & {cols['psnr'][i]} & {cols['ssim'][i]} & {cols['lpips'][i]}"
+                     rf" & {r[7]} & {r[8]} \\")
     L += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}", ""]
     return "\n".join(L)
 

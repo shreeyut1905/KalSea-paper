@@ -13,7 +13,7 @@ sampler or the weights; caching leaves both unchanged and is orthogonal to them.
 \paragraph{Training-free caching.}
 Caching exploits the similarity of activations at consecutive sampling steps. Early caches reuse U-Net
 features~\cite{ma2024deepcache,wimbauer2024cache} or the blocks, attention and MLP outputs, and tokens of diffusion
-transformers~\cite{chen2024deltadit,selvaraju2024fora,zou2025toca}; others target video~\cite{zhao2025pab,lv2025fastercache},
+transformers~\cite{selvaraju2024fora,zou2025toca}; others target video~\cite{zhao2025pab,lv2025fastercache},
 distribute reuse over the trajectory~\cite{chu2025omnicache} or learn which layers to cache~\cite{ma2024learningtocache}.
 Adaptive caches decide online when to recompute: AdaCache~\cite{kahatapitiya2025adacache} adapts the schedule to each
 video, TeaCache~\cite{liu2025teacache} accumulates the relative change of the first block's timestep-modulated input
@@ -24,10 +24,8 @@ Forecasting caches extrapolate the skipped outputs with Taylor expansions~\cite{
 Hermite~\cite{feng2026hicache} or Chebyshev~\cite{han2026spectrum} polynomials, or a BDF2 predictor with Heun-type
 calibration~\cite{zheng2026foca}, and other methods verify~\cite{liu2025speca} or
 rectify~\cite{peng2026ertacache,shen2026gprefiner} the value written on skipped steps.
-Concurrently, SpecKCast~\cite{rajabi2026speckcast} forecasts the DCT coefficients of the model output with
-damped-trend Kalman filters and schedules computation by their uncertainty. All of them improve the value used at the \emph{current or upcoming} steps; none revises the latent of steps that have already been skipped.
-% TODO(owner): direct comparison with SpecKCast's full method (output forecasting + uncertainty scheduler) if its code
-% becomes available; CVPR asks to compare with contemporaneous work "to the degree feasible".
+Concurrent work~\cite{rajabi2026speckcast} also forecasts with Kalman filters. All of them improve the value used
+at the \emph{current or upcoming} steps; none revises the latent of steps that have already been skipped.
 \paragraph{Filtering, smoothing and predictor-corrector integration.}
 The Kalman filter~\cite{kalman1960new} and the RTS smoother~\cite{rauch1965maximum} are the exact recursive
 estimators of linear-Gaussian state-space models~\cite{sarkka2013bayesian}.

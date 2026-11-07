@@ -14,8 +14,7 @@ output and recompute once it exceeds a threshold~\cite{liu2025teacache,ma2025mag
 the noise component of the features. For the second decision, most caches reuse the last computed
 output~\cite{ma2024deepcache,selvaraju2024fora,liu2025teacache,chung2026seacache}, while forecasting methods extrapolate
 it from several computed steps with Taylor expansions~\cite{liu2025taylorseer}, Hermite or Chebyshev
-polynomials~\cite{feng2026hicache,han2026spectrum}, multistep formulas~\cite{zheng2026foca}, or Kalman
-filters~\cite{rajabi2026speckcast}.
+polynomials~\cite{feng2026hicache,han2026spectrum}, or multistep formulas~\cite{zheng2026foca}.
 
 Reuse and forecasting share a structural limitation: they are \emph{open loop}. The filler predicts the skipped steps
 from the past alone, and the sampler integrates its errors into the latent. These errors grow with the distance to

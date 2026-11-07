@@ -79,8 +79,8 @@ images and 3 for videos).
 \label{sec:kalman}
 
 The residual evolves smoothly but nonlinearly along the trajectory, and the cache observes it only at the irregular
-steps chosen by the gate. Following the state-space model of the contemporaneous SpecKCast~\cite{rajabi2026speckcast},
-which forecasts the model output, we model every element of the residual as a damped trend observed in noise. The
+steps chosen by the gate. We model every element of the residual as a damped trend observed in
+noise~\cite{gardner1985forecasting,barshalom2001estimation}. The
 state $\kstate_i=[m_i,\nu_i]^\top$ holds a value and its rate of change with respect to a time coordinate $s$ that
 increases monotonically along the schedule, with steps $\ds_i=s(i)-s(i-1)$. At every step, computed or skipped, the
 filter predicts
@@ -109,7 +109,7 @@ predicted variance $S_b$~\cite{mehra1972approaches} (supplement).
 The covariance $\kP$ is shared by all elements (per-element variant) or by all coefficients of a frequency band (DCT
 variant), so the filter costs a few elementwise operations per step and its gains are scalars per band. In the
 \emph{per-element} variant, $s$ is a warped log signal-to-noise ratio of the schedule. In the
-\emph{DCT} variant, which follows SpecKCast and is our default for \flux, the residual of each channel is transformed
+\emph{DCT} variant (as in~\cite{rajabi2026speckcast}), our default for \flux, the residual of each channel is transformed
 with an orthonormal 2D DCT on the token grid, the coefficients are grouped into seven radial frequency bands, and each
 band has its own warped time coordinate and covariance. Noise intensities, initial trend variances and band powers
 are calibrated once per model from 16 uncached trajectories of prompts disjoint from all evaluation prompts; $\tau=0.5$

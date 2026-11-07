@@ -55,12 +55,12 @@ def per_image():
 # ------------------------------------------------------------------------------------------- published -> NFE
 def tab_published():
     S = ST["summary"]
-    order = ["vanilla25", "teacache0.3", "taylorseer3", "seacache0.3", "deltadit", "toca",
+    order = ["vanilla25", "teacache0.3", "taylorseer3", "seacache0.3", "toca",
              "vanilla15", "teacache0.6", "taylorseer5", "seacache0.6"]
     L = [r"\begin{table}[t]", r"  \centering",
          r"  \caption{\textbf{Published \flux results of \seacache~\cite{" + CITE["seacache"] + r"} (its Table~1) and"
          r" their \nfe.} \nfe{} $=50\,{\times}\,$TFLOPs$/2976$, where 2976 TFLOPs is their 50-step original; for"
-         r" $\Delta$-DiT and ToCa, which compute parts of the network, it is a FLOP equivalent. Bottom: our re-run of"
+         r" ToCa, which computes parts of the network, it is a FLOP equivalent. Bottom: our re-run of"
          r" \seacache (released gate, reuse) at three thresholds, in our setup (DrawBench-200, B200, seed = prompt index).}",
          r"  \label{tab:supp-published}", r"  \footnotesize", r"  \setlength{\tabcolsep}{3pt}",
          r"  \begin{tabular}{@{}lccccc@{}}", r"    \toprule",

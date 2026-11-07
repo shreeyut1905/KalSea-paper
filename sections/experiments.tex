@@ -3,7 +3,7 @@
 
 % Correction size by gap (delta 0.6, kalsea_dct_pcgs_0.6 stats, 0-based steps): gaps (2,4),(4,6): 0.26%, 0.22% (n=200);
 % (33,41): 5.2%, (41,47): 6.1% (n=147, the modal schedule); mean over all gaps 2.0%; delta 0.3: 0.7%.
-% Published baselines (Tab. 1, rows with \dagger): SeaCache Table 1 (KalSea-dev/SeaCache_paper_2602.18993.txt), NFE =
+% Baselines in Tab. 1: measured in our setup (figures/src/make_tables.py MEASURED_BL); published SeaCache Table 1 (KalSea-dev/SeaCache_paper_2602.18993.txt) only in the supplement, NFE =
 %   50 x TFLOPs / 2976. Our delta-0.37 runs: eval_dct_pcgs.txt / eval_final.txt; paired stats at delta 0.37 (vs. our
 %   SeaCache re-run reuse_0.37 and vs. KalSea speckcast_0.37): figures/src/data/flux_drawbench_stats.json (same
 %   per-image metrics and bootstrap as eval2). Median / worst per-prompt PCGS gain and identical-step counts at 0.37:
@@ -46,12 +46,12 @@ the output of the uncached 50-step sampler for the same prompt and seed.
 
 \paragraph{Budgets and baselines.}
 We report the mean number of block-stack evaluations per image (\nfe, of 50), counted by hooks on every block, and
-compare only at matched \nfe. \cref{tab:flux-main} lists the results that \seacache published for itself, TeaCache,
-TaylorSeer, $\Delta$-DiT, ToCa and fewer steps~\cite{chung2026seacache}, with TFLOPs converted to \nfe. Our caches
-use the official \sea gate, whose threshold $\delta$ sets the budget. At $\delta=0.6$ it computes 13.0 steps both in
-\seacache's table and in our setup, where our re-run of \seacache reproduces the published PSNR (21.26 vs.\
-21.33\,dB); at $\delta=0.3$ it computes 20.9 steps in our setup but 18.4 according to the TFLOPs, so we run our cache
-at $\delta=0.37$ (18.1 \nfe) and $0.6$. For controlled comparisons (same code, seeds and hardware), four fillers run
+compare only at matched \nfe. Every baseline runs in our setup with the same prompts and seeds: TeaCache, TaylorSeer
+and fewer sampling steps with their released code, and \seacache with the same gate as our caches. Our caches use the
+official \sea gate, whose threshold $\delta$ sets the budget. At $\delta=0.6$ it computes 13.0 steps both in
+\seacache's published table and in our setup, where our re-run of \seacache reproduces the published PSNR (21.26
+vs.\ 21.33\,dB); at $\delta=0.3$ it computes 20.9 steps in our setup but 18.4 according to the published TFLOPs, so
+we match \nfe rather than $\delta$ and run our caches at $\delta=0.37$ (18.1 \nfe) and $0.6$. For controlled comparisons (same code, seeds and hardware), four fillers run
 behind the same gate: reuse (\seacache), linear extrapolation of the residual from the last two computed steps (the
 first-order forecast of TaylorSeer~\cite{liu2025taylorseer}), the Kalman forecast (\kalsea), and \ours. Behind the same gate, the
 caches compute the same steps on most prompts (supplement).
@@ -74,11 +74,12 @@ runs use bf16 on NVIDIA B200 GPUs. For video we use the calibration-free per-ele
 \subsection{Comparison at matched \nfe}
 \label{sec:main-results}
 
-\cref{tab:flux-main} compares \ours with published results. At 18.1 \nfe, \ours reaches 27.72\,dB PSNR, 1.43\,dB
-above the 26.29\,dB reported for \seacache at 18.4 \nfe, with better SSIM and LPIPS, and it exceeds all baselines that
-use more evaluations. At 13 \nfe, it reaches 22.53 vs.\ 21.33\,dB, again with better SSIM and LPIPS. In our same-setup
-runs, \ours improves over \seacache by 2.39\,dB
-[2.03, 2.75] (better on 88\% of the prompts) at 18.1 \nfe and by 1.27\,dB [1.02, 1.52] (79\%) at 13 \nfe.
+\cref{tab:flux-main} compares \ours with all baselines in our setup. At 18.1 \nfe, \ours reaches 27.72\,dB PSNR,
+2.39\,dB [2.03, 2.75] above \seacache at the same \nfe (better on 88\% of the prompts), with better SSIM and LPIPS,
+and it exceeds every baseline that uses more evaluations; it is also above the 26.29\,dB that \seacache reports at
+18.4 \nfe. At 13 \nfe, it improves over \seacache by 1.27\,dB [1.02, 1.52] (79\%; 22.53 vs.\ 21.26\,dB, reported:
+21.33\,dB). ImageReward and CLIP score stay at the level of the uncached sampler, so the gain in fidelity does not
+come at a cost in perceived quality.
 
 \paragraph{Budget sweep.}
 \cref{fig:tradeoff} varies $\delta$ from 0.2 to 1.0 in the same setup. \ours attains the highest PSNR and the
@@ -140,8 +141,8 @@ filter state is no better than no correction ($-$0.86 vs.\ $-$0.83\,dB at 20.8 \
 % Development-set numbers: research_v2/ablations/ABLATIONS_devset.md (COCO-64, n = 62-64, per-element forecaster).
 
 \paragraph{Other forecasters and fillers.}
-With \pcgs, the forecaster's parametrization hardly matters: the per-element filter, the damping $\tau=0.1$ of
-SpecKCast and a calibration-free filter all stay within 0.1\,dB of \ours, so the frequency decomposition is unnecessary
+With \pcgs, the forecaster's parametrization hardly matters: the per-element filter, a shorter damping $\tau=0.1$
+and a calibration-free filter all stay within 0.1\,dB of \ours, so the frequency decomposition is unnecessary
 for the residual and we use the per-element filter for video. Nor is \pcgs tied to a Kalman forecaster: it improves
 reuse by 1.69 and 0.74\,dB and linear extrapolation by 1.15 and 0.80\,dB (supplement); linear extrapolation with \pcgs
 then ties \ours, while reuse with \pcgs stays 1.03 and 0.53\,dB below.
