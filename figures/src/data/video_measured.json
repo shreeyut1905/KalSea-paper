@@ -172,8 +172,36 @@
    "seacache": {
     "config": "kalsearu0.2575",
     "setting": "$\\delta{=}0.2575$",
-    "fidelity": null,
-    "vbench": null
+    "fidelity": {
+     "n": 944,
+     "nfe": 24.027542372881356,
+     "psnr": 32.43208172684066,
+     "ssim": 0.9281480473154544,
+     "lpips": 0.04840626746707965
+    },
+    "vbench": {
+     "total": 80.83040479296895,
+     "quality": 83.1181524757483,
+     "semantic": 71.67941406185156,
+     "dims": {
+      "subject consistency": 0.9596011077778207,
+      "temporal style": 0.2328972694161348,
+      "background consistency": 0.9585273210392442,
+      "appearance style": 0.2041272302350427,
+      "temporal flickering": 0.9907577519821964,
+      "object class": 0.8662974683544303,
+      "motion smoothness": 0.9913281913929082,
+      "multiple objects": 0.75,
+      "dynamic degree": 0.625,
+      "color": 0.8406250000000001,
+      "aesthetic quality": 0.6137837411895875,
+      "overall consistency": 0.26552161189817614,
+      "imaging quality": 0.6259752053827957,
+      "scene": 0.38299418604651164,
+      "human action": 0.9,
+      "spatial relationship": 0.5450456081465208
+     }
+    }
    },
    "ours": {
     "config": "kalsea0.2575",
@@ -554,8 +582,36 @@
    "seacache": {
     "config": "kalsearu0.2",
     "setting": "$\\delta{=}0.2$",
-    "fidelity": null,
-    "vbench": null
+    "fidelity": {
+     "n": 944,
+     "nfe": 24.009533898305083,
+     "psnr": 29.39507998157505,
+     "ssim": 0.9327387819763887,
+     "lpips": 0.0429973666658707
+    },
+    "vbench": {
+     "total": 80.43264775256006,
+     "quality": 83.93208662555124,
+     "semantic": 66.43489226059532,
+     "dims": {
+      "subject consistency": 0.9635120431258757,
+      "temporal flickering": 0.9906685306496089,
+      "object class": 0.8125,
+      "temporal style": 0.22831356801092625,
+      "background consistency": 0.9882014518560365,
+      "motion smoothness": 0.9857557086814235,
+      "multiple objects": 0.5083841463414634,
+      "appearance style": 0.19950269764957249,
+      "dynamic degree": 0.4444444444444444,
+      "aesthetic quality": 0.644065031120854,
+      "color": 0.8647388059701493,
+      "overall consistency": 0.23552978503447708,
+      "imaging quality": 0.7134724267718218,
+      "human action": 0.75,
+      "spatial relationship": 0.7602579550072734,
+      "scene": 0.2558139534883721
+     }
+    }
    },
    "ours": {
     "config": "kalsea0.2",
@@ -698,8 +754,36 @@
    "seacache": {
     "config": "kalsearu0.35",
     "setting": "$\\delta{=}0.35$",
-    "fidelity": null,
-    "vbench": null
+    "fidelity": {
+     "n": 944,
+     "nfe": 17.0,
+     "psnr": 23.51971126809617,
+     "ssim": 0.8292310862209553,
+     "lpips": 0.118494390096088
+    },
+    "vbench": {
+     "total": 80.05117343096673,
+     "quality": 83.58906467584296,
+     "semantic": 65.89960845146179,
+     "dims": {
+      "subject consistency": 0.9640989227369169,
+      "temporal flickering": 0.9895510049754499,
+      "object class": 0.8156645569620253,
+      "temporal style": 0.2260751184821129,
+      "background consistency": 0.9865282191786655,
+      "motion smoothness": 0.9855160832208417,
+      "multiple objects": 0.5259146341463414,
+      "appearance style": 0.19863584401709425,
+      "dynamic degree": 0.4305555555555556,
+      "aesthetic quality": 0.6355323413366912,
+      "color": 0.8619402985074627,
+      "overall consistency": 0.23395399981608955,
+      "imaging quality": 0.7120681575841407,
+      "human action": 0.72,
+      "spatial relationship": 0.7624596630562143,
+      "scene": 0.23546511627906977
+     }
+    }
    },
    "ours": {
     "config": "kalsea0.35",

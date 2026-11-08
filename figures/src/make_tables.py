@@ -307,7 +307,7 @@ def tab_video_main():
          r" TaylorSeer with their released code, Spectrum in our implementation (identical to its released code on \flux),"
          r" \seacache with the same gate as \ours. Thresholds and strides of all rows:"
          r" supplement. VBench: Total score over all 16 dimensions (official weights and normalization; uncached in the"
-         r" first row; --: not evaluated for \seacache at the thresholds of \ours). Lat.: s/video on one B200, one prompt"
+         r" first row). Lat.: s/video on one B200, one prompt"
          r" (supplement; --: not timed).}",
          r"  \label{tab:video-main}",
          r"  \footnotesize",
