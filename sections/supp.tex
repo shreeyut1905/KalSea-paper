@@ -376,6 +376,23 @@ and 20.8 \nfe, selected by a fixed rule. \cref{tab:collage-prompts} lists the pr
   \input{figures/fig_qualitative_supp_nfe21_caption}
 \end{figure*}
 
+\paragraph{All baselines.} \cref{fig:baselines-flux13,fig:baselines-flux21} show the same prompts for every baseline of
+\maincref{tab:flux-main}: fewer steps, TeaCache, TaylorSeer and Spectrum at 12--15 \nfe, and fewer steps, TeaCache and
+SADA at 21--26 \nfe, next to \seacache and \ours. The prompts come from the rule above, which only compares \ours with
+\seacache, so they are not chosen to favor \ours over the other baselines.
+
+\begin{figure*}[t]
+  \centering
+  \maybegraphics[width=\textwidth]{figures/fig_baselines_flux13.pdf}
+  \input{figures/fig_baselines_flux13_caption}
+\end{figure*}
+
+\begin{figure*}[t]
+  \centering
+  \maybegraphics[width=\textwidth]{figures/fig_baselines_flux21.pdf}
+  \input{figures/fig_baselines_flux21_caption}
+\end{figure*}
+
 %% ====================================================================================================================
 \section{Development-set results}
 \label{supp:devset}
@@ -621,6 +638,21 @@ number suggests.
   \centering
   \maybegraphics[width=\textwidth]{figures/fig_video_examples_wan.pdf}
   \input{figures/fig_video_examples_wan_caption}
+\end{figure*}
+
+\cref{fig:baselines-hunyuan,fig:baselines-wan} show the same two videos per model for every baseline of
+\maincref{tab:video-main} (fewer steps, TeaCache, TaylorSeer, Spectrum, \seacache and \ours).
+
+\begin{figure*}[t]
+  \centering
+  \maybegraphics[width=\textwidth]{figures/fig_baselines_hunyuan.pdf}
+  \input{figures/fig_baselines_hunyuan_caption}
+\end{figure*}
+
+\begin{figure*}[t]
+  \centering
+  \maybegraphics[width=\textwidth]{figures/fig_baselines_wan.pdf}
+  \input{figures/fig_baselines_wan_caption}
 \end{figure*}
 
 \subsection{Reproducibility}
