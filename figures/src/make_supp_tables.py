@@ -909,3 +909,47 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ------------------------------------------------------------------------------------------- VBench, 16 dimensions
+VB_DIMS = ["subject consistency", "background consistency", "temporal flickering", "motion smoothness",
+           "dynamic degree", "aesthetic quality", "imaging quality", "object class", "multiple objects",
+           "human action", "color", "spatial relationship", "scene", "temporal style", "appearance style",
+           "overall consistency"]
+
+
+def tab_vbench_dims():
+    """All 16 VBench dimensions of every row of the main paper's Tab. 2 (data/video_measured.json)."""
+    M = json.load(open(os.path.join(HERE, "data", "video_measured.json")))
+    cols_by_model = {"hunyuan": [("vanilla", "Fewer steps"), ("teacache", "TeaCache"), ("taylorseer", "TaylorSeer"),
+                                 ("spectrum", "Spectrum"), ("seacache", r"\seacache"), ("ours", r"\ours")],
+                     "wan": [("teacache", "TeaCache"), ("taylorseer", "TaylorSeer"), ("spectrum", "Spectrum"),
+                             ("seacache", r"\seacache"), ("ours", r"\ours")]}
+    budget = {"hi": r"$\approx$\,50\% budget", "lo": r"$\approx$\,30\% budget"}
+    L = [r"\begin{table*}[t]", r"  \centering",
+         r"  \caption{\textbf{VBench, all 16 dimensions} (in \%; 944 prompts, one video per prompt, seed 42, official"
+         r" VBench code and standard prompt suite) for every row of \maincref{tab:video-main}. Total, Quality and Semantic"
+         r" scores use VBench's official weights and normalization. --: not available.}",
+         r"  \label{tab:supp-vbench-dims}", r"  \scriptsize", r"  \setlength{\tabcolsep}{2.2pt}"]
+    for model in ("hunyuan", "wan"):
+        cols = [("ref", "Uncached", "ref")] + [(k, lab, b) for b in ("hi", "lo") for k, lab in cols_by_model[model]]
+        def get(k, b):
+            return (M[model]["ref"]["ref"] if k == "ref" else M[model][b].get(k, {})).get("vbench")
+        vals = [get(k, b) for k, _, b in cols]
+        n_hi = len(cols_by_model[model])
+        L += [r"  \begin{tabular}{@{}l c " + "c" * n_hi + r" @{\hspace{6pt}} " + "c" * n_hi + r"@{}}", r"    \toprule",
+              rf"    \textbf{{{MODEL_NAME[model]}}} & & \multicolumn{{{n_hi}}}{{c}}{{{budget['hi']}}}"
+              rf" & \multicolumn{{{n_hi}}}{{c}}{{{budget['lo']}}} \\",
+              rf"    \cmidrule(lr){{3-{2 + n_hi}}} \cmidrule(l){{{3 + n_hi}-{2 + 2 * n_hi}}}",
+              "    Dimension & " + " & ".join(lab for _, lab, _ in cols) + r" \\", r"    \midrule"]
+        for key, name in (("total", "Total score"), ("quality", "Quality score"), ("semantic", "Semantic score")):
+            L.append(f"    {name} & " + " & ".join("--" if v is None else f"{v[key]:.2f}" for v in vals) + r" \\")
+        L.append(r"    \midrule")
+        for dim in VB_DIMS:
+            L.append(f"    {dim.capitalize()} & " + " & ".join(
+                "--" if v is None else f"{100 * v['dims'][dim]:.2f}" for v in vals) + r" \\")
+        L += [r"    \bottomrule", r"  \end{tabular}"]
+        if model == "hunyuan":
+            L.append(r"  \par\medskip")
+    L += [r"\end{table*}", ""]
+    write("supp_vbench_dims", "\n".join(L))
