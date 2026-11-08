@@ -687,5 +687,9 @@ tables' \nfe at both budgets. The original, \seacache and \ours run with our cod
 sampling with their official implementations at the published settings (TaylorSeer on \flux: order 1, first five steps
 computed; the single-block calls of TeaCache's \flux forward are adapted to the current diffusers interface, with the
 same operations). As a check, the 50-step original timed with the baselines' drivers agrees with our script to within
-0.1\% (\flux, HunyuanVideo) and 1.3\% (Wan2.1). $\Delta$-DiT and ToCa were not run. At equal \nfe, \ours takes 3--5\%
+0.1\% (\flux, HunyuanVideo) and 1.3\% (Wan2.1). Spectrum and SADA need an older diffusers release for their
+released \flux code, which is slower at identical work; their latency is the original's latency in
+\maincref{tab:flux-main} times the ratio of their latency to the 50-step original measured with that release on the same
+GPU. The \flux rows at $\delta=0.3$ were timed in a later session with the same protocol and scaled by the ratio of the
+two sessions' original latencies. On video, Spectrum (our implementation) was timed with the same protocol; in that session \ours took 27.4 and 19.4\,s at 16 and 17 \nfe, as in the main paper's table. ToCa was not run. At equal \nfe, \ours takes 3--5\%
 longer than \seacache on \flux and 0.3--1.4\% longer on video, for elementwise work that the count omits (filter updates, gate refresh).

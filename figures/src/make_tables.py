@@ -182,7 +182,7 @@ def tab_flux_main():
          r" TaylorSeer (order 2, which scores higher than its default order 1), Spectrum, SADA (its default configuration"
          r" and a faster one) and fewer sampling steps with their released code, \seacache with the same gate as \ours. One evaluation costs 59.5 TFLOPs in \seacache's convention."
          r" Lat.: s/image on one B200, one"
-         r" prompt (supplement; --: not timed). IR: ImageReward; CLIP: CLIP score (ViT-L/14); both reference-free sanity checks"
+         r" prompt (supplement). IR: ImageReward; CLIP: CLIP score (ViT-L/14); both reference-free sanity checks"
          r" (uncached 50-step output: " + (f"{QUAL['ref']['imagereward']:.3f} / {QUAL['ref']['clip']:.2f}" if QUAL else "--") + r").}",
          r"  \label{tab:flux-main}",
          r"  \footnotesize",
@@ -306,7 +306,7 @@ def tab_video_main():
          r" \seacache with the same gate as \ours. Thresholds and strides of all rows:"
          r" supplement. VBench: Total score over all 16 dimensions (official weights and normalization; uncached in the"
          r" first row). Lat.: s/video on one B200, one prompt"
-         r" (supplement; --: not timed).}",
+         r" (supplement; --: no fewer-step runs on Wan2.1, as in \seacache's table).}",
          r"  \label{tab:video-main}",
          r"  \footnotesize",
          r"  \setlength{\tabcolsep}{3.2pt}",

@@ -69,6 +69,16 @@
    "tflops": 774.731342020608,
    "tflops_attn": 193.341174054912,
    "tflops_outside_forward": 0.0
+  },
+  "mid_ours": {
+   "latency": 2.345,
+   "nfe": 20.84,
+   "note": "timed 2026-11-08 (same protocol, seed 0), scaled by this table's original / original of that session (5.114 s)"
+  },
+  "mid_seacache": {
+   "latency": 2.31,
+   "nfe": 20.88,
+   "note": "timed 2026-11-08 (same protocol, seed 0), scaled by this table's original / original of that session (5.114 s)"
   }
  },
  "hunyuan": {
@@ -262,6 +272,26 @@
     ],
     "nfe": 14,
     "prompt": "A red colored car."
+   },
+   "spectrum18": {
+    "latency": 2.05,
+    "ratio_to_original": 0.3901,
+    "note": "released code needs diffusers 0.34: latency = original latency of this table x (method / 50-step original), both measured with the released code on one B200 over DrawBench-200 (2026-11-07)"
+   },
+   "spectrum13": {
+    "latency": 1.51,
+    "ratio_to_original": 0.2875,
+    "note": "released code needs diffusers 0.34: latency = original latency of this table x (method / 50-step original), both measured with the released code on one B200 over DrawBench-200 (2026-11-07)"
+   },
+   "sada_demo": {
+    "latency": 2.574,
+    "ratio_to_original": 0.49,
+    "note": "released code needs diffusers 0.34: latency = original latency of this table x (method / 50-step original), both measured with the released code on one B200 over DrawBench-200 (2026-11-07)"
+   },
+   "sada_fast": {
+    "latency": 2.315,
+    "ratio_to_original": 0.4406,
+    "note": "released code needs diffusers 0.34: latency = original latency of this table x (method / 50-step original), both measured with the released code on one B200 over DrawBench-200 (2026-11-07)"
    }
   },
   "hunyuan": {
