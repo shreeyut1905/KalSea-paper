@@ -929,7 +929,8 @@ def tab_vbench_dims():
     L = [r"\begin{table*}[t]", r"  \centering",
          r"  \caption{\textbf{VBench, all 16 dimensions} (in \%; 944 prompts, one video per prompt, seed 42, official"
          r" VBench code and standard prompt suite) for every row of \maincref{tab:video-main}. Total, Quality and Semantic"
-         r" scores use VBench's official weights and normalization. --: not available.}",
+         r" scores use VBench's official weights and normalization. --: not evaluated (\seacache at the"
+         r" thresholds of \ours on Wan2.1 and at the larger HunyuanVideo budget).}",
          r"  \label{tab:supp-vbench-dims}", r"  \scriptsize", r"  \setlength{\tabcolsep}{2.2pt}"]
     for model in ("hunyuan", "wan"):
         cols = [("ref", "Uncached", "ref")] + [(k, lab, b) for b in ("hi", "lo") for k, lab in cols_by_model[model]]
