@@ -280,6 +280,12 @@
      "latency": 43.33,
      "nfe": 26,
      "prompt": "In a still frame, a stop sign"
+    },
+    "spectrum": {
+     "latency": 37.47,
+     "nfe": 23,
+     "prompt": "In a still frame, a stop sign",
+     "note": "timed 2026-11-08 (KalSea protocol, warm-up + one call, all 8 GPUs running timing jobs); calibration in the same wave: KalSea Hunyuan delta 0.48 27.45 s (cost.json 27.5), Wan delta 0.35 19.44 s (19.4)"
     }
    },
    "lo": {
@@ -297,6 +303,12 @@
      "latency": 32.56,
      "nfe": 18,
      "prompt": "In a still frame, a stop sign"
+    },
+    "spectrum": {
+     "latency": 27.35,
+     "nfe": 16,
+     "prompt": "In a still frame, a stop sign",
+     "note": "timed 2026-11-08 (KalSea protocol, warm-up + one call, all 8 GPUs running timing jobs); calibration in the same wave: KalSea Hunyuan delta 0.48 27.45 s (cost.json 27.5), Wan delta 0.35 19.44 s (19.4)"
     }
    }
   },
@@ -311,6 +323,18 @@
      "latency": 29.101,
      "nfe": 26,
      "prompt": "In a still frame, a stop sign"
+    },
+    "spectrum": {
+     "latency": 29.92,
+     "nfe": 27,
+     "prompt": "In a still frame, a stop sign",
+     "note": "timed 2026-11-08 (KalSea protocol, warm-up + one call, all 8 GPUs running timing jobs); calibration in the same wave: KalSea Hunyuan delta 0.48 27.45 s (cost.json 27.5), Wan delta 0.35 19.44 s (19.4)"
+    },
+    "vanilla": {
+     "latency": 26.7,
+     "nfe": 25,
+     "prompt": "In a still frame, a stop sign",
+     "note": "timed 2026-11-08 (KalSea protocol, warm-up + one call, all 8 GPUs running timing jobs); calibration in the same wave: KalSea Hunyuan delta 0.48 27.45 s (cost.json 27.5), Wan delta 0.35 19.44 s (19.4)"
     }
    },
    "lo": {
@@ -323,6 +347,18 @@
      "latency": 20.949,
      "nfe": 18,
      "prompt": "In a still frame, a stop sign"
+    },
+    "spectrum": {
+     "latency": 21.52,
+     "nfe": 19,
+     "prompt": "In a still frame, a stop sign",
+     "note": "timed 2026-11-08 (KalSea protocol, warm-up + one call, all 8 GPUs running timing jobs); calibration in the same wave: KalSea Hunyuan delta 0.48 27.45 s (cost.json 27.5), Wan delta 0.35 19.44 s (19.4)"
+    },
+    "vanilla": {
+     "latency": 16.53,
+     "nfe": 15,
+     "prompt": "In a still frame, a stop sign",
+     "note": "timed 2026-11-08 (KalSea protocol, warm-up + one call, all 8 GPUs running timing jobs); calibration in the same wave: KalSea Hunyuan delta 0.48 27.45 s (cost.json 27.5), Wan delta 0.35 19.44 s (19.4)"
     }
    }
   }

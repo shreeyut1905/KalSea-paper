@@ -73,9 +73,13 @@ def tab_published():
             lab += r"$^\ddagger$"
         L.append(rf"    {lab} & {tf} & {50.0 * tf / SEACACHE_T1_TFLOPS_FULL:.2f} & {p} & {s} & {l} \\")
     L += [r"    \midrule", r"    \seacache, our re-run & & & & & \\"]
+    cost = json.load(open(os.path.join(HERE, "data", "cost.json")))["flux"]
+    per_eval = cost["hi_seacache"]["tflops"] / cost["hi_seacache"]["nfe"]  # measured TFLOPs per evaluation (gate incl.)
+    tf_of = {"0.37": cost["hi_seacache"]["tflops"], "0.6": cost["lo_seacache"]["tflops"]}
     for d in ("0.3", "0.37", "0.6"):
         s = S[d]["seacache"]
-        L.append(rf"    \quad $\delta{{=}}{d}$ & \nodata & {s['nfe']:.2f} & {s['psnr']['mean']:.2f} & {s['ssim']['mean']:.3f}"
+        tf = tf_of.get(d, per_eval * s["nfe"])  # delta 0.3: per-evaluation cost x mean NFE
+        L.append(rf"    \quad $\delta{{=}}{d}$ & {tf:.0f} & {s['nfe']:.2f} & {s['psnr']['mean']:.2f} & {s['ssim']['mean']:.3f}"
                  rf" & {s['lpips']['mean']:.3f} \\")
     L += [r"    \bottomrule", r"  \end{tabular}",
           r"  \par\smallskip\parbox{\linewidth}{\scriptsize $^\ddagger$As published; the 25-step row scores below the"

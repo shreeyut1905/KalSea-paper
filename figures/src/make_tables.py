@@ -284,8 +284,6 @@ def tab_video_main():
                 continue
             if key in ("ours", "seacache"):
                 lat = cost_cell(model, f"{b}_{key}", "latency", nd)
-            elif key == "spectrum":
-                lat = "--"
             else:
                 lat = bl_lat(model, key, b)
             vb = vals[key][4]
