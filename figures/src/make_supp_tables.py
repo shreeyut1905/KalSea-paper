@@ -927,7 +927,7 @@ def tab_vbench_dims():
     M = json.load(open(os.path.join(HERE, "data", "video_measured.json")))
     cols_by_model = {"hunyuan": [("vanilla", "Fewer steps"), ("teacache", "TeaCache"), ("taylorseer", "TaylorSeer"),
                                  ("spectrum", "Spectrum"), ("seacache", r"\seacache"), ("ours", r"\ours")],
-                     "wan": [("teacache", "TeaCache"), ("taylorseer", "TaylorSeer"), ("spectrum", "Spectrum"),
+                     "wan": [("vanilla", "Fewer steps"), ("teacache", "TeaCache"), ("taylorseer", "TaylorSeer"), ("spectrum", "Spectrum"),
                              ("seacache", r"\seacache"), ("ours", r"\ours")]}
     budget = {"hi": r"$\approx$\,50\% budget", "lo": r"$\approx$\,30\% budget"}
     L = [r"\begin{table*}[t]", r"  \centering",

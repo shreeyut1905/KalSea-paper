@@ -30,10 +30,10 @@ CONFIGS = {  # model -> budget -> row key -> (harness root, config, setting labe
     },
     "wan": {
         "ref": {"ref": ("wan_main", "official_ref", "50 steps")},
-        "hi": {"teacache": ("wan_main", "teacache0.09", r"$\delta{=}0.09$"), "taylorseer": ("wan_main", "taylorseer_s2", r"$S{=}2$"),
+        "hi": {"vanilla": ("wan_main", "vanilla25", "25 steps"), "teacache": ("wan_main", "teacache0.09", r"$\delta{=}0.09$"), "taylorseer": ("wan_main", "taylorseer_s2", r"$S{=}2$"),
                "spectrum": ("wan_main", "spectrum27_state0.5", r"$\alpha$ for 27 steps"),
                "seacache": ("wan_main", "kalsearu0.2", r"$\delta{=}0.2$"), "ours": ("wan_main", "kalsea0.2", r"$\delta{=}0.2$")},
-        "lo": {"teacache": ("wan_main", "teacache0.15", r"$\delta{=}0.15$"), "taylorseer": ("wan_main", "taylorseer_s3", r"$S{=}3$"),
+        "lo": {"vanilla": ("wan_main", "vanilla15", "15 steps"), "teacache": ("wan_main", "teacache0.15", r"$\delta{=}0.15$"), "taylorseer": ("wan_main", "taylorseer_s3", r"$S{=}3$"),
                "spectrum": ("wan_main", "spectrum19_state0.5", r"$\alpha$ for 19 steps"),
                "seacache": ("wan_main", "kalsearu0.35", r"$\delta{=}0.35$"), "ours": ("wan_main", "kalsea0.35", r"$\delta{=}0.35$")},
     },

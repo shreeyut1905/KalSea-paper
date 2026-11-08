@@ -477,6 +477,40 @@
    }
   },
   "hi": {
+   "vanilla": {
+    "config": "vanilla25",
+    "setting": "25 steps",
+    "fidelity": {
+     "n": 944,
+     "nfe": 25.0,
+     "psnr": 14.779238843331122,
+     "ssim": 0.5706246603434517,
+     "lpips": 0.37903017410923484
+    },
+    "vbench": {
+     "total": 80.4336834251154,
+     "quality": 84.06669338597919,
+     "semantic": 65.90164358166024,
+     "dims": {
+      "subject consistency": 0.96579712270371,
+      "temporal flickering": 0.9917460077276419,
+      "object class": 0.747626582278481,
+      "temporal style": 0.2310400240123272,
+      "background consistency": 0.9870400096094886,
+      "motion smoothness": 0.9850810912352306,
+      "multiple objects": 0.5594512195121951,
+      "appearance style": 0.20606430288461514,
+      "dynamic degree": 0.4722222222222222,
+      "aesthetic quality": 0.6420615844188198,
+      "color": 0.8653011204481792,
+      "overall consistency": 0.23899671956095644,
+      "imaging quality": 0.7086404598037304,
+      "human action": 0.73,
+      "spatial relationship": 0.7363758282918929,
+      "scene": 0.23037790697674418
+     }
+    }
+   },
    "teacache": {
     "config": "teacache0.09",
     "setting": "$\\delta{=}0.09$",
@@ -649,6 +683,40 @@
    }
   },
   "lo": {
+   "vanilla": {
+    "config": "vanilla15",
+    "setting": "15 steps",
+    "fidelity": {
+     "n": 944,
+     "nfe": 15.0,
+     "psnr": 13.281925610018332,
+     "ssim": 0.4957819514446877,
+     "lpips": 0.475571361211562
+    },
+    "vbench": {
+     "total": 79.48395894511648,
+     "quality": 82.96707942703415,
+     "semantic": 65.55147701744582,
+     "dims": {
+      "subject consistency": 0.9551901115208037,
+      "temporal flickering": 0.9891675483292223,
+      "object class": 0.7919303797468354,
+      "temporal style": 0.22879841342568397,
+      "background consistency": 0.9858710710392442,
+      "motion smoothness": 0.9830950509760675,
+      "multiple objects": 0.5342987804878049,
+      "appearance style": 0.2161433493589743,
+      "dynamic degree": 0.4444444444444444,
+      "aesthetic quality": 0.636562479119147,
+      "color": 0.8247111344537815,
+      "overall consistency": 0.24007311871936243,
+      "imaging quality": 0.6843285230852731,
+      "human action": 0.78,
+      "spatial relationship": 0.720985284998618,
+      "scene": 0.16715116279069767
+     }
+    }
+   },
    "teacache": {
     "config": "teacache0.15",
     "setting": "$\\delta{=}0.15$",

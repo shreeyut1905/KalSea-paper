@@ -55,7 +55,8 @@ VIDEO = {  # model -> (meta tag, columns: (label, nfe label, harness dir))
         ("Spectrum", "16", "hy_main/spectrum16_state0.5"), ("SeaCache", "16", "hy_main/gatecur0.48_copy"),
         ("KalSea", "16", "hy_main/kalsea0.48")]),
     "wan": ("video_wan", "Wan2.1-1.3B, 17 NFE", [
-        ("Reference", "50", "wan_main/official_ref"), ("TeaCache", "18", "wan_main/teacache0.15"),
+        ("Reference", "50", "wan_main/official_ref"), ("Fewer steps", "15", "wan_main/vanilla15"),
+        ("TeaCache", "18", "wan_main/teacache0.15"),
         ("TaylorSeer", "17", "wan_main/taylorseer_s3"), ("Spectrum", "19", "wan_main/spectrum19_state0.5"),
         ("SeaCache", "17", "wan_main/kalsearu0.35"), ("KalSea", "17", "wan_main/kalsea0.35")]),
 }

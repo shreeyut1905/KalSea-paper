@@ -306,7 +306,7 @@ def tab_video_main():
          r" \seacache with the same gate as \ours. Thresholds and strides of all rows:"
          r" supplement. VBench: Total score over all 16 dimensions (official weights and normalization; uncached in the"
          r" first row). Lat.: s/video on one B200, one prompt"
-         r" (supplement; --: no fewer-step runs on Wan2.1, as in \seacache's table).}",
+         r" (supplement).}",
          r"  \label{tab:video-main}",
          r"  \footnotesize",
          r"  \setlength{\tabcolsep}{3.2pt}",
