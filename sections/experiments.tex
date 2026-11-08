@@ -46,8 +46,9 @@ the output of the uncached 50-step sampler for the same prompt and seed.
 
 \paragraph{Budgets and baselines.}
 We report the mean number of block-stack evaluations per image (\nfe, of 50), counted by hooks on every block, and
-compare only at matched \nfe. Every baseline runs in our setup with the same prompts and seeds: TeaCache, TaylorSeer
-and fewer sampling steps with their released code, and \seacache with the same gate as our caches. Our caches use the
+compare only at matched \nfe. Every baseline runs in our setup with the same prompts and seeds: TeaCache, TaylorSeer,
+Spectrum~\cite{han2026spectrum}, SADA~\cite{jiang2025sada} and fewer sampling steps with their released code, and
+\seacache with the same gate as our caches. Our caches use the
 official \sea gate, whose threshold $\delta$ sets the budget. At $\delta=0.6$ it computes 13.0 steps both in
 \seacache's published table and in our setup, where our re-run of \seacache reproduces the published PSNR (21.26
 vs.\ 21.33\,dB); at $\delta=0.3$ it computes 20.9 steps in our setup but 18.4 according to the published TFLOPs, so
@@ -75,10 +76,12 @@ runs use bf16 on NVIDIA B200 GPUs. For video we use the calibration-free per-ele
 \label{sec:main-results}
 
 \cref{tab:flux-main} compares \ours with all baselines in our setup. At 18.1 \nfe, \ours reaches 27.72\,dB PSNR,
-2.39\,dB [2.03, 2.75] above \seacache at the same \nfe (better on 88\% of the prompts), with better SSIM and LPIPS,
-and it exceeds every baseline that uses more evaluations; it is also above the 26.29\,dB that \seacache reports at
-18.4 \nfe. At 13 \nfe, it improves over \seacache by 1.27\,dB [1.02, 1.52] (79\%; 22.53 vs.\ 21.26\,dB, reported:
-21.33\,dB). ImageReward and CLIP score stay at the level of the uncached sampler, so the gain in fidelity does not
+2.39\,dB [2.03, 2.75] above \seacache at the same \nfe (better on 88\% of the prompts) and 2.2\,dB above Spectrum,
+with the best SSIM and LPIPS at this budget; it is also above the 26.29\,dB that \seacache reports at 18.4 \nfe. At
+20.8 \nfe it reaches 29.62\,dB and exceeds every baseline that uses more evaluations, including SADA's default
+configuration at 24.0 \nfe (29.41\,dB). At 13 \nfe, it improves over \seacache by 1.27\,dB [1.02, 1.52] (79\%;
+22.53 vs.\ 21.26\,dB, reported: 21.33\,dB) and over TeaCache, TaylorSeer and fewer steps, but Spectrum is 1.2\,dB
+higher; its fixed schedule always computes the first five steps, which the \sea gate partly skips at $\delta=0.6$. ImageReward and CLIP score stay at the level of the uncached sampler, so the gain in fidelity does not
 come at a cost in perceived quality.
 
 \paragraph{Budget sweep.}
@@ -114,13 +117,16 @@ We apply our cache with the per-element filter to HunyuanVideo and Wan2.1-1.3B a
 $\delta\gtrsim0.21$ and costs 12--14\,dB on those prompts (supplement), so every gated method reads the sampler's noise
 level, with $\delta$ set for 24.0 and 16.0 \nfe.
 Our re-run of \seacache then reproduces its published result at 24 \nfe (32.43 vs.\ 32.39\,dB) but not at 16.4
-(24.53\,dB at 16.0 vs.\ 26.46\,dB; its released gate gives 20.52\,dB), so \cref{tab:video-main} reports the re-run for
-HunyuanVideo. There, \ours improves on \seacache by 3.17\,dB [2.99, 3.35] at 24 \nfe and by 1.92\,dB [1.70, 2.14]
-at 16 \nfe (better on 90\% and 72\% of the prompts), with better SSIM and LPIPS (examples:
-\cref{fig:qual-models}). On Wan2.1 it exceeds \seacache's
-published results by 5.07 and 2.07\,dB at 24 and 17 \nfe. In our setup the paired gains are 2.27\,dB [2.13, 2.42] and
-0.33\,dB [0.16, 0.49], the latter with clearly better SSIM ($+$0.023) and LPIPS ($-$0.029); part of the distance to the
-published Wan2.1 numbers thus comes from the setup (our clips have 65 frames).
+(24.53\,dB at 16.0 vs.\ 26.46\,dB; its released gate gives 20.52\,dB). All rows of \cref{tab:video-main} are run in
+our setup. On HunyuanVideo, \ours improves on \seacache by 3.17\,dB [2.99, 3.35] at 24 \nfe and by 1.92\,dB
+[1.70, 2.14] at 16 \nfe (better on 90\% and 72\% of the prompts), with better SSIM and LPIPS (examples:
+\cref{fig:qual-models}); on Wan2.1 the paired gains are 2.27\,dB [2.13, 2.42] and 0.33\,dB [0.16, 0.49], the latter
+with clearly better SSIM ($+$0.023) and LPIPS ($-$0.029). \ours also leads every other baseline at both budgets, by 8.3
+and 0.2\,dB over the strongest on HunyuanVideo (Spectrum) and by 8.8 and 2.8\,dB on Wan2.1 (TeaCache at 25 \nfe,
+Spectrum at 19), although several of them use more evaluations. On VBench, every method stays within about one point
+of the uncached sampler; \ours scores above it on HunyuanVideo (81.11 and 81.19 vs.\ 81.02) and at the smaller Wan2.1
+budget (80.74 vs.\ 80.56), and 0.2 below it at the larger one (80.36), so the gains in fidelity come without a loss in
+VBench quality.
 
 \subsection{Ablations}
 \label{sec:ablations}

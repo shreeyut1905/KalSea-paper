@@ -5,7 +5,7 @@
 % TFLOPs / latency: data/cost.json (cost_stats.py), one example per configuration; see the cost block above.
 \begin{table}[t]
   \centering
-  \caption{\textbf{Text-to-image results on \flux} (DrawBench, 200 held-out prompts). Every row is run in our setup with the same prompts and seeds and compared with the uncached 50-step output of the same code: TeaCache, TaylorSeer (order 2, which scores higher than its default order 1) and fewer sampling steps with their released code, \seacache with the same gate as \ours. One evaluation costs 59.5 TFLOPs in \seacache's convention. Lat.: s/image on one B200, one prompt (supplement). IR: ImageReward; CLIP: CLIP score (ViT-L/14); both reference-free sanity checks (uncached 50-step output: 1.000 / 27.66).}
+  \caption{\textbf{Text-to-image results on \flux} (DrawBench, 200 held-out prompts). Every row is run in our setup with the same prompts and seeds and compared with the uncached 50-step output of the same code: TeaCache, TaylorSeer (order 2, which scores higher than its default order 1), Spectrum, SADA (its default configuration and a faster one) and fewer sampling steps with their released code, \seacache with the same gate as \ours. One evaluation costs 59.5 TFLOPs in \seacache's convention. Lat.: s/image on one B200, one prompt (supplement; --: not timed). IR: ImageReward; CLIP: CLIP score (ViT-L/14); both reference-free sanity checks (uncached 50-step output: 1.000 / 27.66).}
   \label{tab:flux-main}
   \footnotesize
   \setlength{\tabcolsep}{1.4pt}
@@ -15,10 +15,18 @@
     \midrule
     Original (50 steps) & 50 & 5.25 & -- & -- & -- & 1.000 & 27.66 \\
     \midrule
-    \multicolumn{8}{@{}l}{\emph{$\approx$\,18 \nfe (baselines: 18--26 \nfe)}} \\
+    \multicolumn{8}{@{}l}{\emph{$\approx$\,21 \nfe (baselines: 21--26 \nfe)}} \\
     TeaCache~\cite{liu2025teacache} ($\delta{=}0.3$) & 26.0 & 2.81 & 20.69 & 0.802 & 0.203 & 1.050 & 27.82 \\
     Fewer steps (25) & 25.0 & 2.68 & 17.54 & 0.728 & 0.302 & 0.994 & 27.70 \\
+    SADA~\cite{jiang2025sada} (default) & 24.0 & -- & 29.41 & \best{0.935} & 0.054 & 1.006 & 27.75 \\
+    SADA~\cite{jiang2025sada} (faster) & 21.5 & -- & 25.67 & 0.892 & 0.099 & 1.000 & 27.71 \\
+    \seacache~\cite{chung2026seacache} ($\delta{=}0.3$) & 20.9 & \nodata & 26.89 & 0.904 & 0.086 & 1.000 & 27.65 \\
+    \addlinespace[1pt]
+    \ours ($\delta{=}0.3$) & 20.8 & \nodata & \best{29.62} & \best{0.935} & \best{0.053} & 1.013 & 27.70 \\
+    \midrule
+    \multicolumn{8}{@{}l}{\emph{18 \nfe}} \\
     TaylorSeer~\cite{liu2025taylorseer} ($S{=}3$) & 18.0 & 2.64 & 19.68 & 0.779 & 0.222 & 0.998 & 27.57 \\
+    Spectrum~\cite{han2026spectrum} ($\alpha{=}0.3$) & 18.0 & -- & 25.48 & 0.885 & 0.101 & 0.995 & 27.73 \\
     \seacache~\cite{chung2026seacache} ($\delta{=}0.37$) & 18.1 & 2.05 & 25.33 & 0.880 & 0.113 & 0.996 & 27.71 \\
     \addlinespace[1pt]
     \ours ($\delta{=}0.37$) & 18.1 & 2.12 & \best{27.72} & \best{0.916} & \best{0.070} & 1.013 & 27.67 \\
@@ -26,10 +34,11 @@
     \multicolumn{8}{@{}l}{\emph{13 \nfe (baselines: 12--15 \nfe)}} \\
     TeaCache~\cite{liu2025teacache} ($\delta{=}0.6$) & 15.0 & 1.71 & 17.13 & 0.699 & 0.343 & 0.991 & 27.85 \\
     Fewer steps (15) & 15.0 & 1.66 & 15.34 & 0.647 & 0.415 & 0.938 & 27.62 \\
+    Spectrum~\cite{han2026spectrum} ($\alpha{=}1.0$) & 13.0 & -- & \best{23.72} & \best{0.847} & \best{0.142} & 0.995 & 27.81 \\
     TaylorSeer~\cite{liu2025taylorseer} ($S{=}5$) & 12.0 & 2.09 & 16.92 & 0.689 & 0.342 & 0.977 & 27.53 \\
     \seacache~\cite{chung2026seacache} ($\delta{=}0.6$) & 13.0 & 1.53 & 21.26 & 0.800 & 0.214 & 0.973 & 27.80 \\
     \addlinespace[1pt]
-    \ours ($\delta{=}0.6$) & 13.0 & 1.60 & \best{22.53} & \best{0.842} & \best{0.154} & 1.005 & 27.77 \\
+    \ours ($\delta{=}0.6$) & 13.0 & 1.60 & 22.53 & 0.842 & 0.154 & 1.005 & 27.77 \\
     \bottomrule
   \end{tabular}
 \end{table}

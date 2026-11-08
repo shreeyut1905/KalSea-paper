@@ -604,37 +604,40 @@ MODEL_NAME = {"hunyuan": "HunyuanVideo", "wan": "Wan2.1"}
 
 
 def tab_video_settings():
-    """Thresholds and strides of every row of the main paper's Tab. 2."""
-    from make_tables import SEACACHE_VIDEO, SEACACHE_VIDEO_FULL
+    """Thresholds and strides of every row of the main paper's Tab. 2 (all rows measured in our setup)."""
     V, _ = _video()
-    nfe_pub = lambda m, b, k: 50.0 * SEACACHE_VIDEO[m][b][k][1] / SEACACHE_VIDEO_FULL[m]
+    M = json.load(open(os.path.join(HERE, "data", "video_measured.json")))
     cols = [(m, b) for m in ("hunyuan", "wan") for b in ("hi", "lo")]
+    SPECTRUM_ALPHA = {("hunyuan", "hi"): 0.1, ("hunyuan", "lo"): 0.4, ("wan", "hi"): 0.01, ("wan", "lo"): 0.22}
 
     def cell(m, b, key):
-        if key == "ours" or key == "rerun":
-            if key == "rerun" and m != "hunyuan":
-                return "--"
+        if key in ("ours", "seacache"):
             rec = V[m][b]["ours" if key == "ours" else "seacache_rerun"]
             return rf"$\delta{{=}}{V[m][b]['delta']}$ ({rec['nfe']:.2f})"
-        if key not in SEACACHE_VIDEO[m][b]:
+        r = M[m][b].get(key)
+        if not r or not r.get("fidelity"):
             return "--"
-        return rf"{SEACACHE_VIDEO[m][b][key][0]} ({nfe_pub(m, b, key):.1f})"
-    rows = [("vanilla", r"Fewer steps$^\dagger$", "sampling steps"),
-            ("teacache", r"TeaCache~\cite{" + CITE["teacache"] + r"}$^\dagger$", r"threshold $\delta$ (rel.\ L1)"),
-            ("taylorseer", r"TaylorSeer~\cite{" + CITE["taylorseer"] + r"}$^\dagger$", r"stride $S$"),
-            ("seacache", r"\seacache, published$^\dagger$", r"\sea threshold $\delta$"),
-            ("rerun", r"\seacache, our re-run$^\S$", r"\sea threshold $\delta$"),
+        nfe = r["fidelity"]["nfe"]
+        if key == "spectrum":
+            return rf"$\alpha{{=}}{SPECTRUM_ALPHA[(m, b)]}$ ({nfe:.2f})"
+        return rf"{r['setting']} ({nfe:.2f})"
+    rows = [("vanilla", r"Fewer steps", "sampling steps"),
+            ("teacache", r"TeaCache~\cite{" + CITE["teacache"] + r"}", r"threshold $\delta$ (rel.\ L1)"),
+            ("taylorseer", r"TaylorSeer~\cite{" + CITE["taylorseer"] + r"}", r"stride $S$"),
+            ("spectrum", r"Spectrum~\cite{" + CITE["spectrum"] + r"}", r"window growth $\alpha$"),
+            ("seacache", r"\seacache, our re-run", r"\sea threshold $\delta$"),
             ("ours", r"\ours", r"\sea threshold $\delta$")]
     L = [r"\begin{table*}[t]", r"  \centering",
-         r"  \caption{\textbf{Settings of every row of the main paper's \maincref{tab:video-main}}: threshold or stride and,"
-         r" in parentheses, \nfe. $^\dagger$Settings and results published by \seacache~\cite{" + CITE["seacache"] + r"}"
-         r" (its Tables~3 and 4); \nfe{} $=50\,{\times}\,$TFLOPs$/$TFLOPs of its 50-step run. TaylorSeer computes the"
-         r" first three steps and then every $S$-th step (expansion order 2, as stated by \seacache). TeaCache and the"
-         r" \sea gate compute a step once the accumulated relative change of the first block's modulated input (rescaled"
-         r" for TeaCache, \sea-filtered for \seacache and \ours) exceeds $\delta$; the first and last steps are always"
-         r" computed. $^\S$Our re-run of \seacache's released code with the corrected HunyuanVideo gate"
-         r" (\cref{supp:video-gate}), which needs its own thresholds for the same \nfe; for Wan2.1 the main paper"
-         r" reports the published \seacache row. Our rows: mean \nfe over the 944 prompts.}",
+         r"  \caption{\textbf{Settings of every row of the main paper's \maincref{tab:video-main}}: threshold, stride or"
+         r" window growth and, in parentheses, the mean \nfe over the 944 prompts. Fewer steps, TeaCache and TaylorSeer"
+         r" run with their released code; TaylorSeer uses the default of its official forks (expansion order 1, full"
+         r" computation every $S$-th step). Spectrum uses its fixed schedule (window 2, five warm-up steps, growth"
+         r" $\alpha$ set to give the listed \nfe) and its Chebyshev forecast of the final hidden state (degree 4,"
+         r" $\lambda{=}0.1$, blend 0.5), in our implementation, which reproduces its released code on \flux. TeaCache and"
+         r" the \sea gate compute a step once the accumulated relative change of the first block's modulated input"
+         r" (rescaled for TeaCache, \sea-filtered for \seacache and \ours) exceeds $\delta$; the first and last steps are"
+         r" always computed. \seacache: our re-run of its released code with the corrected HunyuanVideo gate"
+         r" (\cref{supp:video-gate}), at the thresholds of \ours.}",
          r"  \label{tab:supp-video-settings}", r"  \footnotesize", r"  \setlength{\tabcolsep}{4pt}",
          r"  \begin{tabular}{@{}ll cc @{\hspace{12pt}} cc@{}}", r"    \toprule",
          r"    & & \multicolumn{2}{c}{HunyuanVideo} & \multicolumn{2}{c}{Wan2.1 1.3B} \\",

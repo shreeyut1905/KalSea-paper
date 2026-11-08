@@ -636,9 +636,9 @@ evaluated videos, and their per-video PSNR equals the evaluated value.
 \paragraph{TFLOPs.} We use \seacache's convention (Calflops): twice the multiply-accumulates of the linear, convolution
 and matrix-product operations of the denoiser over the sampling loop; attention cores, text encoders and the VAE are not
 counted. We count them with PyTorch's FLOP counter on one generation per configuration. Our counts of the 50-step
-originals reproduce the published ones (\flux: 2975.6 vs.\ 2976; HunyuanVideo: 14043 vs.\ 14038), so the baselines'
-published TFLOPs are used as they are. \seacache's Wan2.1 TFLOPs correspond to 81 frames (8214 for the original; our
-count at 65 frames is 6649), so those rows are rescaled by $6649/8214$. \pcgs and the filter add less than 0.1\% to the
+originals reproduce the published ones (\flux: 2975.6 vs.\ 2976; HunyuanVideo: 14043 vs.\ 14038). The main tables
+report \nfe; one evaluation costs 59.5 TFLOPs on \flux, 280.9 on HunyuanVideo and 133.0 on Wan2.1 at 65 frames
+(\seacache's published Wan2.1 count, 8214 for 50 steps, corresponds to 81 frames). \pcgs and the filter add less than 0.1\% to the
 count of \seacache at the same \nfe (output layers only; elementwise operations are not counted).
 
 \paragraph{Latency.} End-to-end time of one generation call (text encoding, sampling and VAE decoding; synchronized),

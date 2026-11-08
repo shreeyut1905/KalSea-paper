@@ -17,8 +17,9 @@ transformers~\cite{selvaraju2024fora,zou2025toca}; others target video~\cite{zha
 distribute reuse over the trajectory~\cite{chu2025omnicache} or learn which layers to cache~\cite{ma2024learningtocache}.
 Adaptive caches decide online when to recompute: AdaCache~\cite{kahatapitiya2025adacache} adapts the schedule to each
 video, TeaCache~\cite{liu2025teacache} accumulates the relative change of the first block's timestep-modulated input
-until it exceeds a threshold, MagCache~\cite{ma2025magcache} models the magnitude ratio of successive residuals, and
-DiCache~\cite{bu2026dicache} probes a shallow layer. \seacache~\cite{chung2026seacache} measures this change after a
+until it exceeds a threshold, MagCache~\cite{ma2025magcache} models the magnitude ratio of successive residuals,
+DiCache~\cite{bu2026dicache} probes a shallow layer, and SADA~\cite{jiang2025sada} adapts the skipping to the
+stability of the sampling trajectory. \seacache~\cite{chung2026seacache} measures this change after a
 spectral-evolution-aware filter, so that the gate responds to content rather than noise.
 Forecasting caches extrapolate the skipped outputs with Taylor expansions~\cite{liu2025taylorseer},
 Hermite~\cite{feng2026hicache} or Chebyshev~\cite{han2026spectrum} polynomials, or a BDF2 predictor with Heun-type

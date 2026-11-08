@@ -60,6 +60,32 @@
   "taylorseer5": {
    "imagereward": 0.9772,
    "clip": 27.528
+  },
+  "spectrum18": {
+   "imagereward": 0.9954,
+   "clip": 27.731
+  },
+  "spectrum13": {
+   "imagereward": 0.995,
+   "clip": 27.811
+  },
+  "sada_demo": {
+   "imagereward": 1.0059,
+   "clip": 27.751
+  },
+  "sada_fast": {
+   "imagereward": 0.9997,
+   "clip": 27.706
+  }
+ },
+ "0.3": {
+  "ours": {
+   "imagereward": 1.0133,
+   "clip": 27.703
+  },
+  "seacache": {
+   "imagereward": 1.0,
+   "clip": 27.649
   }
  }
 }

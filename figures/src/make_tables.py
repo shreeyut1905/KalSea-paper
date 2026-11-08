@@ -20,9 +20,11 @@ PAPER_DIR = os.path.dirname(TAB_DIR)
 # default keys (verified entries in tables/tables_refs.bib); a paper already in refs.bib is cited with refs.bib's key,
 # found by title, so the tables follow whatever key the bibliography uses.
 CITE = {"seacache": "chung2026seacache", "teacache": "liu2025teacache", "taylorseer": "liu2025taylorseer",
-        "toca": "zou2025toca", "hunyuanvideo": "kong2024hunyuanvideo", "wan": "wan2025wan"}
+        "toca": "zou2025toca", "spectrum": "han2026spectrum", "sada": "jiang2025sada",
+        "hunyuanvideo": "kong2024hunyuanvideo", "wan": "wan2025wan"}
 TITLE = {"seacache": "spectral-evolution-aware cache", "teacache": "timestep embedding tells",
          "taylorseer": "from reusing to forecasting", "toca": "token-wise feature caching",
+         "spectrum": "adaptive spectral feature forecasting", "sada": "stability-guided adaptive diffusion",
          "hunyuanvideo": "systematic framework for large video generative",
          "wan": "open and advanced large-scale video generative"}
 
@@ -109,7 +111,7 @@ def bl_lat(model, key, b=None):
 # ---------------------------------------------------------------- Table: FLUX main
 # Every row is measured in our setup: DrawBench-200, 1024^2, 50 steps, guidance 3.5, seed = prompt index, each accelerated
 # image compared with the uncached 50-step output of the same code. Baselines with their released code (diffusers 0.34,
-# same prompts and seeds; ReSPect-rebuttal harness, /home/ubuntu/exp/flux/fidelity.json and fidelity_taylorseer_o2.json):
+# same prompts and seeds; shared evaluation harness, /home/ubuntu/exp/flux/fidelity.json and fidelity_taylorseer_o2.json):
 # TeaCache delta 0.3 / 0.6, fewer sampling steps (25 / 15), TaylorSeer interval S = 3 / 5 with order 2 (scores higher than
 # its default order 1: 19.39 / 16.63 dB). SeaCache = our same-setup re-run (summary[d]["seacache"]); scoring SeaCache's
 # method in both setups agrees within 0.01 dB (25.34 vs 25.33, 21.26 vs 21.26), so the two references are comparable.
@@ -145,11 +147,19 @@ MEASURED_BL = {   # key: (label, NFE, PSNR, SSIM, LPIPS)
     "teacache0.6": (r"TeaCache~\cite{%(teacache)s} ($\delta{=}0.6$)", 15.01, 17.134, 0.6990, 0.3433),
     "vanilla15": (r"Fewer steps (15)", 15.00, 15.344, 0.6466, 0.4146),
     "taylorseer5": (r"TaylorSeer~\cite{%(taylorseer)s} ($S{=}5$)", 12.00, 16.92, 0.689, 0.342),
+    # Spectrum (released code, window growth alpha 0.3 / 1.0) and SADA (released code, default demo configuration and a
+    # faster one with a wider acceleration range and longer maximum skip): same harness, /home/ubuntu/exp/flux/
+    # fidelity.json, fidelity_sada_default.json, fidelity_sada_fast.json.
+    "spectrum18": (r"Spectrum~\cite{%(spectrum)s} ($\alpha{=}0.3$)", 18.00, 25.482, 0.8846, 0.1011),
+    "spectrum13": (r"Spectrum~\cite{%(spectrum)s} ($\alpha{=}1.0$)", 13.00, 23.717, 0.8469, 0.1422),
+    "sada_demo": (r"SADA~\cite{%(sada)s} (default)", 24.00, 29.415, 0.9355, 0.0542),
+    "sada_fast": (r"SADA~\cite{%(sada)s} (faster)", 21.46, 25.671, 0.8921, 0.0993),
 }
 # blocks of the main table: (title, baseline rows, our delta, cost key). Baselines sorted by NFE (descending) below.
 FLUX_MAIN_BLOCKS = [
-    (r"$\approx$\,18 \nfe (baselines: 18--26 \nfe)", ["teacache0.3", "vanilla25", "taylorseer3"], "0.37", "hi"),
-    (r"13 \nfe (baselines: 12--15 \nfe)", ["teacache0.6", "vanilla15", "taylorseer5"], "0.6", "lo"),
+    (r"$\approx$\,21 \nfe (baselines: 21--26 \nfe)", ["teacache0.3", "vanilla25", "sada_demo", "sada_fast"], "0.3", "mid"),
+    (r"18 \nfe", ["taylorseer3", "spectrum18"], "0.37", "hi"),
+    (r"13 \nfe (baselines: 12--15 \nfe)", ["teacache0.6", "vanilla15", "taylorseer5", "spectrum13"], "0.6", "lo"),
 ]
 
 
@@ -169,10 +179,10 @@ def tab_flux_main():
          r"  \centering",
          r"  \caption{\textbf{Text-to-image results on \flux} (DrawBench, 200 held-out prompts). Every row is run in our setup"
          r" with the same prompts and seeds and compared with the uncached 50-step output of the same code: TeaCache,"
-         r" TaylorSeer (order 2, which scores higher than its default order 1) and fewer sampling steps with their released"
-         r" code, \seacache with the same gate as \ours. One evaluation costs 59.5 TFLOPs in \seacache's convention."
+         r" TaylorSeer (order 2, which scores higher than its default order 1), Spectrum, SADA (its default configuration"
+         r" and a faster one) and fewer sampling steps with their released code, \seacache with the same gate as \ours. One evaluation costs 59.5 TFLOPs in \seacache's convention."
          r" Lat.: s/image on one B200, one"
-         r" prompt (supplement). IR: ImageReward; CLIP: CLIP score (ViT-L/14); both reference-free sanity checks"
+         r" prompt (supplement; --: not timed). IR: ImageReward; CLIP: CLIP score (ViT-L/14); both reference-free sanity checks"
          r" (uncached 50-step output: " + (f"{QUAL['ref']['imagereward']:.3f} / {QUAL['ref']['clip']:.2f}" if QUAL else "--") + r").}",
          r"  \label{tab:flux-main}",
          r"  \footnotesize",
@@ -236,82 +246,68 @@ SEACACHE_VIDEO = {
                    "taylorseer": (r"$S{=}3$", 2956, "14.18", "0.453", "0.455"),
                    "seacache": (r"$\delta{=}0.35$", 2793, "21.78", "0.740", "0.170")}},
 }
-VIDEO_ROWS = [("vanilla", r"Fewer steps$^\dagger$"), ("teacache", r"TeaCache~\cite{%(teacache)s}$^\dagger$"),
-              ("taylorseer", r"TaylorSeer~\cite{%(taylorseer)s}$^\dagger$"),
-              ("seacache", r"\seacache~\cite{%(seacache)s}"), ("ours", r"\ours")]
 VIDEO_MODELS = ("hunyuan", "wan")
-# Models whose SeaCache cells are our same-setup re-run (marked \S) instead of the published numbers (\dagger): on
-# HunyuanVideo the published 16.4-NFE result is not reproducible with the released code (owner decision 2026-10-22).
-SEACACHE_RERUN_MODELS = ("hunyuan",)
+# Every row of the video table is measured in our setup (data/video_measured.json, collect_video_measured.py): fewer
+# steps, TeaCache, TaylorSeer and Spectrum with their released code; SeaCache = our same-setup re-run (fidelity from
+# data/video_stats.json, VBench from the harness run at the same threshold); KalSea from data/video_stats.json.
+VIDEO_ROWS = [("vanilla", r"Fewer steps"), ("teacache", r"TeaCache~\cite{%(teacache)s}"),
+              ("taylorseer", r"TaylorSeer~\cite{%(taylorseer)s}"), ("spectrum", r"Spectrum~\cite{%(spectrum)s}"),
+              ("seacache", r"\seacache~\cite{%(seacache)s}"), ("ours", r"\ours")]
 
 
 def tab_video_main():
-    """Main video table: SeaCache's published Table-3/4 rows (\\dagger) + Ours, HunyuanVideo and Wan2.1 side by side.
-    SeaCache cells: published for Wan2.1, our same-setup re-run for the models in SEACACHE_RERUN_MODELS (\\S, published
-    numbers in the caption). A model without results
-    in data/video_stats.json (video_stats.py) for a budget gets \\tbd in that Ours row."""
+    """Main video table: all rows measured in our setup, HunyuanVideo and Wan2.1 side by side, with VBench Total."""
     V = json.load(open(os.path.join(HERE, "data", "video_stats.json")))
-    tbd = [(m, b) for m in VIDEO_MODELS for b in ("hi", "lo") if "ours" not in V[m][b]]
+    _mp = os.path.join(HERE, "data", "video_measured.json")
+    M = json.load(open(_mp)) if os.path.exists(_mp) else {}
+
+    def row_vals(model, b, key):
+        m = M.get(model, {}).get(b, {}).get(key, {})
+        vb = (m.get("vbench") or {}).get("total")
+        if key in ("ours", "seacache"):
+            src = V[model][b].get("ours" if key == "ours" else "seacache_rerun")
+            if src:
+                return (src["nfe"], src["psnr"], src["ssim"], src["lpips"], vb)
+        f = m.get("fidelity")
+        return (f["nfe"], f["psnr"], f["ssim"], f["lpips"], vb) if f else None
 
     def block_cells(model, b):
-        vals = {k: (50.0 * tf / SEACACHE_VIDEO_FULL[model], float(p), float(s), float(l))
-                for k, (_, tf, p, s, l) in SEACACHE_VIDEO[model][b].items()}
-        rerun = model in SEACACHE_RERUN_MODELS and "seacache_rerun" in V[model][b]
-        if rerun:
-            r = V[model][b]["seacache_rerun"]
-            vals["seacache"] = (r["nfe"], r["psnr"], r["ssim"], r["lpips"])
-        if "ours" in V[model][b]:
-            o = V[model][b]["ours"]
-            vals["ours"] = (o["nfe"], o["psnr"], o["ssim"], o["lpips"])
+        vals = {k: row_vals(model, b, k) for k, _ in VIDEO_ROWS}
+        vals = {k: v for k, v in vals.items() if v is not None}
         cols = {m: bold_best({k: v[1 + j] for k, v in vals.items()}, m, lower_better=lo)
                 for j, (m, lo) in enumerate((("psnr", False), ("ssim", False), ("lpips", True)))}
-        ref_tf = COST.get(model, {}).get("ref", {}).get("tflops")
-        scale = 1.0 if model != "wan" else (ref_tf / SEACACHE_VIDEO_FULL["wan"] if ref_tf else None)  # 81 -> 65 frames
         nd = LAT_ND[model]
         out = {}
         for key, _ in VIDEO_ROWS:
-            if key in vals:
-                mark = (r"$^\S$" if rerun else r"$^\dagger$") if key == "seacache" else ""
-                if key == "ours" or (key == "seacache" and rerun):        # measured (same code, seeds, GPU)
-                    ent = f"{b}_ours" if key == "ours" else f"{b}_seacache"
-                    tf, lat = cost_cell(model, ent, "tflops", 0), cost_cell(model, ent, "latency", nd)
-                else:                                                      # published TFLOPs
-                    pub_tf = SEACACHE_VIDEO[model][b][key][1]
-                    tf = r"\nodata" if scale is None else f"{pub_tf * scale:.0f}"
-                    lat = (cost_cell(model, f"{b}_seacache", "latency", nd) + LAT_MARK) if key == "seacache" \
-                        else bl_lat(model, key, b)
-                out[key] = [f"{vals[key][0]:.1f}{mark}", tf, lat, cols["psnr"][key], cols["ssim"][key],
-                            cols["lpips"][key]]
-            elif key == "ours":
-                out[key] = [r"\tbd", r"\nodata", r"\nodata", r"\tbd", r"\tbd", r"\tbd"]
-            else:
+            if key not in vals:
                 out[key] = ["--"] * 6
+                continue
+            if key in ("ours", "seacache"):
+                lat = cost_cell(model, f"{b}_{key}", "latency", nd)
+            elif key == "spectrum":
+                lat = "--"
+            else:
+                lat = bl_lat(model, key, b)
+            vb = vals[key][4]
+            out[key] = [f"{vals[key][0]:.1f}", lat, cols["psnr"][key], cols["ssim"][key], cols["lpips"][key],
+                        (r"\nodata" if vb is None else f"{vb:.2f}")]
         return out
 
+    ref_vb = {m: (M.get(m, {}).get("ref", {}).get("ref", {}).get("vbench") or {}).get("total") for m in VIDEO_MODELS}
+    fmt_vb = lambda v: r"\nodata" if v is None else f"{v:.2f}"
     ours_delta = {m: "/".join(V[m][b]["delta"] for b in ("hi", "lo")) for m in VIDEO_MODELS}
-    pub = SEACACHE_VIDEO["hunyuan"]
-    rel = V.get("extra", {}).get("hunyuan_released_gate_lo")
-    sec_note = (r" $^\S$Our re-run of \seacache's released code with the corrected gate (same code, seeds and GPUs as"
-                r" \ours); published:"
-                rf" {pub['hi']['seacache'][2]}\,dB at {50 * pub['hi']['seacache'][1] / SEACACHE_VIDEO_FULL['hunyuan']:.1f} \nfe"
-                rf" and {pub['lo']['seacache'][2]}\,dB at {50 * pub['lo']['seacache'][1] / SEACACHE_VIDEO_FULL['hunyuan']:.1f} \nfe,"
-                r" the latter not reproducible with the released code"
-                + (rf" (its gate gives {rel['psnr']:.2f}\,dB at {rel['nfe']:.1f} \nfe)." if rel else ".")) if any(
-        m in SEACACHE_RERUN_MODELS for m in VIDEO_MODELS) else ""
-    L = [HEADER.replace("flux_drawbench_stats.json", "video_stats.json (video_stats.py)"),
-         "% Rows marked \\dagger: SeaCache's Tables 3/4, NFE = 50 x TFLOPs / full-run TFLOPs (14038 / 8214). KalSea: SEA gate,",
+    L = [HEADER.replace("flux_drawbench_stats.json", "video_stats.json and video_measured.json"),
+         "% All rows measured in our setup (see VIDEO_ROWS above). KalSea: SEA gate,",
          f"% delta {ours_delta['hunyuan']} (HunyuanVideo, gate reads the live sampler sigma) and {ours_delta['wan']} (Wan2.1).",
-         "% TFLOPs / latency: data/cost.json (cost_stats.py), one example per configuration; see the cost block above.",
+         "% Latency: data/cost.json (cost_stats.py), one example per configuration; see the cost block above.",
          r"\begin{table*}[t]",
          r"  \centering",
-         r"  \caption{\textbf{Text-to-video results} (944 VBench prompts, 65 frames, fidelity to the 50-step output)."
-         r" $^\dagger$Published by \seacache~\cite{" + CITE["seacache"] + r"} (its Tables~3 and 4; other GPUs, seed not stated; its"
-         r" Wan2.1 compute corresponds to 81 frames), \nfe{} $=50\,{\times}\,$TFLOPs$/$TFLOPs of the full run."
-         + sec_note +
-         r" Thresholds and strides of all rows: supplement."
-         + r" TFLOPs: \seacache's convention ($^\dagger$Wan2.1 rows rescaled to 65 frames); Lat.: s/video on one B200,"
-         r" one prompt, all rows measured by us (supplement). $^\ast$\seacache's method in our code at the \nfe of \ours."
-         + (r" \tbd: runs in progress." if tbd else "") + "}",
+         r"  \caption{\textbf{Text-to-video results} (944 VBench prompts, 65 frames, seed 42, fidelity to the 50-step output)."
+         r" Every row is run in our setup with the same prompts, seed and GPUs: fewer sampling steps, TeaCache and"
+         r" TaylorSeer with their released code, Spectrum in our implementation (identical to its released code on \flux),"
+         r" \seacache with the same gate as \ours. Thresholds and strides of all rows:"
+         r" supplement. VBench: Total score over all 16 dimensions (official weights and normalization; uncached in the"
+         r" first row). Lat.: s/video on one B200, one prompt (supplement; --: not timed).}",
          r"  \label{tab:video-main}",
          r"  \footnotesize",
          r"  \setlength{\tabcolsep}{3.2pt}",
@@ -319,26 +315,22 @@ def tab_video_main():
          r"    \toprule",
          r"    & \multicolumn{6}{c}{HunyuanVideo, $480{\times}640$, 65 frames} & \multicolumn{6}{c}{Wan2.1 1.3B, $832{\times}480$, 65 frames} \\",
          r"    \cmidrule(lr){2-7} \cmidrule(l){8-13}",
-         r"    Method & \nfe & TFLOPs & Lat.\,(s) & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$"
-         r" & \nfe & TFLOPs & Lat.\,(s) & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ \\",
+         r"    Method & \nfe & Lat.\,(s) & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ & VBench$\uparrow$"
+         r" & \nfe & Lat.\,(s) & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ & VBench$\uparrow$ \\",
          r"    \midrule",
-         rf"    Reference (50 steps) & 50 & {cost_cell('hunyuan', 'ref', 'tflops', 0)} & {cost_cell('hunyuan', 'ref', 'latency', 1)}"
-         rf" & -- & -- & -- & 50 & {cost_cell('wan', 'ref', 'tflops', 0)} & {cost_cell('wan', 'ref', 'latency', 1)}"
-         r" & -- & -- & -- \\"]
-    for b, title in (("hi", r"$\approx$\,50\% budget (24--26 \nfe)"), ("lo", r"$\approx$\,30\% budget (15--18 \nfe)")):
+         rf"    Reference (50 steps) & 50 & {cost_cell('hunyuan', 'ref', 'latency', 1)} & -- & -- & -- & {fmt_vb(ref_vb['hunyuan'])}"
+         rf" & 50 & {cost_cell('wan', 'ref', 'latency', 1)} & -- & -- & -- & {fmt_vb(ref_vb['wan'])} \\"]
+    for b, title in (("hi", r"$\approx$\,50\% budget (23--27 \nfe)"), ("lo", r"$\approx$\,30\% budget (15--19 \nfe)")):
         cells = {m: block_cells(m, b) for m in VIDEO_MODELS}
         L.append(r"    \midrule")
         L.append(rf"    \multicolumn{{13}}{{@{{}}l}}{{\emph{{{title}}}}} \\")
         for key, lab in VIDEO_ROWS:
             if key == "ours":
                 L.append(r"    \addlinespace[1pt]")
-            L.append(f"    {lab % CITE} & " + " & ".join(cells["hunyuan"][key]) + " & "
-                     + " & ".join(cells["wan"][key]) + r" \\")
+            L.append("    " + " & ".join([lab % CITE] + cells["hunyuan"][key] + cells["wan"][key]) + r" \\")
     L += [r"    \bottomrule", r"  \end{tabular}", r"\end{table*}", ""]
     return "\n".join(L)
 
-
-# ---------------------------------------------------------------- Table: 2x2 ablation {DCT, per-element} x {PCGS off, on}
 def tab_ablation_2x2():
     A = ST["ablation_2x2"]
     budgets = [("0.37", "18.1"), ("0.6", "13")]
