@@ -1,23 +1,22 @@
 \begin{abstract}
-% Numbers: published SeaCache Table 1 (26.285 dB at 1098 TFLOPs = 18.4 NFE; 21.332 dB at 773 TFLOPs = 13.0 NFE) vs.
+% Numbers: tables/tab_flux_main.tex and tables/tab_video_main.tex (every row run in the same setup);
 % research_v2/runs/drawbench_eval/eval_dct_pcgs.txt (KalSea, delta 0.37 / 0.6); PCGS alone: paired vs. the predictor
 % (speckcast_<d>), figures/src/data/flux_drawbench_stats.json (eval_sweep_vs_kalsea.json per-image metrics, eval2 bootstrap);
 % gains on reuse / linear extrapolation: research_v2/ablations/eval/eval_all.json.
 Diffusion transformers spend most of their sampling time in the block stack, which runs at each of tens of sampling
-steps. Training-free caches skip it on some steps with a gate decides \emph{when} to compute, and a filler decides
+steps. Training-free caches skip it on some steps: a gate decides \emph{when} to compute, and a filler decides
 \emph{what} to write on the skipped steps, typically the last block-stack residual or a forecast of it. Both fillers
-are open loop, when the next computed step reveals how wrong the filler was, its error has already been integrated
+are open loop: when the next computed step reveals how wrong the filler was, its error has already been integrated
 into the latent and is never corrected. We close this loop with predictor-corrector gap smoothing (\pcgs). Behind the
 spectrally aligned gate of \seacache, a damped-trend Kalman filter forecasts the block-stack residual on skipped
 steps. When the next step is computed, a Rauch-Tung-Striebel smoother turns the filter's innovation into corrected
 residuals for the whole skipped gap, which we re-integrate through the output layers only before sampling continues
-from the corrected latent. \pcgs requires no additional transformer evaluations. On \flux and held-out DrawBench
-prompts, our cache reaches a PSNR of 27.72\,dB with respect to the 50-step sampler at 18 of 50 transformer
-evaluations, against 26.29\,dB reported for \seacache at 18, and 22.53 against 21.33\,dB at 13 evaluations. In
-paired comparisons, \pcgs alone contributes 0.81\,dB (95\% CI [0.63, 1.00]) and 0.61\,dB [0.48, 0.76], and it also
-improves plain reuse and linear extrapolation.
-% Video: HunyuanVideo eval/full/fr_metrics_live.json + fr_metrics_live048.json, Wan eval/full/fr_metrics.json (paired vs.
-% the same-setup SeaCache re-run); figures/src/data/video_stats.json.
-On HunyuanVideo and Wan2.1 at \seacache's budgets, it improves PSNR over \seacache run in the same setup by
-1.9--3.2\,dB and 0.3--2.3\,dB.
+from the corrected latent. \pcgs requires no additional transformer evaluations. On \flux with held-out DrawBench prompts, with every baseline run in the same setup, our cache reaches a PSNR
+of 27.72\,dB with respect to the 50-step sampler at 18 of 50 transformer evaluations, against 25.33\,dB for
+\seacache and 25.48\,dB for Spectrum, and at 21 evaluations it exceeds every baseline that uses more, including SADA.
+In paired comparisons, \pcgs alone contributes 0.81\,dB (95\% CI [0.63, 1.00]) and 0.61\,dB [0.48, 0.76], and it
+also improves plain reuse and linear extrapolation.
+% Video: figures/src/data/video_measured.json (same-setup rows of tables/tab_video_main.tex).
+On HunyuanVideo and Wan2.1 it has the best PSNR, SSIM and LPIPS of all methods at both budgets (1.9--3.2 and
+0.3--2.3\,dB above \seacache), with VBench within 0.2 points of the uncached model.
 \end{abstract}
