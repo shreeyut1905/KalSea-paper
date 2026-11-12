@@ -151,12 +151,11 @@ def qual_models(flux_tag="nfe13_teaser"):
     assert len(frame) == 1
     n_fr = 65
     body = (
-        r"\caption{\textbf{One example per model at its lower budget}: \flux ($\delta="
+        r"\caption{\textbf{Examples on each model} at its lower budget: \flux ($\delta="
         + f"{fm['delta']}$, {int(fq['nfe'])} " + r"\nfe), "
         + ", ".join(rf"{VNAME[m]} ($\delta={V[m]['delta']}$, {int(vq[m]['nfe'])} \nfe{VGATE[m]})" for m in V)
-        + rf"; video: frame {frame.pop()} of {n_fr}. Fixed rule: among the prompts on which \seacache and \ours computed"
-        r" identical steps, the one whose PSNR gain of \ours over \seacache is closest to the upper quartile."
-        r" Numbers: per-image and per-video PSNR (dB) w.r.t.\ the 50-step reference. More in \supprefs{supp:qualitative}{supp:video-examples}.}"
+        + rf"; video: frame {frame.pop()} of {n_fr}."
+        r" Numbers: PSNR (dB) w.r.t.\ the 50-step reference. More examples in \supprefs{supp:qualitative}{supp:video-examples}.}"
         + "\n" + r"\label{fig:qual-models}")
     write("fig_qual_models", body, r"\begin{figure}[t]\centering\includegraphics[width=\columnwidth]"
           r"{figures/fig_qual_models.pdf}\input{figures/fig_qual_models_caption}\end{figure}")
