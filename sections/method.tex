@@ -63,8 +63,8 @@ $\hout_i=\hin_i+\hat\res_i$, where the filler $\hat\res_i$ is the last computed 
 \paragraph{The \sea gate.}
 TeaCache~\cite{liu2025teacache} and \seacache~\cite{chung2026seacache} decide whether to compute from the
 timestep-modulated input of the first block, $\modin_i$, \ie, its adaptive layer normalization applied to $\hin_i$.
-\seacache filters $\modin_i$ on the token grid with the normalized gain of the optimal linear denoiser under a
-power-law spectrum, $G_i(f)\propto a_iS(f)/(a_i^2S(f)+b_i^2)$ with $S(f)=|f|^{-\beta}$, $a_i=1-\sigma_i$ and
+\seacache filters $\modin_i$ on the token grid ($\seaop_i$) with the normalized gain of the optimal linear denoiser under a
+power-law spectrum at spatial frequency $f$, $G_i(f)\propto a_iS(f)/(a_i^2S(f)+b_i^2)$ with $S(f)=|f|^{-\beta}$, $a_i=1-\sigma_i$ and
 $b_i=\sigma_i$, and accumulates the relative $\ell_1$ change of the filtered input,
 \begin{equation}
   \gdist_i=\frac{\|\seaop_i(\modin_i)-\seaop_{i-1}(\modin_{i-1})\|_1}{\|\seaop_{i-1}(\modin_{i-1})\|_1},
@@ -80,29 +80,31 @@ images and 3 for videos).
 
 The residual evolves smoothly but nonlinearly along the trajectory, and the cache observes it only at the irregular
 steps chosen by the gate. We model every element of the residual as a damped trend observed in
-noise~\cite{gardner1985forecasting,barshalom2001estimation}. The
-state $\kstate_i=[m_i,\nu_i]^\top$ holds a value and its rate of change with respect to a time coordinate $s$ that
-increases monotonically along the schedule, with steps $\ds_i=s(i)-s(i-1)$. At every step, computed or skipped, the
-filter predicts
+noise~\cite{gardner1985forecasting,barshalom2001estimation}; each element has its own state, and we drop the element
+index. The state $\kstate_i=[m_i,\nu_i]^\top$ holds the level $m_i$, the filter's estimate of the residual element,
+and the trend $\nu_i$, its rate of change with respect to a time coordinate $s$ that increases monotonically along the
+schedule (see Parametrizations), with steps $\ds_i=s(i)-s(i-1)$. $\kP_i$ is the $2\times2$ covariance of the state and
+$[\kP_i]_{00}$ the variance of $m_i$; the superscripts $\prior{(\cdot)}$ and $\post{(\cdot)}$ mark the moments predicted
+before and filtered after the observation of step $i$. At every step, computed or skipped, the filter predicts
 \begin{gather}
   \prior{\kstate}_i=\kA_i\,\post{\kstate}_{i-1},\qquad
   \prior{\kP}_i=\kA_i\,\post{\kP}_{i-1}\kA_i^\top+\kQ_i,\label{eq:predict}\\
   \kA_i=\begin{bmatrix}1&\ds_i\\0&\rho_i\end{bmatrix},\qquad
   \kQ_i=q\kappa\begin{bmatrix}\ds_i^3/3&\ds_i^2/2\\\ds_i^2/2&\ds_i\end{bmatrix},\nonumber
 \end{gather}
-with $\rho_i=e^{-\ds_i/\tau}$.
-Here $\kQ_i$ is the process noise of an integrated Wiener process~\cite{barshalom2001estimation} with intensity $q\kappa$,
+with $\rho_i=e^{-\ds_i/\tau}$, where the time constant $\tau$ sets how quickly the trend decays.
+Here $\kQ_i$ is the process noise of an integrated Wiener process~\cite{barshalom2001estimation} with intensity $q\kappa$, a calibrated base intensity $q$ times a factor $\kappa$ adapted online,
 and $\rho_i$ damps the trend so that forecasts over long gaps do not overshoot~\cite{gardner1985forecasting}. On a
-computed step $b$ the filter observes the residual element $z_b$ with noise variance $R$ and updates, with
-$\mathbf h=[1,0]^\top$,
+computed step $b$ the filter observes the residual element $z_b$ through $\mathbf H=[1,0]$, with noise variance $R$, and
+updates with the innovation $e_b$, its predicted variance $S_b$ and the Kalman gain $\mathbf k_b$:
 \begin{gather}
-  e_b=z_b-\prior{m}_b,\quad S_b=[\prior{\kP}_b]_{00}+R,\quad \mathbf k_b=\prior{\kP}_b\mathbf h/S_b,\nonumber\\
+  e_b=z_b-\prior{m}_b,\quad S_b=[\prior{\kP}_b]_{00}+R,\quad \mathbf k_b=\prior{\kP}_b\mathbf H^\top/S_b,\nonumber\\
   \post{\kstate}_b=\prior{\kstate}_b+\mathbf k_b\,e_b,\qquad
-  \post{\kP}_b=(\mathbf I-\mathbf k_b\mathbf h^\top)\,\prior{\kP}_b.\label{eq:update}
+  \post{\kP}_b=(\mathbf I-\mathbf k_b\mathbf H)\,\prior{\kP}_b.\label{eq:update}
 \end{gather}
 On skipped steps the moments are not updated ($\post{\kstate}_i=\prior{\kstate}_i$, $\post{\kP}_i=\prior{\kP}_i$),
 and the cache writes the predicted value, $\hat\res_i=\prior{m}_i$, into $\hout_i=\hin_i+\hat\res_i$; the output
-layers run as usual. The intensity $\kappa$ is adapted online so that the mean squared innovation matches its
+layers run as usual. The factor $\kappa$ is adapted so that the mean squared innovation matches its
 predicted variance $S_b$~\cite{mehra1972approaches} (\suppref{supp:forecaster}).
 
 \paragraph{Parametrizations.}
@@ -111,7 +113,7 @@ variant), so the filter costs a few elementwise operations per step and its gain
 \emph{per-element} variant, $s$ is a warped log signal-to-noise ratio of the schedule. In the
 \emph{DCT} variant (as in~\cite{rajabi2026speckcast}), our default for \flux, the residual of each channel is transformed
 with an orthonormal 2D DCT on the token grid, the coefficients are grouped into seven radial frequency bands, and each
-band has its own warped time coordinate and covariance. Noise intensities, initial trend variances and band powers
+band has its own warped time coordinate and covariance. Noise intensities $q$, initial trend variances and band powers
 are calibrated once per model from 16 uncached trajectories of prompts disjoint from all evaluation prompts; $\tau=0.5$
 and $R=10^{-3}$ throughout (\suppref{supp:forecaster}, \ref*{S-supp:calib}). The two variants perform the same (\cref{sec:ablations}). With the corrector of
 \cref{sec:pcgs}, this predictor forms our full method, \ours; the predictor alone (the \sea gate with Kalman residual
@@ -130,7 +132,7 @@ they stem from the same trend error and process noise. \pcgs exploits this corre
 No observation falls inside the gap, so $\kstate_b=\kPhi(b,i)\,\kstate_i+\mathbf w_{i\to b}$ for $a<i<b$, with the
 transition $\kPhi(b,i)=\kA_b\kA_{b-1}\cdots\kA_{i+1}$ and accumulated process noise $\mathbf w_{i\to b}$ independent
 of $\kstate_i$. Given the observations up to step $a$, the cross-covariance of $\kstate_i$ and $z_b$ is therefore
-$\prior{\kP}_i\kPhi(b,i)^\top\mathbf h$, and conditioning the joint Gaussian on $z_b$ yields
+$\prior{\kP}_i\kPhi(b,i)^\top\mathbf H^\top$, and conditioning the joint Gaussian on $z_b$ yields
 \begin{equation}
   \smooth{m}_i=\prior{m}_i+g_i\,e_b,\qquad
   g_i=\frac{\big[\prior{\kP}_i\,\kPhi(b,i)^\top\big]_{00}}{[\prior{\kP}_b]_{00}+R}.
@@ -146,7 +148,7 @@ residual is the forecast plus a gain-weighted share of the forecast error reveal
   \label{eq:smooth-res}
 \end{equation}
 where $\hat\res_b=\prior{m}_b$ is the forecast for step $b$, and $\mathcal G_i$ multiplies by the scalar $g_i$
-(per-element variant) or applies the band gains $g_{i,\ell}$ in the DCT domain.
+(per-element variant) or applies the gains $g_{i,\ell}$ of the frequency bands $\ell$ in the DCT domain.
 
 \paragraph{(2) Re-integration.}
 Only the output layers depend on the residual. We therefore replay the sampler over the gap with the smoothed

@@ -162,13 +162,13 @@ skipped step. No observation falls into the gap, so the predicted moments are pr
 $\prior{\kstate}_{i}=\kA_i\prior{\kstate}_{i-1}$ and $\prior{\kP}_i=\kA_i\prior{\kP}_{i-1}\kA_i^\top+\kQ_i$ for
 $a+1<i\le b$, starting from $\prior{\kstate}_{a+1}=\kA_{a+1}\post{\kstate}_a$. Define the transition
 $\kPhi(b,i)=\kA_b\kA_{b-1}\cdots\kA_{i+1}$, with $\kPhi(b,b)=\mathbf I$, and the innovation variance
-$S_b=\mathbf h^\top\prior{\kP}_b\mathbf h+R$ with $\mathbf h=[1,0]^\top$.
+$S_b=\mathbf H\prior{\kP}_b\mathbf H^\top+R$ with $\mathbf H=[1,0]$.
 
 \paragraph{Proposition.}
 For $a<i\le b$,
 \begin{equation}
-  \E\!\left[\kstate_i\mid\mathcal Y_a,z_b\right]=\prior{\kstate}_i+\prior{\kP}_i\kPhi(b,i)^\top\mathbf h\,S_b^{-1}e_b,
-  \quad e_b=z_b-\mathbf h^\top\prior{\kstate}_b,
+  \E\!\left[\kstate_i\mid\mathcal Y_a,z_b\right]=\prior{\kstate}_i+\prior{\kP}_i\kPhi(b,i)^\top\mathbf H^\top\,S_b^{-1}e_b,
+  \quad e_b=z_b-\mathbf H\prior{\kstate}_b,
   \label{eq:supp-smooth}
 \end{equation}
 and its first component gives the gain $g_i=[\prior{\kP}_i\kPhi(b,i)^\top]_{00}/S_b$ of \maineqref{eq:smooth}.
@@ -176,8 +176,8 @@ and its first component gives the gain $g_i=[\prior{\kP}_i\kPhi(b,i)^\top]_{00}/
 \paragraph{Proof by conditioning.}
 Iterating the state equation, $\kstate_b=\kPhi(b,i)\kstate_i+\mathbf w_{i\to b}$, where $\mathbf w_{i\to b}$ is a sum of
 process-noise terms of steps $i+1,\dots,b$; it has zero mean and is independent of $\kstate_i$ and of $\mathcal Y_a$.
-With $z_b=\mathbf h^\top\kstate_b+\eta_b$ and $\eta_b\sim\mathcal N(0,R)$ independent of everything else,
-$\mathrm{Cov}(\kstate_i,z_b\mid\mathcal Y_a)=\prior{\kP}_i\kPhi(b,i)^\top\mathbf h$ and
+With $z_b=\mathbf H\kstate_b+\eta_b$ and $\eta_b\sim\mathcal N(0,R)$ independent of everything else,
+$\mathrm{Cov}(\kstate_i,z_b\mid\mathcal Y_a)=\prior{\kP}_i\kPhi(b,i)^\top\mathbf H^\top$ and
 $\mathrm{Var}(z_b\mid\mathcal Y_a)=S_b$. Conditioning the jointly Gaussian pair $(\kstate_i,z_b)$ given $\mathcal Y_a$
 on $z_b$ gives \eqref{eq:supp-smooth}.
 
@@ -185,14 +185,14 @@ on $z_b$ gives \eqref{eq:supp-smooth}.
 The RTS recursion~\cite{rauch1965maximum,sarkka2013bayesian} over $[a,b]$, using the observations up to $b$, reads
 $\smooth{\kstate}_i=\post{\kstate}_i+\mathbf C_i(\smooth{\kstate}_{i+1}-\prior{\kstate}_{i+1})$ with
 $\mathbf C_i=\post{\kP}_i\kA_{i+1}^\top(\prior{\kP}_{i+1})^{-1}$, initialized with the filtered estimate
-$\smooth{\kstate}_b=\post{\kstate}_b=\prior{\kstate}_b+\prior{\kP}_b\mathbf h S_b^{-1}e_b$. Inside the gap,
+$\smooth{\kstate}_b=\post{\kstate}_b=\prior{\kstate}_b+\prior{\kP}_b\mathbf H^\top S_b^{-1}e_b$. Inside the gap,
 $\post{\kstate}_i=\prior{\kstate}_i$ and $\post{\kP}_i=\prior{\kP}_i$. We show by backward induction that
-$\smooth{\kstate}_i-\prior{\kstate}_i=\prior{\kP}_i\kPhi(b,i)^\top\mathbf h S_b^{-1}e_b$. The case $i=b$ holds because
+$\smooth{\kstate}_i-\prior{\kstate}_i=\prior{\kP}_i\kPhi(b,i)^\top\mathbf H^\top S_b^{-1}e_b$. The case $i=b$ holds because
 $\kPhi(b,b)=\mathbf I$. If it holds for $i+1$, then
 \begin{align*}
   \smooth{\kstate}_i-\prior{\kstate}_i
-  &=\prior{\kP}_i\kA_{i+1}^\top(\prior{\kP}_{i+1})^{-1}\prior{\kP}_{i+1}\kPhi(b,i{+}1)^\top\mathbf h S_b^{-1}e_b\\
-  &=\prior{\kP}_i\big(\kPhi(b,i{+}1)\kA_{i+1}\big)^\top\mathbf h S_b^{-1}e_b,
+  &=\prior{\kP}_i\kA_{i+1}^\top(\prior{\kP}_{i+1})^{-1}\prior{\kP}_{i+1}\kPhi(b,i{+}1)^\top\mathbf H^\top S_b^{-1}e_b\\
+  &=\prior{\kP}_i\big(\kPhi(b,i{+}1)\kA_{i+1}\big)^\top\mathbf H^\top S_b^{-1}e_b,
 \end{align*}
 and $\kPhi(b,i{+}1)\kA_{i+1}=\kPhi(b,i)$. \hfill$\square$
 
