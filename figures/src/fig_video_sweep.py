@@ -20,7 +20,7 @@ import figstyle as S  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIG_DIR = os.path.dirname(HERE)
-LABEL = {**S.LABEL, "seacache": "SeaCache (re-run)"}
+LABEL = dict(S.LABEL)
 MODELS = (("hunyuan", "HunyuanVideo"), ("wan", "Wan2.1"))
 
 

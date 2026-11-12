@@ -60,7 +60,7 @@ def tab_published():
     L = [r"\begin{table}[t]", r"  \centering",
          r"  \caption{\textbf{Published \flux results of \seacache~\cite{" + CITE["seacache"] + r"} (its Table~1) and"
          r" their \nfe.} \nfe{} $=50\,{\times}\,$TFLOPs$/2976$, where 2976 TFLOPs is their 50-step original; for"
-         r" ToCa, which computes parts of the network, it is a FLOP equivalent. Bottom: our re-run of"
+         r" ToCa, which computes parts of the network, it is a FLOP equivalent. Bottom:"
          r" \seacache (released gate, reuse) at three thresholds, in our setup (DrawBench-200, B200, seed = prompt index).}",
          r"  \label{tab:supp-published}", r"  \footnotesize", r"  \setlength{\tabcolsep}{3pt}",
          r"  \begin{tabular}{@{}lccccc@{}}", r"    \toprule",
@@ -72,7 +72,7 @@ def tab_published():
         if k.startswith("vanilla"):
             lab += r"$^\ddagger$"
         L.append(rf"    {lab} & {tf} & {50.0 * tf / SEACACHE_T1_TFLOPS_FULL:.2f} & {p} & {s} & {l} \\")
-    L += [r"    \midrule", r"    \seacache, our re-run & & & & & \\"]
+    L += [r"    \midrule", r"    \seacache, in our setup & & & & & \\"]
     cost = json.load(open(os.path.join(HERE, "data", "cost.json")))["flux"]
     per_eval = cost["hi_seacache"]["tflops"] / cost["hi_seacache"]["nfe"]  # measured TFLOPs per evaluation (gate incl.)
     tf_of = {"0.37": cost["hi_seacache"]["tflops"], "0.6": cost["lo_seacache"]["tflops"]}
@@ -103,7 +103,7 @@ def tab_samesetup():
          r"    Method & \nfe & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ & $\Delta$PSNR (dB) & $\Delta$SSIM"
          r" & $\Delta$LPIPS & win \\", r"    \midrule"]
     for d in ("0.3", "0.37", "0.6"):
-        rows = [("seacache", r"\seacache (re-run)", P[d]["ours-seacache"])]
+        rows = [("seacache", r"\seacache", P[d]["ours-seacache"])]
         if d in E:
             rows.append(("linext", "Linear extrapolation", PE[d]["ours-linext"]))
         rows.append(("kalsea", r"\kalsea", P[d]["ours-kalsea"]))
@@ -629,7 +629,7 @@ def tab_video_settings():
             ("teacache", r"TeaCache~\cite{" + CITE["teacache"] + r"}", r"threshold $\delta$ (rel.\ L1)"),
             ("taylorseer", r"TaylorSeer~\cite{" + CITE["taylorseer"] + r"}", r"stride $S$"),
             ("spectrum", r"Spectrum~\cite{" + CITE["spectrum"] + r"}", r"window growth $\alpha$"),
-            ("seacache", r"\seacache, our re-run", r"\sea threshold $\delta$"),
+            ("seacache", r"\seacache", r"\sea threshold $\delta$"),
             ("ours", r"\ours", r"\sea threshold $\delta$")]
     L = [r"\begin{table*}[t]", r"  \centering",
          r"  \caption{\textbf{Settings of every row of the main paper's \maincref{tab:video-main}}: threshold, stride or"
@@ -640,7 +640,7 @@ def tab_video_settings():
          r" $\lambda{=}0.1$, blend 0.5), in our implementation, which reproduces its released code on \flux. TeaCache and"
          r" the \sea gate compute a step once the accumulated relative change of the first block's modulated input"
          r" (rescaled for TeaCache, \sea-filtered for \seacache and \ours) exceeds $\delta$; the first and last steps are"
-         r" always computed. \seacache: our re-run of its released code with the corrected HunyuanVideo gate"
+         r" always computed. \seacache: its released code with the corrected HunyuanVideo gate"
          r" (\cref{supp:video-gate}), at the thresholds of \ours.}",
          r"  \label{tab:supp-video-settings}", r"  \footnotesize", r"  \setlength{\tabcolsep}{4pt}",
          r"  \begin{tabular}{@{}ll cc @{\hspace{12pt}} cc@{}}", r"    \toprule",
@@ -677,7 +677,7 @@ def tab_video_samesetup():
                  rf" ({o['nfe']:.1f} \nfe{note})}}}} \\")
         sch = r.get("schedules")
         same = f"{sch['n_identical_steps']}/{sch['n']}" if sch else "--"
-        L.append(rf"    \seacache (re-run) & {s['nfe']:.2f} & {s['psnr']:.2f} & {s['ssim']:.3f} & {s['lpips']:.3f}"
+        L.append(rf"    \seacache & {s['nfe']:.2f} & {s['psnr']:.2f} & {s['ssim']:.3f} & {s['lpips']:.3f}"
                  rf" & {ci(p['psnr'])} & {ci(p['ssim'], 3)} & {ci(p['lpips'], 3)} & {100 * p['psnr']['frac_better']:.1f}\%"
                  rf" & {same} \\")
         L.append(rf"    \ours & {o['nfe']:.2f} & {o['psnr']:.2f} & {o['ssim']:.3f} & {o['lpips']:.3f}"

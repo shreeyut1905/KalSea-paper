@@ -50,7 +50,7 @@ compare only at matched \nfe. Every baseline runs in our setup with the same pro
 Spectrum~\cite{han2026spectrum}, SADA~\cite{jiang2025sada} and fewer sampling steps with their released code, and
 \seacache with the same gate as our caches. Our caches use the
 official \sea gate, whose threshold $\delta$ sets the budget. At $\delta=0.6$ it computes 13.0 steps both in
-\seacache's published table and in our setup, where our re-run of \seacache reproduces the published PSNR (21.26
+\seacache's published table and in our setup, where \seacache reproduces the published PSNR (21.26
 vs.\ 21.33\,dB); at $\delta=0.3$ it computes 20.9 steps in our setup but 18.4 according to the published TFLOPs, so
 we match \nfe rather than $\delta$ and run our caches at $\delta=0.37$ (18.1 \nfe) and $0.6$. For controlled comparisons (same code, seeds and hardware), four fillers run
 behind the same gate: reuse (\seacache), linear extrapolation of the residual from the last two computed steps (the
@@ -86,7 +86,7 @@ come at a cost in perceived quality.
 
 \paragraph{Budget sweep.}
 \cref{fig:tradeoff} varies $\delta$ from 0.2 to 1.0 in the same setup. \ours attains the highest PSNR and the
-lowest LPIPS at every budget; its PSNR gain over our re-run of \seacache grows from 0.74\,dB [0.46, 1.04] at 11 \nfe
+lowest LPIPS at every budget; its PSNR gain over \seacache grows from 0.74\,dB [0.46, 1.04] at 11 \nfe
 to 3.89\,dB [3.49, 4.28] at 27 \nfe, and at 9 \nfe only LPIPS improves significantly (0.043 [0.033, 0.053]).
 
 % Size of the latent correction: moved to the supplement (sections/supp.tex) for space.
@@ -116,7 +116,7 @@ We apply our cache with the per-element filter to HunyuanVideo and Wan2.1-1.3B a
 \seacache's released HunyuanVideo script gates on a stale noise level near one, which skips step~1 once
 $\delta\gtrsim0.21$ and costs 12--14\,dB on those prompts (\suppref{supp:video-gate}), so every gated method reads the sampler's noise
 level, with $\delta$ set for 24.0 and 16.0 \nfe.
-Our re-run of \seacache then reproduces its published result at 24 \nfe (32.43 vs.\ 32.39\,dB) but not at 16.4
+In our setup, \seacache then reproduces its published result at 24 \nfe (32.43 vs.\ 32.39\,dB) but not at 16.4
 (24.53\,dB at 16.0 vs.\ 26.46\,dB; its released gate gives 20.52\,dB). All rows of \cref{tab:video-main} are run in
 our setup. On HunyuanVideo, \ours improves on \seacache by 3.17\,dB [2.99, 3.35] at 24 \nfe and by 1.92\,dB
 [1.70, 2.14] at 16 \nfe (better on 90\% and 72\% of the prompts), with better SSIM and LPIPS (examples:

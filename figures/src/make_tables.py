@@ -399,7 +399,7 @@ def tab_flux_sweep():
          r"\begin{table*}[t]",
          r"  \centering",
          r"  \caption{\textbf{All budgets of the main paper's \maincref{fig:tradeoff}} (\flux, DrawBench-200, metrics"
-         r" w.r.t.\ the 50-step reference; same code, seeds and hardware for all methods; \seacache: our re-run of its released gate"
+         r" w.r.t.\ the 50-step reference; same code, seeds and hardware for all methods; \seacache: its released gate"
          r" with residual reuse). The \sea-gate threshold $\delta$ sets the budget and is shared by the three methods; \nfe"
          r" is the mean of \ours (the"
          rf" three methods differ by at most {math.ceil(dmax * 100 - 1e-9) / 100:.2f} \nfe at any $\delta$). $\Delta$PSNR: paired per-prompt gain of \ours with"

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Fig. (quality-compute trade-off on FLUX.1-dev, DrawBench-200).
 
-(a) PSNR and (b) LPIPS w.r.t. the 50-step reference vs. NFE for SeaCache, KalSea and Ours (mean over 200 prompts,
-shaded band = 95% bootstrap CI of the mean); (c) paired PSNR gain of Ours over each baseline with 95% bootstrap CIs.
-Reads figures/src/data/flux_drawbench_stats.json (run flux_stats.py first).
+(a) PSNR and (b) LPIPS w.r.t. the 50-step reference vs. NFE for SeaCache and Ours over the delta sweep (mean over 200
+prompts, shaded band = 95% bootstrap CI of the mean), plus the other baselines of Tab. 1 as gray markers (two budgets
+each, bars = 95% bootstrap CI); (c) paired PSNR gain of Ours over SeaCache with 95% bootstrap CIs.
+Reads figures/src/data/flux_drawbench_stats.json (run flux_stats.py first) and data/flux_baselines.json
+(collect_flux_baselines.py).
 
     python fig_tradeoff.py            # full width (\\textwidth), 3 panels  -> figures/fig_tradeoff.{pdf,png}
     python fig_tradeoff.py --onecol   # one column, 2x2 grid variant         -> figures/fig_tradeoff_1col.{pdf,png}
@@ -23,7 +25,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 FIG_DIR = os.path.dirname(HERE)
 METHODS = ("seacache", "ours")   # main comparison: KalSea vs SeaCache (the predictor-only ablation is in Tab. 3 / supplement)
 # SeaCache curve = our same-setup re-run of its released gate + reuse (the main table cites its published numbers)
-LABEL = {**S.LABEL, "seacache": "SeaCache (re-run)"}
+LABEL = dict(S.LABEL)
+# other baselines of Tab. 1 (data/flux_baselines.json): neutral gray, one marker shape each, identified in the legend
+BASELINES = (("spectrum", "Spectrum", "^"), ("sada", "SADA", "v"), ("teacache", "TeaCache", "P"),
+             ("taylorseer", "TaylorSeer", "X"), ("vanilla", "Fewer steps", "p"))
+BASE_C = S.INK2
 MAIN_BUDGETS = {"0.37": r"$\delta\!=\!0.37$", "0.6": r"$\delta\!=\!0.6$"}   # budgets of the main table (18.1 / 13 NFE)
 
 
@@ -45,6 +51,20 @@ def load():
         gains[base] = rows
     budget_nfe = {d: st["summary"][d]["ours"]["nfe"] for d in deltas}
     return series, gains, budget_nfe
+
+
+def load_baselines():
+    return json.load(open(os.path.join(HERE, "data", "flux_baselines.json")))["methods"]
+
+
+def baseline_points(ax, key):
+    for m, _, mk in BASELINES:
+        pts = sorted(BL[m], key=lambda p: p["nfe"])
+        x = [p["nfe"] for p in pts]
+        y = [p[key]["mean"] for p in pts]
+        yerr = [[p[key]["mean"] - p[key]["ci95"][0] for p in pts], [p[key]["ci95"][1] - p[key]["mean"] for p in pts]]
+        ax.errorbar(x, y, yerr=yerr, fmt="none", ecolor=BASE_C, elinewidth=0.5, capsize=0, zorder=2, alpha=0.7)
+        ax.plot(x, y, color=BASE_C, lw=0.6, ls=":", zorder=2.5, marker=mk, ms=4.4, mfc=BASE_C, mec=BASE_C, mew=0)
 
 
 def budget_marks(ax, budget_nfe, label=True, y=0.985):
@@ -70,6 +90,7 @@ def metric_panel(ax, series, budget_nfe, key, ylabel, direct_labels=False, label
         if direct_labels:
             ax.annotate(LABEL[m], (x[-1], y[-1]), xytext=(4, 0), textcoords="offset points",
                         ha="left", va="center", fontsize=7, color=S.INK)
+    baseline_points(ax, key)
     budget_marks(ax, budget_nfe, label=label_budgets)
     ax.set_ylabel(ylabel, labelpad=2)
     nfe_ticks(ax, budget_nfe)
@@ -112,6 +133,8 @@ def gain_panel(ax, gains, budget_nfe, label_budgets=True, annotate=True):
 def method_legend(fig, y, x=0.5, ncol=3):
     handles = [Line2D([], [], color=S.C[m], lw=1.6 if m == "ours" else 1.2, marker=S.MARKER[m], ms=S.MSIZE[m] + 0.4,
                       mfc=S.C[m], mec="white", mew=0.6, label=LABEL[m]) for m in METHODS]
+    handles += [Line2D([], [], color=BASE_C, lw=0.6, ls=":", marker=mk, ms=4.4, mfc=BASE_C, mec=BASE_C, mew=0,
+                       label=lab) for _, lab, mk in BASELINES]  # noqa: E501
     fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(x, y), ncol=ncol, columnspacing=1.6,
                handlelength=2.0, borderaxespad=0.0)
 
@@ -123,16 +146,16 @@ def full_width():
     metric_panel(axes[0], series, budget_nfe, "psnr", r"PSNR (dB) $\uparrow$", direct_labels=False)
     metric_panel(axes[1], series, budget_nfe, "lpips", r"LPIPS $\downarrow$", label_budgets=False)
     gain_panel(axes[2], gains, budget_nfe, label_budgets=False)
-    axes[0].set_ylim(18, 36.5)
-    axes[1].set_ylim(0, 0.33)
+    axes[0].set_ylim(14.5, 36.5)
+    axes[1].set_ylim(0, 0.44)
     axes[2].set_ylim(-0.3, 4.6)
     titles = ["(a) PSNR w.r.t. the 50-step reference", "(b) LPIPS w.r.t. the 50-step reference",
-              "(c) Paired PSNR gain of KalSea (95\% CI)"]
+              r"(c) Paired PSNR gain of KalSea (95\% CI)"]
     for ax, t in zip(axes, titles):
         ax.set_title(t, loc="left", fontsize=7.5, pad=4, color=S.INK)
         ax.set_xlabel("NFE (of 50)", labelpad=1.5)
     axes[2].set_ylabel(r"$\Delta$PSNR (dB)", labelpad=2)
-    method_legend(fig, y=1.0, x=0.5)
+    method_legend(fig, y=1.0, x=0.5, ncol=len(METHODS) + len(BASELINES))
     S.save(fig, os.path.join(FIG_DIR, "fig_tradeoff"))
     plt.close(fig)
 
@@ -154,18 +177,20 @@ def one_col():
         ax.set_xticklabels([f"{x:.0f}" if abs(x - round(x)) < 0.05 else f"{x:.1f}" for x in major])
         ax.set_xticks([budget_nfe[d] for d in ("0.8", "0.5", "0.37")], minor=True)
         ax.tick_params(axis="x", which="minor", length=1.8, width=0.5, color=S.INK2)
-    ax_p.set_ylim(18, 36.5)
-    ax_l.set_ylim(0, 0.33)
+    ax_p.set_ylim(14.5, 36.5)
+    ax_l.set_ylim(0, 0.44)
     ax_g.set_ylim(-0.3, 4.6)
     ax_g.set_ylabel(r"$\Delta$PSNR (dB)", labelpad=2)
     for ax, t in zip((ax_p, ax_l, ax_g), ("(a) PSNR w.r.t. reference", "(b) LPIPS w.r.t. reference",
-                                          "(c) Paired PSNR gain of KalSea (95\% CI)")):
+                                          r"(c) Paired PSNR gain of KalSea (95\% CI)")):
         ax.set_title(t, loc="left", fontsize=7.5, pad=4, color=S.INK)
         ax.set_xlabel("NFE (of 50)", labelpad=1.5)
-    method_legend(fig, y=1.0)
+    method_legend(fig, y=1.0, ncol=4)
     S.save(fig, os.path.join(FIG_DIR, "fig_tradeoff_1col"))
     plt.close(fig)
 
+
+BL = load_baselines()
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()

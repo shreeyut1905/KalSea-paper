@@ -251,10 +251,10 @@ With the released gate, $\delta=0.3$ computes 20.88 steps per image on average i
 $\delta=0.37$ computes 18.14; its $\delta=0.6$ row (12.99) agrees with our measurement (13.00, on every prompt). We
 cannot tell whether the TFLOPs or the threshold of the $\delta=0.3$ row are off. Running our cache at the \nfe implied by
 the TFLOPs ($\delta=0.37$) is the conservative choice in both cases: if their run used 18.4 evaluations, the comparison is
-matched; if it used 20.9, \seacache had more compute than our cache. Our re-run of \seacache reaches 26.89\,dB at
+matched; if it used 20.9, \seacache had more compute than our cache. In our setup, \seacache reaches 26.89\,dB at
 $\delta=0.3$, close to the published 26.29\,dB, and 25.33\,dB at $\delta=0.37$; at $\delta=0.6$ it reproduces the
 published 21.33\,dB (21.26\,dB). The published numbers were obtained on different hardware (NVIDIA Blackwell Pro 6000,
-according to the paper) and with seeds the paper does not state, so the main paper compares with our re-run, with
+according to the paper) and with seeds the paper does not state, so the main paper compares with \seacache run in our setup, with
 paired intervals (\cref{tab:supp-samesetup}), and mentions the published numbers only in the text. The published 25- and
 15-step rows appear swapped (the 25-step row is worse on every metric); the main table uses our own 25- and 15-step
 runs.
@@ -285,7 +285,7 @@ configuration are not bitwise identical; with deterministic algorithms enforced 
 of \ours differs by \suppOursRerunA{} at $\delta=0.3$ and \suppOursRerunB{} at $\delta=0.6$
 (\cref{tab:ablation-full}, caption), and two independent runs of \kalsea differ by \suppKalRerunA{} at $\delta=0.37$ and
 \suppKalRerunB{} at $\delta=0.6$, with identical computed steps on \suppKalRerunSameA/200 and \suppKalRerunSameB/200 prompts (the main paper's \maincref{tab:flux-main} uses one of these runs, the $2{\times}2$ ablation of
-\cref{tab:ablation-2x2} the other). On the development set, a same-session re-run of \kalsea differs by $-$0.05 and
+\cref{tab:ablation-2x2} the other). On the development set, a second run of \kalsea in the same session differs by $-$0.05 and
 $+$0.03\,dB (\cref{tab:supp-devset}). We therefore do not interpret differences below 0.1\,dB. The per-element filter,
 reuse and the uncached reference regenerated bit-identical images on all 64 development prompts; for video, the
 filter updates run with deterministic algorithms, and re-generated videos are bit-identical
@@ -302,7 +302,7 @@ filter updates run with deterministic algorithms, and re-generated videos are bi
 \paragraph{Same-setup comparisons at three thresholds.}
 \cref{tab:supp-samesetup} lists all same-setup comparisons with \seacache, linear extrapolation and \kalsea, with paired
 intervals for PSNR, SSIM and LPIPS. At $\delta=0.3$ (20.8 \nfe), the threshold of \seacache's larger-budget row, \ours
-reaches 29.62\,dB, 2.73\,dB [2.34, 3.12] above our re-run of \seacache (26.89\,dB at 20.88 \nfe) and 0.83\,dB
+reaches 29.62\,dB, 2.73\,dB [2.34, 3.12] above \seacache (26.89\,dB at 20.88 \nfe) and 0.83\,dB
 [0.63, 1.02] above \kalsea (28.79\,dB). At 18.1 \nfe, the median per-prompt gain of \pcgs over \kalsea is
 \suppPcgsMedianA\,dB, and \pcgs lowers PSNR on \suppPcgsNegA{} of the 200 prompts, by at most \suppPcgsWorstA\,dB; at 13
 \nfe the corresponding values are \suppPcgsMedianB\,dB, \suppPcgsNegB{} prompts and \suppPcgsWorstB\,dB.
@@ -330,7 +330,7 @@ stays below it (\cref{tab:ablation-full}, group (e)), so a forecasting predictor
 
 \paragraph{Budget sweep.}
 \cref{tab:flux-sweep} is the table view of the main paper's \maincref{fig:tradeoff}: seven thresholds from 27 to 9 \nfe,
-with the paired gains of \ours over our re-run of \seacache and over \kalsea. \cref{tab:supp-sweep-open} adds the
+with the paired gains of \ours over \seacache and over \kalsea. \cref{tab:supp-sweep-open} adds the
 forecasts without correction. As the open-loop argument predicts, the gain of the Kalman forecast over reuse falls from
 \suppKalVsReuseMax{} at \suppKalVsReuseMaxNfe{} \nfe to \suppKalVsReuseNext{} at \suppLinBelowReuseNfeB{} \nfe and
 \suppKalVsReuseMin{} at \suppKalVsReuseMinNfe{} \nfe, and linear extrapolation falls below reuse, by
@@ -359,7 +359,7 @@ seventh for the residual forecasts of \kalsea.
 \paragraph{Qualitative results.}
 \label{supp:qualitative}
 \cref{fig:qualitative-supp-nfe13,fig:qualitative-supp-nfe21} show the prompts at the lower quartile, the median and the
-upper quartile of the per-prompt PSNR gain of \ours over \seacache (our re-run of its released gate with reuse) at 13
+upper quartile of the per-prompt PSNR gain of \ours over \seacache (its released gate with reuse, run in our setup) at 13
 and 20.8 \nfe, selected by a fixed rule. \cref{tab:collage-prompts} lists the prompts and seeds of the main paper's
 \maincref{fig:collage}.
 \input{tables/supp_collage}
@@ -544,10 +544,10 @@ We match \nfe, not thresholds: \seacache reports TFLOPs, which we convert to \nf
   \item HunyuanVideo, corrected gate: the gate distances change, so we set new thresholds by replaying the gate on the
   distances recorded in a corrected-gate run of \seacache on the 20 pilot prompts: $\delta=0.2575$, the middle of the
   range that gives 24.0 \nfe, and $\delta=\suppVidFirstLoDelta$ for 16.4. On all prompts, $\delta=0.2575$ gives 24.0
-  \nfe, but $\delta=\suppVidFirstLoDelta$ gives \suppVidFirstLoNfe, more than \seacache's 16.4. We therefore ran both
-  methods again at $\delta=0.48$, which computes exactly 16 steps for every prompt, and report these runs. At
-  $\delta=\suppVidFirstLoDelta$ (\cref{tab:supp-video-samesetup}, bottom), with more compute than published, our re-run
-  of \seacache reaches \suppVidFirstLoSea\,dB, still below the published \suppVidPubLo\,dB, and \ours improves on it by
+  \nfe, but $\delta=\suppVidFirstLoDelta$ gives \suppVidFirstLoNfe, more than \seacache's 16.4. We therefore also ran both
+  methods at $\delta=0.48$, which computes exactly 16 steps for every prompt, and report these runs. At
+  $\delta=\suppVidFirstLoDelta$ (\cref{tab:supp-video-samesetup}, bottom), with more compute than published,
+  \seacache reaches \suppVidFirstLoSea\,dB, still below the published \suppVidPubLo\,dB, and \ours improves on it by
   \suppVidFirstLoGain.
 \end{itemize}
 
@@ -555,7 +555,7 @@ We match \nfe, not thresholds: \seacache reports TFLOPs, which we convert to \nf
 
 \subsection{Same-setup comparisons}
 \label{supp:video-samesetup}
-\cref{tab:supp-video-samesetup} compares \ours with our re-run of \seacache on all prompts, with the same code, seeds,
+\cref{tab:supp-video-samesetup} compares \ours with \seacache on all prompts, with the same code, seeds,
 GPUs and gate. On HunyuanVideo, \ours improves PSNR by \suppVidGainHA{} and \suppVidGainHB{} at 24 and 16 \nfe, on
 \suppVidWinHA\% and \suppVidWinHB\% of the videos, with better SSIM and LPIPS. On Wan2.1, it improves PSNR by
 \suppVidGainWA{} at 24 \nfe (\suppVidWinWA\% of the videos) but only by \suppVidGainWB{} at 17 \nfe, where it has the
