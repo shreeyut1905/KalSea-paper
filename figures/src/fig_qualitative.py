@@ -8,6 +8,7 @@ The rasters are embedded as the JPEG files themselves (quality 92, 4:4:4), text 
     python fig_qualitative.py --tag nfe13 --name fig_qualitative [--engine /path/to/tectonic]
 """
 import argparse
+import math
 import json
 import os
 import shutil
@@ -28,7 +29,9 @@ GAP_COL = 1.5            # between tiles of one prompt
 GAP_GROUP = 8.0          # between the two prompts of a row
 GAP_ZOOM = 1.5           # image -> crop
 GAP_ROW = 6.0
-PROMPT_H = 18.5          # two lines of 7/8.1 pt + padding
+PROMPT_H = 18.5          # two lines of 7/8.1 pt + padding (minimum prompt slot; longer prompts get more lines)
+LINE_H = 8.1             # baseline skip of the prompt font
+CHAR_W = 3.2             # conservative mean advance of a 7 pt Times italic character (bp), to count wrapped lines
 PSNR_H = 8.5
 HEADER_H = 24.0
 
@@ -68,9 +71,18 @@ def build(meta, tag, ncols_groups=2):
     gap_group = max(GAP_GROUP, LEFT) if per_group else GAP_GROUP
     w = (W_TOTAL - LEFT - ncols_groups * (NC - 1) * GAP_COL - (ncols_groups - 1) * gap_group) / (NC * ncols_groups)
     zh = w * meta["prompts"][0]["window"][3] / meta["prompts"][0]["window"][2]
-    row_h = PROMPT_H + w + GAP_ZOOM + zh + PSNR_H
-    nrows = (len(prompts) + ncols_groups - 1) // ncols_groups
-    H = HEADER_H + nrows * row_h + (nrows - 1) * GAP_ROW
+    # prompt slot per row, tall enough for the longest prompt of the row (a long prompt must not run into the row above)
+    text_w = NC * w + (NC - 1) * GAP_COL
+    rows = [prompts[i:i + ncols_groups] for i in range(0, len(prompts), ncols_groups)]
+    n_lines = lambda s: max(1, math.ceil((len(s) + 2) * CHAR_W / text_w))
+    prompt_h = [max(PROMPT_H, max(n_lines(p["prompt"]) for p in rp) * LINE_H + 2.3) for rp in rows]
+    row_hs = [ph + w + GAP_ZOOM + zh + PSNR_H for ph in prompt_h]
+    row_top, y = [], -HEADER_H
+    for rh in row_hs:
+        row_top.append(y)
+        y -= rh + GAP_ROW
+    nrows = len(rows)
+    H = HEADER_H + sum(row_hs) + (nrows - 1) * GAP_ROW
     L = []
     L.append(r"\begin{tikzpicture}[x=1bp,y=1bp,line join=round]")
     L.append(fr"\path[use as bounding box] (0,0) rectangle ({W_TOTAL:.2f},{-H:.2f});")
@@ -95,13 +107,13 @@ def build(meta, tag, ncols_groups=2):
 
     for k, p in enumerate(prompts):
         r, gi = divmod(k, ncols_groups)
-        ytop = -HEADER_H - r * (row_h + GAP_ROW)
+        ytop = row_top[r]
         # prompt text
         xg0, xg1 = gx(gi, 0), gx(gi, NC - 1) + w
         txt = tex_escape(p["prompt"])
         L.append(fr"\node[anchor=south west,inner sep=0,text width={xg1 - xg0:.2f}bp,align=flush left,font=\prm] "
-                 fr"at ({xg0:.2f},{ytop - PROMPT_H + 2.0:.2f}) {{``{txt}''}};")
-        yimg = ytop - PROMPT_H
+                 fr"at ({xg0:.2f},{ytop - prompt_h[r] + 2.0:.2f}) {{``{txt}''}};")
+        yimg = ytop - prompt_h[r]
         x0w, y0w, ww, wh = p["window"]
         S = p["size"][0]
         best = max(METHODS, key=lambda m: p["psnr"][m])
