@@ -5,7 +5,7 @@
 % TFLOPs / latency: data/cost.json (cost_stats.py), one example per configuration; see the cost block above.
 \begin{table}[t]
   \centering
-  \caption{\textbf{Text-to-image results on \flux} (DrawBench, 200 held-out prompts). Every row is run in our setup with the same prompts and seeds and compared with the uncached 50-step output of the same code: TeaCache, TaylorSeer (order 2, which scores higher than its default order 1), Spectrum, SADA (its default configuration and a faster one) and fewer sampling steps with their released code, \seacache with the same gate as \ours. One evaluation costs 59.5 TFLOPs in \seacache's convention. Lat.: s/image on one B200, one prompt (\suppref{supp:cost}). IR: ImageReward; CLIP: CLIP score (ViT-L/14); both reference-free sanity checks (uncached 50-step output: 1.000 / 27.66).}
+  \caption{\textbf{Text-to-image results on \flux} (DrawBench-200). All rows use the same prompts and seeds and are compared with the uncached 50-step output of the same code; baselines run with their released code (TaylorSeer: order 2), \seacache with the gate of \ours. Lat.: s/image on one B200 (\suppref{supp:cost}). IR, CLIP: ImageReward and CLIP score (uncached: 1.000 / 27.66).}
   \label{tab:flux-main}
   \footnotesize
   \setlength{\tabcolsep}{1.4pt}

@@ -177,13 +177,10 @@ def tab_flux_main():
          "% TFLOPs / latency: data/cost.json (cost_stats.py), one example per configuration; see the cost block above.",
          r"\begin{table}[t]",
          r"  \centering",
-         r"  \caption{\textbf{Text-to-image results on \flux} (DrawBench, 200 held-out prompts). Every row is run in our setup"
-         r" with the same prompts and seeds and compared with the uncached 50-step output of the same code: TeaCache,"
-         r" TaylorSeer (order 2, which scores higher than its default order 1), Spectrum, SADA (its default configuration"
-         r" and a faster one) and fewer sampling steps with their released code, \seacache with the same gate as \ours. One evaluation costs 59.5 TFLOPs in \seacache's convention."
-         r" Lat.: s/image on one B200, one"
-         r" prompt (\suppref{supp:cost}). IR: ImageReward; CLIP: CLIP score (ViT-L/14); both reference-free sanity checks"
-         r" (uncached 50-step output: " + (f"{QUAL['ref']['imagereward']:.3f} / {QUAL['ref']['clip']:.2f}" if QUAL else "--") + r").}",
+         r"  \caption{\textbf{Text-to-image results on \flux} (DrawBench-200). All rows use the same prompts and seeds and"
+         r" are compared with the uncached 50-step output of the same code; baselines run with their released code"
+         r" (TaylorSeer: order 2), \seacache with the gate of \ours. Lat.: s/image on one B200 (\suppref{supp:cost})."
+         r" IR, CLIP: ImageReward and CLIP score (uncached: " + (f"{QUAL['ref']['imagereward']:.3f} / {QUAL['ref']['clip']:.2f}" if QUAL else "--") + r").}",
          r"  \label{tab:flux-main}",
          r"  \footnotesize",
          r"  \setlength{\tabcolsep}{1.4pt}",
@@ -300,12 +297,9 @@ def tab_video_main():
          "% Latency: data/cost.json (cost_stats.py), one example per configuration; see the cost block above.",
          r"\begin{table*}[t]",
          r"  \centering",
-         r"  \caption{\textbf{Text-to-video results} (944 VBench prompts, 65 frames, seed 42, fidelity to the 50-step output)."
-         r" Every row is run in our setup with the same prompts, seed and GPUs: fewer sampling steps, TeaCache and"
-         r" TaylorSeer with their released code, Spectrum in our implementation (identical to its released code on \flux),"
-         r" \seacache with the same gate as \ours. Thresholds and strides of all rows:"
-         r" \suppref{supp:video-budgets}. VBench: Total score over all 16 dimensions (official weights and normalization; uncached in the"
-         r" first row). Lat.: s/video on one B200, one prompt"
+         r"  \caption{\textbf{Text-to-video results} (944 VBench prompts, 65 frames, seed 42). Fidelity w.r.t.\ the 50-step"
+         r" output; all rows run in our setup (Spectrum in our implementation, \seacache with the gate of \ours; settings:"
+         r" \suppref{supp:video-budgets}). VBench: Total score over all 16 dimensions. Lat.: s/video on one B200"
          r" (\suppref{supp:cost}).}",
          r"  \label{tab:video-main}",
          r"  \footnotesize",

@@ -5,7 +5,7 @@
 % Latency: data/cost.json (cost_stats.py), one example per configuration; see the cost block above.
 \begin{table*}[t]
   \centering
-  \caption{\textbf{Text-to-video results} (944 VBench prompts, 65 frames, seed 42, fidelity to the 50-step output). Every row is run in our setup with the same prompts, seed and GPUs: fewer sampling steps, TeaCache and TaylorSeer with their released code, Spectrum in our implementation (identical to its released code on \flux), \seacache with the same gate as \ours. Thresholds and strides of all rows: \suppref{supp:video-budgets}. VBench: Total score over all 16 dimensions (official weights and normalization; uncached in the first row). Lat.: s/video on one B200, one prompt (\suppref{supp:cost}).}
+  \caption{\textbf{Text-to-video results} (944 VBench prompts, 65 frames, seed 42). Fidelity w.r.t.\ the 50-step output; all rows run in our setup (Spectrum in our implementation, \seacache with the gate of \ours; settings: \suppref{supp:video-budgets}). VBench: Total score over all 16 dimensions. Lat.: s/video on one B200 (\suppref{supp:cost}).}
   \label{tab:video-main}
   \footnotesize
   \setlength{\tabcolsep}{3.2pt}

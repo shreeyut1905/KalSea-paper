@@ -44,17 +44,11 @@ def tradeoff(long=False):
     deltas = ", ".join(ST["deltas"])
     if not long:   # compact main-paper caption (8-page limit); same numbers
         body = (
-            r"\caption{\textbf{Fidelity vs.\ compute on \flux} (DrawBench, 200 held-out prompts)."
-            r" \textbf{(a)}~PSNR and \textbf{(b)}~LPIPS w.r.t.\ the 50-step reference vs.\ the mean number of transformer"
-            r" evaluations per image. Lines: \ours and \seacache (its released gate with reuse), which share"
-            rf" code, seeds and hardware; the \sea-gate threshold $\delta \in \{{{deltas}\}}$ sets their budget, and gray"
-            r" bands mark the budgets of \cref{tab:flux-main}. Gray markers: the other baselines of \cref{tab:flux-main},"
-            r" run with their released code at two budgets each and scored against the 50-step output of the same code."
-            r" Means over prompts; shaded and bars: 95\% bootstrap CIs; inset: the 18-\nfe budget enlarged. \textbf{(c)}~Paired PSNR gain of \ours (95\% CIs):"
-            r" over \seacache, it grows from "
-            + ci(P[lo_d]["ours-seacache"]["psnr"]) + rf" at {nfe_label(S[lo_d]['ours']['nfe'])} \nfe"
-            + (r" (not significant)" if lo_d in sig_sea else "") + " to "
-            + ci(P[hi_d]["ours-seacache"]["psnr"]) + rf" at {nfe_label(S[hi_d]['ours']['nfe'])} \nfe.}}" "\n"
+            r"\caption{\textbf{Fidelity vs.\ compute on \flux} (DrawBench-200). \textbf{(a)}~PSNR and \textbf{(b)}~LPIPS"
+            rf" w.r.t.\ the 50-step reference vs.\ \nfe. Lines: \ours and \seacache over the \sea-gate threshold"
+            rf" $\delta\in\{{{deltas}\}}$; gray markers: the other baselines of \cref{{tab:flux-main}}; gray bands: its"
+            r" budgets; inset: 18 \nfe enlarged. Shading and bars: 95\% bootstrap CIs. \textbf{(c)}~Paired PSNR gain of"
+            r" \ours over \seacache (95\% CIs).}" "\n"
             r"\label{fig:tradeoff}")
         write("fig_tradeoff", body, r"\begin{figure*}[t]\centering\includegraphics[width=\textwidth]{figures/fig_tradeoff.pdf}"
               r"\input{figures/fig_tradeoff_caption}\end{figure*}   (one-column variant: figures/fig_tradeoff_1col.pdf,"
@@ -151,11 +145,11 @@ def qual_models(flux_tag="nfe13_teaser"):
     assert len(frame) == 1
     n_fr = 65
     body = (
-        r"\caption{\textbf{Examples on each model} at its lower budget: \flux ($\delta="
-        + f"{fm['delta']}$, {int(fq['nfe'])} " + r"\nfe), "
-        + ", ".join(rf"{VNAME[m]} ($\delta={V[m]['delta']}$, {int(vq[m]['nfe'])} \nfe{VGATE[m]})" for m in V)
+        r"\caption{\textbf{Examples} at the lower budget of each model: \flux ("
+        + f"{int(fq['nfe'])} " + r"\nfe), "
+        + ", ".join(rf"{VNAME[m]} ({int(vq[m]['nfe'])} \nfe)" for m in V)
         + rf"; video: frame {frame.pop()} of {n_fr}."
-        r" Numbers: PSNR (dB) w.r.t.\ the 50-step reference. More examples in \supprefs{supp:qualitative}{supp:video-examples}.}"
+        r" PSNR (dB) w.r.t.\ the 50-step reference. More in \supprefs{supp:qualitative}{supp:video-examples}.}"
         + "\n" + r"\label{fig:qual-models}")
     write("fig_qual_models", body, r"\begin{figure}[t]\centering\includegraphics[width=\columnwidth]"
           r"{figures/fig_qual_models.pdf}\input{figures/fig_qual_models_caption}\end{figure}")
