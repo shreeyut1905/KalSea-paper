@@ -5,18 +5,19 @@
 %   \end{figure*}
 % Source and data: figures/src/method/ (build.sh).  Numbers below come from data/method_trace_summary.json
 % (one real FLUX.1-dev generation, DrawBench prompt index 154, delta = 0.6, seed = 154).  Steps are 1-based (i = 1..N).
-\caption{\textbf{Overview.}
-\textbf{(a)}~In each step~$i$, the \sea gate of \seacache accumulates the \sea-filtered relative change $\gdist_i$ of
-the first block's modulated input and runs the blocks $\blocks$ only when the sum reaches~$\delta$; the residual
-$\res_i$ of a computed step updates a damped-trend Kalman filter per DCT coefficient (the predictor), whose forecast
-$\hat\res_i$ replaces it on skipped steps; $\Emb$ and $\Out$ run at every step.
-\textbf{(b)}~When a computed step~$b$ ends the gap $a{+}1,\dots,b{-}1$, \pcgs spreads the innovation $e_b$ over the
-gap with the RTS gains $g_i$, which grow toward~$b$; the smoothed residuals $\smooth{m}_i$ replace the extrapolation
-$\prior{m}_i$.
-\textbf{(c)}~Re-integrating the gap from $\lat_{a+1}$ with $\Emb$ and $\Out$ only lowers the latent deviation from full
-computation at~$b$ by 25--59\% in all ten gaps of this sample (here $5.0\%\to2.4\%$ and $7.8\%\to3.2\%$), without
-extra transformer evaluations.
-(b, c): one \flux generation at $\delta=0.6$ for the DrawBench prompt whose PSNR gains (forecast over reuse,
-and gap smoothing over the forecast) are closest to the benchmark means (``McDonalds Church.''); residual projected onto a fixed random unit direction~$\mathbf{p}$ in the lowest DCT
-band (89\% of its energy); gray: full computation, evaluated only for this figure.}
+\caption{\textbf{Overview of \ours.}
+\textbf{(a)}~One sampler step. The \sea gate of \seacache accumulates the filtered relative change $\gdist_i$ of the
+first block's modulated input and runs the block stack $\blocks$ only when the sum reaches~$\delta$. On a computed
+step, the residual $\res_i$ updates a damped-trend Kalman filter for each DCT coefficient (the predictor); on a skipped
+step, the filter's forecast $\hat\res_i$ takes its place. $\Emb$ and $\Out$ run at every step.
+\textbf{(b)}~When a computed step~$b$ closes the gap $a{+}1,\dots,b{-}1$, \pcgs distributes the innovation $e_b$ over
+the gap with the RTS gains $g_i$, which grow toward~$b$, and the smoothed residuals $\smooth{m}_i$ replace the
+forecasts $\prior{m}_i$.
+\textbf{(c)}~Re-integrating the gap from $\lat_{a+1}$ with $\Emb$ and $\Out$ only reduces the deviation of the latent
+from full computation at~$b$ by 25--59\% in all ten gaps of this generation (shown: $5.0\%\to2.4\%$ and
+$7.8\%\to3.2\%$), without extra transformer evaluations.
+Panels (b) and (c) show one \flux generation at $\delta=0.6$ for the DrawBench prompt ``McDonalds Church'', chosen
+because its PSNR gains (forecast over reuse, and gap smoothing over forecast) are closest to the benchmark averages.
+The residual is projected onto a fixed random unit direction~$\mathbf{p}$ in the lowest DCT band, which holds 89\% of
+its energy. Gray: full computation, run only for this figure.}
 \label{fig:method}
