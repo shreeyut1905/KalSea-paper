@@ -50,7 +50,7 @@ def tradeoff(long=False):
             rf" code, seeds and hardware; the \sea-gate threshold $\delta \in \{{{deltas}\}}$ sets their budget, and gray"
             r" bands mark the budgets of \cref{tab:flux-main}. Gray markers: the other baselines of \cref{tab:flux-main},"
             r" run with their released code at two budgets each and scored against the 50-step output of the same code."
-            r" Means over prompts; shaded and bars: 95\% bootstrap CIs. \textbf{(c)}~Paired PSNR gain of \ours (95\% CIs):"
+            r" Means over prompts; shaded and bars: 95\% bootstrap CIs; inset: the 18-\nfe budget enlarged. \textbf{(c)}~Paired PSNR gain of \ours (95\% CIs):"
             r" over \seacache, it grows from "
             + ci(P[lo_d]["ours-seacache"]["psnr"]) + rf" at {nfe_label(S[lo_d]['ours']['nfe'])} \nfe"
             + (r" (not significant)" if lo_d in sig_sea else "") + " to "

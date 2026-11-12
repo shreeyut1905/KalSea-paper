@@ -96,6 +96,35 @@ def metric_panel(ax, series, budget_nfe, key, ylabel, direct_labels=False, label
     nfe_ticks(ax, budget_nfe)
 
 
+def zoom_inset(ax, series, budget_nfe):
+    """Enlarged view of the 18-NFE budget in the PSNR panel, where SeaCache and Spectrum lie 0.15 dB apart."""
+    x0 = budget_nfe["0.37"]
+    ins = ax.inset_axes([0.035, 0.55, 0.36, 0.33])
+    for m in METHODS:
+        rows = series[m]
+        x = [r[1] for r in rows]
+        y = [r[2]["mean"] for r in rows]
+        ins.fill_between(x, [r[2]["ci95"][0] for r in rows], [r[2]["ci95"][1] for r in rows], color=S.C[m], alpha=0.12,
+                         lw=0, zorder=S.ZORDER[m] - 2)
+        ins.plot(x, y, color=S.C[m], lw=1.6 if m == "ours" else 1.2, zorder=S.ZORDER[m], marker=S.MARKER[m],
+                 ms=S.MSIZE[m] + 0.6, mfc=S.C[m], mec="white", mew=0.6)
+    baseline_points(ins, "psnr")
+    ins.set_xlim(x0 - 0.45, x0 + 0.35)
+    ins.set_ylim(24.6, 28.5)
+    ins.set_xticks([])
+    ins.set_yticks([25, 27])
+    ins.yaxis.tick_right()
+    ins.tick_params(labelsize=5.5, length=1.5, pad=1)
+    ins.text(0.04, 0.95, f"{x0:.0f} NFE", transform=ins.transAxes, ha="left", va="top", fontsize=5.5, color=S.INK2)
+    ins.grid(axis="x", visible=False)
+    ins.set_facecolor("white")
+    for sp in ins.spines.values():
+        sp.set_visible(True)
+        sp.set_color(S.AXIS)
+        sp.set_linewidth(0.5)
+    ax.indicate_inset_zoom(ins, edgecolor=S.AXIS, lw=0.5, alpha=1.0)
+
+
 def nfe_ticks(ax, budget_nfe):
     xs = sorted(budget_nfe.values())
     ax.set_xticks(xs)
@@ -141,12 +170,13 @@ def method_legend(fig, y, x=0.5, ncol=3):
 
 def full_width():
     series, gains, budget_nfe = load()
-    fig, axes = plt.subplots(1, 3, figsize=(S.TEXT_W, 1.80), gridspec_kw=dict(wspace=0.30))
-    fig.subplots_adjust(left=0.055, right=0.99, bottom=0.19, top=0.80)
+    fig, axes = plt.subplots(1, 3, figsize=(S.TEXT_W, 2.30), gridspec_kw=dict(wspace=0.30))
+    fig.subplots_adjust(left=0.055, right=0.99, bottom=0.15, top=0.84)
     metric_panel(axes[0], series, budget_nfe, "psnr", r"PSNR (dB) $\uparrow$", direct_labels=False)
+    zoom_inset(axes[0], series, budget_nfe)
     metric_panel(axes[1], series, budget_nfe, "lpips", r"LPIPS $\downarrow$", label_budgets=False)
     gain_panel(axes[2], gains, budget_nfe, label_budgets=False)
-    axes[0].set_ylim(14.5, 36.5)
+    axes[0].set_ylim(14.5, 38.5)
     axes[1].set_ylim(0, 0.44)
     axes[2].set_ylim(-0.3, 4.6)
     titles = ["(a) PSNR w.r.t. the 50-step reference", "(b) LPIPS w.r.t. the 50-step reference",
