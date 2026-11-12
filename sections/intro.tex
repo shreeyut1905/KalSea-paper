@@ -20,7 +20,7 @@ Reuse and forecasting share a structural limitation: they are \emph{open loop}. 
 from the past alone, and the sampler integrates its errors into the latent. These errors grow with the distance to
 the last computed step: on six reference trajectories of our development set, the relative error of the velocity
 obtained from a Kalman forecast of the residual grows from 4--5\% at the first skipped step to over 20\% at the
-seventh, as reported in the Sec.~D of the supplementary material. When the next step is computed, its block-stack output reveals how wrong the forecast was, but
+seventh (\suppref{supp:results}). When the next step is computed, its block-stack output reveals how wrong the forecast was, but
 existing caches use this observation only to predict the \emph{next} gap; the latent, already advanced along erroneous
 velocities, is never revisited. Forecasting reduces this drift but does not remove it: as gaps grow, its advantage
 over reuse vanishes (\cref{sec:main-results}).

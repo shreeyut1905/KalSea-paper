@@ -65,6 +65,8 @@ if [ "$BUILD" = 1 ]; then
   if [ "$SUPP" = 1 ]; then
     echo "[build]  latexmk -pdf supp_main.tex  (supplementary material; reads build/main.aux)"
     build_one supp_main supp.pdf
+    echo "[build]  latexmk -pdf main.tex again (reads build/supp_main.aux for the Supp. references)"
+    build_one main main.pdf
   fi
 fi
 

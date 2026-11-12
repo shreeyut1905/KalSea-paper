@@ -19,6 +19,6 @@ Matched \nfe is not matched latency: \pcgs adds output-layer evaluations (\cref{
 Our metrics measure fidelity to the 50-step sampler, the goal of a cache, not sample quality. Our image results cover a single model.
 % Wan2.1: full set +0.33 dB [0.16, 0.49] at 17 NFE (fr_metrics.json); 20-prompt sweep -1.69 dB [-2.37, -1.07] at 10 NFE
 % (supplement, fig_video_sweep; paper_plan/video_ablations_20.json).
-On Wan2.1, the same-setup PSNR gain is only 0.33\,dB at 17 \nfe and negative at 10 \nfe on 20 prompts (supplement). \pcgs attaches the
+On Wan2.1, the same-setup PSNR gain is only 0.33\,dB at 17 \nfe and negative at 10 \nfe on 20 prompts (\suppref{supp:video-abl}). \pcgs attaches the
 residual of the uncorrected latent to the corrected one, accurate only for small corrections; with gaps of up to
 twelve steps its gain is modest (0.31\,dB at 9 \nfe).

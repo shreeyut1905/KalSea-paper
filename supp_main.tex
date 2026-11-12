@@ -26,6 +26,8 @@
 \newcommand{\maincref}[1]{\cref*{M-#1}}  % "Sec. 3.3", "Tab. 1", "Fig. 3" of the main paper, no hyperlink
 \newcommand{\mainref}[1]{\ref*{M-#1}}    % bare number of a main-paper label (e.g. an equation)
 \newcommand{\maineqref}[1]{(\ref*{M-#1})}
+\newcommand{\suppref}[1]{Sec.~\ref{#1}}                   % main-paper macro, local meaning here
+\newcommand{\supprefs}[2]{Secs.~\ref{#1} and~\ref{#2}}
 
 % Supplementary numbering: sections A, B, ...; tables, figures and equations S1, S2, ... (main-paper items keep their
 % plain numbers, so "Tab. 1" is the main paper and "Tab. S1" this document).

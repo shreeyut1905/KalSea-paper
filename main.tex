@@ -21,9 +21,17 @@
 \input{preamble}  % kit file, unchanged
 \input{macros}    % our packages, method names, notation
 
+% References into the supplementary material: the labels of build/supp_main.aux are imported with the prefix "S-"
+% (package xr, before hyperref) and printed without hyperlinks (the target is in the other PDF):
+% \suppref{supp:calib} -> "Supp. A.2". build.sh compiles main, then supp_main, then main again.
+\usepackage{xr}
+\externaldocument[S-]{build/supp_main}
+
 % hyperref with pagebackref, as in the kit (strongly recommended for the review version).
 \definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
 \usepackage[pagebackref,breaklinks,colorlinks,allcolors=cvprblue]{hyperref}
+\newcommand{\suppref}[1]{Supp.~\ref*{S-#1}}                         % "Supp. A.2"
+\newcommand{\supprefs}[2]{Supp.~\ref*{S-#1} and~\ref*{S-#2}}        % "Supp. D and G.6"
 
 %%%%%%%%% CONFERENCE (the CVPR 2027 kit has no paper ID)
 \def\confName{CVPR}

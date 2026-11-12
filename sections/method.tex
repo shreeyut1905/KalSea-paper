@@ -103,7 +103,7 @@ $\mathbf h=[1,0]^\top$,
 On skipped steps the moments are not updated ($\post{\kstate}_i=\prior{\kstate}_i$, $\post{\kP}_i=\prior{\kP}_i$),
 and the cache writes the predicted value, $\hat\res_i=\prior{m}_i$, into $\hout_i=\hin_i+\hat\res_i$; the output
 layers run as usual. The intensity $\kappa$ is adapted online so that the mean squared innovation matches its
-predicted variance $S_b$~\cite{mehra1972approaches} (supplement).
+predicted variance $S_b$~\cite{mehra1972approaches} (\suppref{supp:forecaster}).
 
 \paragraph{Parametrizations.}
 The covariance $\kP$ is shared by all elements (per-element variant) or by all coefficients of a frequency band (DCT
@@ -113,7 +113,7 @@ variant), so the filter costs a few elementwise operations per step and its gain
 with an orthonormal 2D DCT on the token grid, the coefficients are grouped into seven radial frequency bands, and each
 band has its own warped time coordinate and covariance. Noise intensities, initial trend variances and band powers
 are calibrated once per model from 16 uncached trajectories of prompts disjoint from all evaluation prompts; $\tau=0.5$
-and $R=10^{-3}$ throughout (supplement). The two variants perform the same (\cref{sec:ablations}). With the corrector of
+and $R=10^{-3}$ throughout (\suppref{supp:forecaster}, \ref*{S-supp:calib}). The two variants perform the same (\cref{sec:ablations}). With the corrector of
 \cref{sec:pcgs}, this predictor forms our full method, \ours; the predictor alone (the \sea gate with Kalman residual
 forecasting) is labeled \kalsea in tables and figures.
 
@@ -137,7 +137,7 @@ $\prior{\kP}_i\kPhi(b,i)^\top\mathbf h$, and conditioning the joint Gaussian on 
   \label{eq:smooth}
 \end{equation}
 This is the RTS smoother~\cite{rauch1965maximum} over $[a,b]$, whose gain products telescope because the filtered and
-predicted moments coincide inside the gap (proof in the supplement). The gains use only quantities that the
+predicted moments coincide inside the gap (proof in \suppref{supp:smoother}). The gains use only quantities that the
 filter already maintains, so the smoother has no parameters of its own. They increase across the gap: the steps
 closest to $b$, whose forecasts were the least reliable, absorb most of the innovation. In residual space, the smoothed
 residual is the forecast plus a gain-weighted share of the forecast error revealed at $b$,
@@ -177,7 +177,7 @@ The gate's reference input of step $b$ is recomputed from $\lat'_b$ (no measurab
 
 \paragraph{Remarks.}
 Under the filter's model and to first order, re-integrating with the smoothed residuals minimizes the expected squared
-error of $\lat'_b$ given the observations up to step $b$ (supplement). \pcgs does not change the predictor for the next gap, because smoothed and filtered estimates coincide at the latest
+error of $\lat'_b$ given the observations up to step $b$ (\suppref{supp:smoother}). \pcgs does not change the predictor for the next gap, because smoothed and filtered estimates coincide at the latest
 observation. It only requires the solver update to be linear in the network output: for a multistep solver such as
 the UniPC sampler~\cite{zhao2023unipc} of Wan2.1, the solver state is restored at step $a{+}1$ and the updates are
 replayed with the corrected outputs; with classifier-free guidance~\cite{ho2022cfg}, the conditional and
@@ -223,7 +223,7 @@ procedure.
 $\Emb$ and $\Out$ per skipped step and, at each computed step that closes a gap, one more of each plus the gate
 refresh: for \flux at $1024^2$, about 0.3\% of one transformer evaluation per image. The filter state and the gap
 buffer raise the peak memory by 0.16\,GiB over the uncached sampler (\seacache: 0.05\,GiB; \kalsea: 0.14\,GiB;
-supplement).
+\suppref{supp:pcgs-impl}).
 % Wall-clock overhead (measured, one prompt per configuration): Limitations (Sec. 5) and supplement, TFLOPs and latency.
 % FLOP count (analytic, from the layer shapes; verify with calflops before submission): x_embedder Linear(64->3072)
 % and proj_out Linear(3072->64) on 4096 tokens cost 2*4096*64*3072 = 1.61 GFLOP each, norm_out ~0.1 GFLOP, i.e.
