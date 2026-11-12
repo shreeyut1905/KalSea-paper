@@ -148,7 +148,8 @@ filter state is no better than no correction ($-$0.86 vs.\ $-$0.83\,dB at 20.8 \
 
 \paragraph{Other forecasters and fillers.}
 With \pcgs, the forecaster's parametrization hardly matters: the per-element filter, a shorter damping $\tau=0.1$
-and a calibration-free filter all stay within 0.1\,dB of \ours, so the frequency decomposition is unnecessary
-for the residual and we use the per-element filter for video. Nor is \pcgs tied to a Kalman forecaster: it improves
+and a calibration-free filter all stay within 0.1\,dB of \ours, so the two variants perform the same: we keep the DCT
+variant on \flux, whose bands follow the frequency model of the \sea gate, and use the calibration-free per-element
+filter for video, where it needs no calibration. Nor is \pcgs tied to a Kalman forecaster: it improves
 reuse by 1.69 and 0.74\,dB and linear extrapolation by 1.15 and 0.80\,dB (\suppref{supp:results}); linear extrapolation with \pcgs
 then ties \ours, while reuse with \pcgs stays 1.03 and 0.53\,dB below.

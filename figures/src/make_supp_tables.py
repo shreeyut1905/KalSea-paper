@@ -498,7 +498,7 @@ def tab_fillers():
          r" extrapolation have no state-space model and use the forecast plus a linearly weighted innovation, which for"
          r" reuse is the linear interpolation from $\res_a$ to $\res_b$ (\cref{supp:smoother}). All other parts of"
          r" \pcgs (re-integration, continuation, gate refresh) are the same.}",
-         r"  \label{tab:supp-fillers}", r"  \footnotesize", r"  \setlength{\tabcolsep}{3.2pt}",
+         r"  \label{tab:supp-fillers}", r"  \footnotesize", r"  \setlength{\tabcolsep}{1.9pt}",
          r"  \begin{tabular}{@{}ll cccc @{\hspace{10pt}} cccc@{}}", r"    \toprule",
          r"    & & \multicolumn{4}{c}{" + head[D.FILLER_DELTAS[0]] + r"} & \multicolumn{4}{c}{" + head[D.FILLER_DELTAS[1]]
          + r"} \\",

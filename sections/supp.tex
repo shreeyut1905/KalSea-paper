@@ -271,7 +271,12 @@ them on 183 to 196, and the per-prompt \nfe never differs by more than \suppSame
 
 \paragraph{Metrics.}
 Images are compared with the uncached 50-step output of the same code path, prompt and seed (seed = DrawBench prompt
-index, 200 prompts in the file order). PSNR: scikit-image on 8-bit RGB with data range 255. SSIM: scikit-image
+index, 200 prompts in the file order). The baselines of \maincref{tab:flux-main} (TeaCache, TaylorSeer, Spectrum, SADA
+and fewer steps) run in one harness with diffusers 0.34, which the released code of Spectrum and SADA requires, and are
+compared with the 50-step output of that release; \ours, \kalsea and \seacache run with diffusers 0.41 and are compared
+with its 50-step output. The two 50-step outputs differ (29.4\,dB PSNR between them, mean over the 200 prompts), so gaps
+between the two groups are not measured against the same target, whereas all comparisons within a group (\ours vs.\
+\seacache, the ablations, the budget sweep) are. PSNR: scikit-image on 8-bit RGB with data range 255. SSIM: scikit-image
 structural similarity on 8-bit RGB (default $7{\times}7$ uniform window, channels averaged). LPIPS: AlexNet
 features~\cite{zhang2018lpips}, inputs scaled to $[-1,1]$. \seacache does not state its SSIM implementation or LPIPS
 backbone (TeaCache's evaluation code, on which it builds, uses a Gaussian $11{\times}11$ SSIM window), so published SSIM
@@ -404,7 +409,11 @@ second half (B, 32--63). The development set used the thresholds $\delta=0.37$ (
 \cref{tab:supp-devset} gives the gains of \pcgs for both forecasters and for reuse on both halves;
 \cref{tab:supp-devabl} the development-set ablations. On this set, the per-element filter with \pcgs was the best
 configuration at 18 \nfe (27.94 vs.\ 27.58\,dB for the DCT filter with \pcgs); on DrawBench the two are tied
-(\cref{tab:ablation-2x2}). The RTS gains and the linear interpolation were tied on the development set for the
+(\cref{tab:ablation-2x2}): with \pcgs, every PSNR difference between the DCT, per-element and calibration-free filters
+is at most 0.03\,dB and all CIs include zero, so they perform the same. We keep the DCT variant on \flux because it
+follows the frequency model of the \sea gate (\maincref{sec:prelim}): a frequency $f$ is resolved once $a_i^2S(f)$
+exceeds $b_i^2$, so low frequencies settle early and high frequencies late, and each band has its own time coordinate
+and noise level to follow this order. The per-element filter needs no calibration, so we use it on video. The RTS gains and the linear interpolation were tied on the development set for the
 per-element filter (interpolation minus RTS: \suppDevLinA{} at 18 \nfe and \suppDevLinB{} at 13 \nfe,
 \cref{tab:supp-devabl}), which is where we chose the RTS gains; on DrawBench the interpolation is better by 0.14\,dB at
 20.8 \nfe and tied at 13 \nfe (main paper, \maincref{sec:ablations}), and we did not change the method based on the
@@ -685,7 +694,7 @@ process. One prompt per configuration: \flux, DrawBench ``A red colored car.'' (
 VBench ``In a still frame, a stop sign'' (seed 42, one call). On these prompts \seacache and \ours compute exactly the
 tables' \nfe at both budgets. The original, \seacache and \ours run with our code; TeaCache, TaylorSeer and fewer-step
 sampling with their official implementations at the published settings (TaylorSeer on \flux: order 1, first five steps
-computed; the single-block calls of TeaCache's \flux forward are adapted to the current diffusers interface, with the
+computed, 20 and 14 \nfe, while its fidelity rows in \maincref{tab:flux-main} use order 2 at 18 and 12 \nfe; the single-block calls of TeaCache's \flux forward are adapted to the current diffusers interface, with the
 same operations). As a check, the 50-step original timed with the baselines' drivers agrees with our script to within
 0.1\% (\flux, HunyuanVideo) and 1.3\% (Wan2.1). Spectrum and SADA need an older diffusers release for their
 released \flux code, which is slower at identical work; their latency is the original's latency in
