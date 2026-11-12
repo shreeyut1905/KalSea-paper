@@ -28,7 +28,7 @@
 \node[title] at (\Gx+0.1,2.37) {SEA gate {\normalfont\scriptsize(SeaCache)}};
 \node[lbl, anchor=north west, align=left] at (\Gx+0.1,2.0) {%
   $\modin_i=\mathrm{AdaLN}_0(\hin_i,\cond_i)$\\[2pt]
-  $\bar{\modin}_i=\seaop_{\sigma_i}(\modin_i)$\\[2pt]
+  $\bar{\modin}_i=\seaop_i(\modin_i)$\\[2pt]
   $d_i=\|\bar{\modin}_i-\bar{\modin}_{i-1}\|_1/\|\bar{\modin}_{i-1}\|_1$\\[2pt]
   compute iff $D_i\mskip-2mu=\mskip-2mu D_{i-1}\mskip-2mu+\mskip-2mu d_i\mskip-2mu\ge\mskip-2mu\delta$};
 \draw[data] (\Gx+1.9,\yS) -- (\Gx+1.9,2.45);
@@ -84,7 +84,7 @@
   at computed step $b$ ending a gap $a{+}1,\dots,b{-}1$:\\[2pt]
   (1) RTS: $\smooth{m}_i=\prior{m}_i+g_i\,e_b$,\ \ $e_b=z_b-\prior{m}_b$\\[2pt]
   (2) re-integrate $\lat_{a+1}\!\to\lat_b'$ with $\Emb,\Out$ only\\[2pt]
-  (3) continue from $\lat_b'$;\ refresh the gate input\\[2pt]
+  (3) continue from $\lat_b'$;\ (4) refresh the gate input\\[2pt]
   \textit{0 extra transformer-block evaluations}};
 \draw[data] (\Fx+\Fw-0.25,0.28) -- (\Fx+\Fw-0.25,-0.10) -- (\Bx,-0.10);
 \node[lbl, anchor=north east] at (\Fx+\Fw-0.29,0.06) {$e_b,\ \prior{\kP}_{a+1:b}$};

@@ -390,7 +390,7 @@
 \definecolor{textcolor}{rgb}{0.043137,0.043137,0.043137}%
 \pgfsetstrokecolor{textcolor}%
 \pgfsetfillcolor{textcolor}%
-\pgftext[x=0.255687in,y=1.044537in,,bottom,rotate=90.000000]{\color{textcolor}{\rmfamily\fontsize{7.000000}{8.400000}\selectfont\catcode`\^=\active\def^{\ifmmode\sp\else\^{}\fi}\catcode`\%=\active\def%{\%}residual $\langle\res_i,\mathbf{u}\rangle$}}%
+\pgftext[x=0.255687in,y=1.044537in,,bottom,rotate=90.000000]{\color{textcolor}{\rmfamily\fontsize{7.000000}{8.400000}\selectfont\catcode`\^=\active\def^{\ifmmode\sp\else\^{}\fi}\catcode`\%=\active\def%{\%}residual $\langle\res_i,\mathbf{p}\rangle$}}%
 \end{pgfscope}%
 \begin{pgfscope}%
 \pgfpathrectangle{\pgfqpoint{0.283465in}{0.627461in}}{\pgfqpoint{3.622047in}{0.834154in}}%

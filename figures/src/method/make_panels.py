@@ -153,7 +153,7 @@ def panel_b(D, S, lo, hi, path, W, H):
     ym = np.interp(xm, np.r_[a1, i[g1], b1], np.r_[D["obs"][int(a1) - 1], D["smoothed"][g1], D["obs"][int(b1) - 1]])
     axr.annotate(r"$\smooth{m}_i$", (xm, ym), xytext=(1.0, -5.0), textcoords="offset points", ha="center", va="top",
                  fontsize=7, color=INK)
-    axr.set_ylabel(r"residual $\langle\res_i,\mathbf{u}\rangle$", labelpad=2)
+    axr.set_ylabel(r"residual $\langle\res_i,\mathbf{p}\rangle$", labelpad=2)
     axr.set_yticks([])
     plt.setp(axr.get_xticklabels(), visible=False)
     axr.tick_params(axis="x", which="both", length=0)
